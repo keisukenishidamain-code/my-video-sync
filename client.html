@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>視聴ページ - 広告強制スキップ・完全同期版</title>
+    <title>視聴ページ - 広告強制スキップ・同時再生版</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
@@ -11,7 +11,7 @@
         #player { width: 100%; height: 100%; pointer-events: none; }
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 1); display: flex; flex-direction: column;
+            background: #000; display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 9999;
             cursor: pointer; color: #fff; font-family: sans-serif;
         }
@@ -21,9 +21,9 @@
 </head>
 <body>
 
-<div id="overlay" onclick="startSync()">
+<div id="overlay" onclick="startApp()">
     <div class="play-btn"></div>
-    <div style="margin-top: 20px; font-weight: bold;">タップして広告スキップ同期を開始</div>
+    <div style="margin-top: 20px; font-weight: bold;">画面をタップして開始</div>
 </div>
 
 <div id="player"></div>
@@ -35,12 +35,11 @@
         projectId: "club-d0011",
         appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let player;
     let currentVideoId = "";
-    let userActive = false;
+    let active = false;
 
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
@@ -51,49 +50,47 @@
             playerVars: { 'autoplay': 1, 'mute': 1, 'playsinline': 1, 'controls': 0, 'modestbranding': 1, 'origin': window.location.origin },
             events: {
                 'onReady': () => {
-                    db.ref('sync').on('value', (snapshot) => {
-                        const data = snapshot.val();
+                    db.ref('sync').on('value', (snap) => {
+                        const data = snap.val();
                         if (!data) return;
                         if (currentVideoId !== data.videoId) {
                             player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
                             currentVideoId = data.videoId;
                         }
                     });
-                    setInterval(forceSync, 200); // 0.2秒ごとに超高速チェック
+                    loop();
                 }
             }
         });
     }
 
-    function startSync() {
-        userActive = true;
+    function startApp() {
+        active = true;
         document.getElementById('overlay').style.display = 'none';
         if (player) { player.unMute(); player.playVideo(); }
     }
 
-    function forceSync() {
-        db.ref('sync').once('value', (snapshot) => {
-            const data = snapshot.val();
-            if (!data || !player || !player.getCurrentTime || !userActive) return;
+    function loop() {
+        setInterval(() => {
+            db.ref('sync').once('value', (snap) => {
+                const data = snap.val();
+                if (!data || !player || !player.getCurrentTime || !active) return;
 
-            const staffTime = data.time;
-            const staffState = data.state;
-            const myTime = player.getCurrentTime();
-            const myState = player.getPlayerState();
+                const staffTime = data.time;
+                const myTime = player.getCurrentTime();
+                
+                // 広告スキップ強制 & 同時再生 (0.5秒以上のズレで即シーク)
+                if (Math.abs(myTime - staffTime) > 0.5 && data.state === 1) {
+                    player.seekTo(staffTime, true);
+                    player.playVideo();
+                }
 
-            // 広告スキップ・同時再生ロジック
-            // スタッフの時間と0.5秒以上ズレていたら、広告中であろうとお構いなしにシーク命令を送る
-            const diff = Math.abs(myTime - staffTime);
-            if (diff > 0.5 && staffState === 1) {
-                player.seekTo(staffTime, true);
-                if (myState !== 1) player.playVideo();
-            }
-
-            // 停止同期
-            if ((staffState === 2 || staffState === 0) && myState === 1) {
-                player.pauseVideo();
-            }
-        });
+                // 停止同期
+                if ((data.state === 2 || data.state === 0) && player.getPlayerState() === 1) {
+                    player.pauseVideo();
+                }
+            });
+        }, 200); 
     }
 </script>
 </body>
