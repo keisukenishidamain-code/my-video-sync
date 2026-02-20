@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スタッフ操作パネル - スキップ・停止完全同期版</title>
+    <title>スタッフ操作パネル - 最終完全版</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
@@ -13,10 +13,11 @@
             padding: 20px;
             background-color: #fafafa;
             color: #333;
+            margin: 0;
         }
         .container {
-            max-width: 800px;
-            margin: 0 auto;
+            max-width: 900px;
+            margin: 20px auto;
             background: #fff;
             padding: 30px;
             border-radius: 12px;
@@ -35,7 +36,9 @@
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 1rem;
+            outline: none;
         }
+        input[type="text"]:focus { border-color: #ff0000; }
         button {
             padding: 12px 24px;
             background-color: #ff0000;
@@ -46,10 +49,8 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        button:hover {
-            background-color: #cc0000;
-        }
-        #player-container {
+        button:hover { background-color: #cc0000; }
+        #player-wrapper {
             margin-top: 20px;
             position: relative;
             padding-top: 56.25%; /* 16:9 Aspect Ratio */
@@ -58,41 +59,43 @@
             border-radius: 8px;
             background: #000;
         }
-        #player-container iframe {
+        #player-wrapper iframe {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
         }
-        #status {
+        #status-bar {
             margin-top: 15px;
             display: inline-block;
-            padding: 5px 12px;
+            padding: 8px 16px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             background: #eee;
+            color: #555;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>スタッフ・マスター操作（スキップ対応）</h1>
+    <h1>スタッフ・マスター操作パネル</h1>
     
     <div class="input-group">
-        <input type="text" id="urlInput" placeholder="YouTubeのURLを入力">
+        <input type="text" id="urlInput" placeholder="YouTubeの動画URLを貼り付けてください">
         <button onclick="sendVideo()">配信開始</button>
     </div>
 
-    <div id="player-container">
+    <div id="player-wrapper">
         <div id="player"></div>
     </div>
 
-    <div id="status">プレイヤー準備中...</div>
+    <div id="status-bar">プレイヤーの状態を待機中...</div>
 </div>
 
 <script>
+    // Firebaseの設定
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -104,6 +107,7 @@
     const db = firebase.database();
     let player;
 
+    // YouTube API 読み込み
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -111,30 +115,46 @@
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
+            height: '360',
+            width: '640',
             playerVars: {
                 'origin': window.location.origin,
-                'enablejsapi': 1
+                'enablejsapi': 1,
+                'rel': 0
             },
             events: {
-                'onStateChange': (event) => {
-                    // 状態が変わった（再生・停止・シーク）瞬間に同期
-                    db.ref('sync').update({
-                        state: event.data,
-                        time: player.getCurrentTime(),
-                        lastUpdate: Date.now()
-                    });
-                    
-                    const states = { 1: "再生中", 2: "一時停止", 3: "シーク/読み込み中", 0: "終了" };
-                    document.getElementById('status').innerText = "状態: " + (states[event.data] || "待機中");
-                },
-                'onReady': () => { document.getElementById('status').innerText = "準備完了"; }
+                'onStateChange': onPlayerStateChange,
+                'onReady': () => { document.getElementById('status-bar').innerText = "準備完了：URLを入力してください"; }
             }
         });
     }
 
+    // 状態変化（再生・停止・シーク操作）を即座にFirebaseへ送信
+    function onPlayerStateChange(event) {
+        db.ref('sync').update({
+            state: event.data,
+            time: player.getCurrentTime(),
+            lastUpdate: Date.now()
+        });
+        
+        const stateLabels = { 1: "再生中", 2: "一時停止", 3: "バッファ/シーク中", 0: "終了", 5: "未開始" };
+        document.getElementById('status-bar').innerText = "現在の状態: " + (stateLabels[event.data] || "不明");
+    }
+
+    // 動画配信実行
     function sendVideo() {
         const url = document.getElementById('urlInput').value;
-        const videoId = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
+        if (!url) return alert("URLを正しく入力してください");
+
+        let videoId = "";
+        if (url.includes('v=')) {
+            videoId = url.split('v=')[1].split('&')[0];
+        } else if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1].split('?')[0];
+        } else {
+            videoId = url.split('/').pop();
+        }
+
         if (videoId) {
             db.ref('sync').set({
                 videoId: videoId,
@@ -143,18 +163,22 @@
                 lastUpdate: Date.now()
             });
             player.loadVideoById(videoId);
+        } else {
+            alert("YouTube IDが見つかりません");
         }
     }
 
-    // 0.5秒ごとに現在位置を定期更新（再生中のみ）
+    // 0.5秒おきに「再生中」の秒数を強制同期
     setInterval(() => {
         if (player && typeof player.getPlayerState === 'function') {
             const currentState = player.getPlayerState();
             if (currentState === 1) {
                 db.ref('sync/time').set(player.getCurrentTime());
+                db.ref('sync/lastUpdate').set(Date.now());
             }
         }
     }, 500);
 </script>
+
 </body>
 </html>
