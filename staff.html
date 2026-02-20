@@ -2,121 +2,34 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>顧客用・広告強制弾き飛ばし同期システム</title>
+    <title>スタッフ・マスター操作パネル（高精度同期版）</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
-            background: #1a1a1a; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            width: 100vw; 
-            height: 100vh; 
-            font-family: sans-serif; 
-            overflow: hidden;
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f0f0; margin: 0; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .input-group { margin-bottom: 20px; }
+        input { width: 60%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 12px 24px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .video-container {
+            position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 10px; overflow: hidden; margin-top: 20px;
         }
-        
-        /* スタッフ側と同じアスペクト比を維持する枠（全画面廃止） */
-        .main-wrapper {
-            position: relative; 
-            width: 95%; 
-            max-width: 800px; 
-            padding-top: 53.43%; /* 16:9計算 */
-            background: #000; 
-            border-radius: 12px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-            overflow: hidden;
+        .video-container iframe, .video-container div {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         }
-
-        /* 内部要素を絶対配置で固定 */
-        #player, #logo-overlay {
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%;
-        }
-
-        #player { 
-            pointer-events: none; 
-            visibility: hidden; 
-        }
-
-        /* ロゴ待機画面（枠の中に収める） */
-        #logo-overlay {
-            z-index: 10; 
-            background: #000; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            transition: opacity 0.5s; 
-            cursor: pointer;
-        }
-        video#logo-video { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-        }
-        .tap-hint { 
-            position: absolute; 
-            bottom: 20px; 
-            color: #fff; 
-            background: rgba(0,0,0,0.5); 
-            padding: 8px 20px; 
-            border-radius: 20px; 
-            font-size: 0.9rem; 
-            font-weight: bold;
-            animation: blink 2s infinite;
-        }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-        /* 音量UI（枠の下に配置） */
-        #ui-layer { 
-            position: fixed; 
-            bottom: 30px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            display: flex; 
-            align-items: center; 
-            background: rgba(0,0,0,0.7); 
-            padding: 12px 25px; 
-            border-radius: 40px; 
-            border: 1px solid rgba(255,255,255,0.1); 
-            z-index: 10001;
-        }
-        #ui-layer label { 
-            color: white; 
-            font-size: 12px; 
-            margin-right: 12px; 
-            font-weight: bold; 
-        }
-        input[type=range] { cursor: pointer; width: 150px; }
     </style>
 </head>
-<body onclick="enableAudio()">
-
-<div class="main-wrapper">
-    <div id="logo-overlay">
-        <video id="logo-video" autoplay muted playsinline loop>
-            <source src="logo.mp4" type="video/mp4">
-        </video>
-        <div class="tap-hint">タップして入場</div>
+<body>
+<div class="container">
+    <h2>マスター配信（裏側動作・同期維持）</h2>
+    <div class="input-group">
+        <input type="text" id="urlInput" placeholder="YouTube URLを入力">
+        <button onclick="sendVideo()">配信開始</button>
     </div>
-
-    <div id="player"></div>
-</div>
-
-<div id="ui-layer">
-    <label>音量調整</label>
-    <input type="range" id="volumeBar" min="0" max="100" value="50" oninput="changeVolume(this.value)">
+    <div class="video-container"><div id="player"></div></div>
 </div>
 
 <script>
-    // Firebase設定（省略なし）
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -125,109 +38,40 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
     let player;
-    let currentId = "";
-    let isAudioUnlocked = false;
 
-    // YouTube APIの読み込み
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: { 
-                'autoplay': 1, 
-                'mute': 1, 
-                'playsinline': 1, 
-                'controls': 0, 
-                'modestbranding': 1, 
-                'origin': window.location.origin,
-                'iv_load_policy': 3,
-                'rel': 0
-            },
+            playerVars: { 'origin': location.origin, 'enablejsapi': 1 },
             events: {
-                'onReady': () => {
-                    // Firebaseからのリアルタイム同期設定
-                    db.ref('sync').on('value', (snap) => {
-                        const data = snap.val();
-                        if (!data) return;
-
-                        // 動画IDの変更を検知
-                        if (currentId !== data.videoId) {
-                            player.loadVideoById({ 
-                                videoId: data.videoId, 
-                                startSeconds: data.time 
-                            });
-                            currentId = data.videoId;
-                        }
-
-                        const overlay = document.getElementById('logo-overlay');
-                        const pEl = document.getElementById('player');
-
-                        // スタッフの再生状態(state)に連動
-                        if (data.state === 1) { // 再生中
-                            overlay.style.opacity = '0';
-                            overlay.style.pointerEvents = 'none';
-                            pEl.style.visibility = 'visible';
-                            if (isAudioUnlocked) player.playVideo();
-                        } else { // 停止・待機中
-                            overlay.style.opacity = '1';
-                            overlay.style.pointerEvents = 'auto';
-                            pEl.style.visibility = 'hidden';
-                            player.pauseVideo();
-                        }
-                    });
-
-                    // 広告突破＆完全同期用ループ (0.1秒間隔)
-                    setInterval(forceSync, 100);
+                'onStateChange': (e) => {
+                    db.ref('sync').update({ state: e.data, time: player.getCurrentTime(), lastUpdate: Date.now() });
                 }
             }
         });
     }
 
-    // 広告を検知して弾き飛ばすロジック
-    function forceSync() {
-        db.ref('sync').once('value', (snap) => {
-            const data = snap.val();
-            if (!data || !player || typeof player.getCurrentTime !== 'function' || data.state !== 1) return;
-
-            const myTime = player.getCurrentTime();
-            const staffTime = data.time;
-            const diff = Math.abs(myTime - staffTime);
-            
-            // ズレが0.2秒以上（広告の差し込み等）あれば、スタッフの秒数へ強制ワープ
-            if (diff > 0.2) {
-                player.seekTo(staffTime, true);
-                // 再生が止まっていたら叩き起こす
-                if (player.getPlayerState() !== 1 && isAudioUnlocked) {
-                    player.playVideo();
-                }
-            }
-        });
-    }
-
-    // 初回タップでブラウザの音声制限を解除
-    function enableAudio() {
-        if (!isAudioUnlocked && player) {
-            isAudioUnlocked = true;
-            player.unMute();
-            player.setVolume(50);
-            player.playVideo();
-            document.querySelector('.tap-hint').innerText = "同期済み";
-            setTimeout(() => {
-                document.querySelector('.tap-hint').style.display = "none";
-            }, 2000);
+    function sendVideo() {
+        const url = document.getElementById('urlInput').value;
+        const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
+        if (id) {
+            db.ref('sync').set({ videoId: id, state: 1, time: 0, lastUpdate: Date.now() });
+            player.loadVideoById(id);
         }
     }
 
-    // 顧客側独自の音量調整
-    function changeVolume(val) {
-        if (player && typeof player.setVolume === 'function') {
-            player.setVolume(val);
+    // 0.2秒おきに最新秒数を送信（裏側でも停止しにくい再帰タイマー）
+    function syncTick() {
+        if (player && typeof player.getPlayerState === 'function' && player.getPlayerState() === 1) {
+            db.ref('sync').update({ time: player.getCurrentTime(), lastUpdate: Date.now() });
         }
+        setTimeout(syncTick, 200);
     }
+    syncTick();
 </script>
 </body>
 </html>
