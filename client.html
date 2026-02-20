@@ -17,7 +17,179 @@
 
 <script>
     const firebaseConfig = {
+        apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>同時視聴ページ - 完全同期版</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+        #player {
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* 顧客が自分で操作できないようにする */
+        }
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: pointer;
+            font-family: sans-serif;
+            text-align: center;
+        }
+        .play-button {
+            width: 80px;
+            height: 80px;
+            background: #ff0000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .play-button::after {
+            content: "";
+            display: block;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 15px 0 15px 25px;
+            border-color: transparent transparent transparent #fff;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="overlay" onclick="activatePlayer()">
+    <div class="play-button"></div>
+    <div style="font-size: 1.2rem; font-weight: bold;">画面をタップして同期を開始</div>
+    <div style="font-size: 0.9rem; margin-top: 10px; color: #ccc;">スタッフの操作に合わせて再生・停止します</div>
+</div>
+
+<div id="player"></div>
+
+<script>
+    // Firebase初期設定
+    const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
+        databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "club-d0011",
+        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let player;
+    let currentVideoId = "";
+    let isFirstPlay = true;
+
+    // YouTube IFrame API読み込み
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            playerVars: {
+                'autoplay': 1,
+                'mute': 1,
+                'playsinline': 1,
+                'controls': 0, // 操作パネルを隠す
+                'disablekb': 1,
+                'fs': 0,
+                'modestbranding': 1,
+                'origin': window.location.origin
+            },
+            events: {
+                'onReady': startMonitoring
+            }
+        });
+    }
+
+    // 初回の画面タップで音声を出し再生を許可する
+    function activatePlayer() {
+        document.getElementById('overlay').style.display = 'none';
+        if (player) {
+            player.unMute();
+            player.playVideo();
+        }
+    }
+
+    function startMonitoring() {
+        // 1. Firebaseの「即時通知」を監視
+        db.ref('sync').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            // 動画IDが新しければロード
+            if (currentVideoId !== data.videoId) {
+                player.loadVideoById({
+                    videoId: data.videoId,
+                    startSeconds: data.time
+                });
+                currentVideoId = data.videoId;
+            }
+        });
+
+        // 2. 【最重要】0.5秒おきの「強制ステータス同期」ループ
+        // 1回限りの命令(on value)が広告などで無視されても、ここで何度も命令を出す
+        setInterval(() => {
+            db.ref('sync').once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data || !player || typeof player.getPlayerState !== 'function') return;
+
+                const myState = player.getPlayerState();
+                const staffState = data.state;
+                const staffTime = data.time;
+
+                // --- 停止・再生の強制同期ロジック ---
+                
+                // スタッフが停止(2)または終了(0)しているが、自分が動いている場合
+                if ((staffState === 2 || staffState === 0) && (myState === 1 || myState === 3)) {
+                    player.pauseVideo();
+                }
+                
+                // スタッフが再生中(1)だが、自分が止まっている場合（かつオーバーレイ非表示時）
+                else if (staffState === 1 && myState === 2 && document.getElementById('overlay').style.display === 'none') {
+                    player.playVideo();
+                }
+
+                // --- 位置の強制同期ロジック ---
+                const myTime = player.getCurrentTime();
+                const diff = Math.abs(myTime - staffTime);
+
+                // 1.2秒以上のズレがあればスタッフの位置へ強制ワープ
+                if (diff > 1.2 && staffState === 1) {
+                    player.seekTo(staffTime, true);
+                }
+            });
+        }, 500);
+    }
+</script>
+
+</body>
+</html>
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
         projectId: "club-d0011",
         appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
@@ -72,3 +244,4 @@
 <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
+
