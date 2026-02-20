@@ -2,26 +2,32 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>スタッフ・マスター操作（強制同期維持）</title>
+    <title>スタッフ・マスター操作パネル</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f0f0; margin: 0; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        input { width: 65%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; }
+        .input-group { margin-bottom: 20px; }
+        input { width: 60%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; }
         button { padding: 12px 24px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        #player-box { margin-top: 20px; position: relative; padding-top: 56.25%; background: #000; border-radius: 10px; overflow: hidden; }
-        #player-box iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        /* 16:9を維持するボックス */
+        .video-container {
+            position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 10px; overflow: hidden; margin-top: 20px;
+        }
+        .video-container iframe, .video-container div {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>マスター配信（広告強制突破・同期モード）</h2>
+    <h2>マスター配信（16:9 同期モード）</h2>
     <div class="input-group">
         <input type="text" id="urlInput" placeholder="YouTube URLを入力">
         <button onclick="sendVideo()">配信開始</button>
     </div>
-    <div id="player-box"><div id="player"></div></div>
+    <div class="video-container"><div id="player"></div></div>
 </div>
 
 <script>
@@ -44,11 +50,7 @@
             playerVars: { 'origin': location.origin, 'enablejsapi': 1 },
             events: {
                 'onStateChange': (e) => {
-                    db.ref('sync').update({
-                        state: e.data,
-                        time: player.getCurrentTime(),
-                        lastUpdate: Date.now()
-                    });
+                    db.ref('sync').update({ state: e.data, time: player.getCurrentTime(), lastUpdate: Date.now() });
                 }
             }
         });
@@ -63,13 +65,9 @@
         }
     }
 
-    // 0.2秒おきに最新の再生秒数を上書き送信（高精度化）
     function syncTick() {
         if (player && typeof player.getPlayerState === 'function' && player.getPlayerState() === 1) {
-            db.ref('sync').update({
-                time: player.getCurrentTime(),
-                lastUpdate: Date.now()
-            });
+            db.ref('sync').update({ time: player.getCurrentTime(), lastUpdate: Date.now() });
         }
         setTimeout(syncTick, 200);
     }
