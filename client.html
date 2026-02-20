@@ -3,47 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>顧客用・広告弾き飛ばし＆ボックス同期版</title>
+    <title>顧客用・同期システム（ボックス型）</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { 
-            margin: 0; padding: 0; background: #1a1a1a; 
-            display: flex; align-items: center; justify-content: center; 
-            width: 100vw; height: 100vh; font-family: sans-serif; overflow: hidden;
-        }
-        
-        /* スタッフと同じアスペクト比を維持（全画面廃止） */
-        .main-wrapper {
-            position: relative; width: 95%; max-width: 800px; padding-top: 53.43%;
-            background: #000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden;
-        }
-
+        body { margin: 0; padding: 0; background: #1a1a1a; display: flex; align-items: center; justify-content: center; width: 100vw; height: 100vh; font-family: sans-serif; overflow: hidden; }
+        .main-wrapper { position: relative; width: 95%; max-width: 800px; padding-top: 53.43%; background: #000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
         #player, #logo-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         #player { pointer-events: none; visibility: hidden; }
-
-        /* ロゴ待機画面 */
-        #logo-overlay {
-            z-index: 10; background: #000; display: flex; align-items: center; justify-content: center;
-            transition: opacity 0.5s; cursor: pointer;
-        }
+        #logo-overlay { z-index: 10; background: #000; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; cursor: pointer; }
         video#logo-video { width: 100%; height: 100%; object-fit: cover; }
-        .tap-hint { 
-            position: absolute; bottom: 20px; color: #fff; background: rgba(0,0,0,0.5); 
-            padding: 8px 20px; border-radius: 20px; font-size: 0.9rem; font-weight: bold;
-        }
-
-        #ui-layer { 
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); 
-            display: flex; align-items: center; background: rgba(0,0,0,0.7); 
-            padding: 12px 25px; border-radius: 40px; z-index: 10001;
-        }
+        .tap-hint { position: absolute; bottom: 20px; color: #fff; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; }
+        #ui-layer { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; background: rgba(0,0,0,0.7); padding: 12px 25px; border-radius: 40px; z-index: 10001; }
         #ui-layer label { color: white; font-size: 12px; margin-right: 12px; }
         input[type=range] { width: 150px; cursor: pointer; }
     </style>
 </head>
 <body onclick="enableAudio()">
-
 <div class="main-wrapper">
     <div id="logo-overlay">
         <video id="logo-video" autoplay muted playsinline loop>
@@ -53,12 +29,10 @@
     </div>
     <div id="player"></div>
 </div>
-
 <div id="ui-layer">
     <label>音量調整</label>
     <input type="range" id="volumeBar" min="0" max="100" value="50" oninput="changeVolume(this.value)">
 </div>
-
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
@@ -68,15 +42,12 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    
     let player;
     let currentId = "";
     let isAudioUnlocked = false;
-
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
-
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
             playerVars: { 'autoplay': 1, 'mute': 1, 'playsinline': 1, 'controls': 0, 'modestbranding': 1, 'origin': window.location.origin },
@@ -85,46 +56,40 @@
                     db.ref('sync').on('value', (snap) => {
                         const data = snap.val();
                         if (!data) return;
-
                         if (currentId !== data.videoId) {
                             player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
                             currentId = data.videoId;
                         }
-
                         const overlay = document.getElementById('logo-overlay');
                         const pEl = document.getElementById('player');
-
-                        if (data.state === 1) { // スタッフ再生中
+                        if (data.state === 1) {
                             overlay.style.opacity = '0';
                             overlay.style.pointerEvents = 'none';
                             pEl.style.visibility = 'visible';
                             if (isAudioUnlocked) player.playVideo();
-                        } else { // スタッフ停止中
+                        } else {
                             overlay.style.opacity = '1';
                             overlay.style.pointerEvents = 'auto';
                             pEl.style.visibility = 'hidden';
                             player.pauseVideo();
                         }
                     });
-                    // 広告を0.1秒単位で監視して弾く
                     setInterval(forceSync, 100);
                 }
             }
         });
     }
-
     function forceSync() {
         db.ref('sync').once('value', (snap) => {
             const data = snap.val();
             if (!data || !player || typeof player.getCurrentTime !== 'function' || data.state !== 1) return;
             const diff = Math.abs(player.getCurrentTime() - data.time);
-            if (diff > 0.3) { // 広告等で0.3秒ズレたら強制ワープ
+            if (diff > 0.3) {
                 player.seekTo(data.time, true);
                 if (isAudioUnlocked) player.playVideo();
             }
         });
     }
-
     function enableAudio() {
         if (!isAudioUnlocked && player) {
             isAudioUnlocked = true;
@@ -134,10 +99,7 @@
             document.querySelector('.tap-hint').style.display = "none";
         }
     }
-
-    function changeVolume(val) {
-        if (player && typeof player.setVolume === 'function') player.setVolume(val);
-    }
+    function changeVolume(val) { if (player && typeof player.setVolume === 'function') player.setVolume(val); }
 </script>
 </body>
 </html>
