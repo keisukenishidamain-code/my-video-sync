@@ -53,7 +53,7 @@
         #player-wrapper {
             margin-top: 20px;
             position: relative;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            padding-top: 56.25%;
             height: 0;
             overflow: hidden;
             border-radius: 8px;
@@ -81,21 +81,17 @@
 
 <div class="container">
     <h1>スタッフ・マスター操作パネル</h1>
-    
     <div class="input-group">
         <input type="text" id="urlInput" placeholder="YouTubeの動画URLを貼り付けてください">
         <button onclick="sendVideo()">配信開始</button>
     </div>
-
     <div id="player-wrapper">
         <div id="player"></div>
     </div>
-
     <div id="status-bar">プレイヤーの状態を待機中...</div>
 </div>
 
 <script>
-    // Firebaseの設定
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -107,7 +103,6 @@
     const db = firebase.database();
     let player;
 
-    // YouTube API 読み込み
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -117,11 +112,7 @@
         player = new YT.Player('player', {
             height: '360',
             width: '640',
-            playerVars: {
-                'origin': window.location.origin,
-                'enablejsapi': 1,
-                'rel': 0
-            },
+            playerVars: { 'origin': window.location.origin, 'enablejsapi': 1, 'rel': 0 },
             events: {
                 'onStateChange': onPlayerStateChange,
                 'onReady': () => { document.getElementById('status-bar').innerText = "準備完了：URLを入力してください"; }
@@ -129,56 +120,31 @@
         });
     }
 
-    // 状態変化（再生・停止・シーク操作）を即座にFirebaseへ送信
     function onPlayerStateChange(event) {
         db.ref('sync').update({
             state: event.data,
             time: player.getCurrentTime(),
             lastUpdate: Date.now()
         });
-        
-        const stateLabels = { 1: "再生中", 2: "一時停止", 3: "バッファ/シーク中", 0: "終了", 5: "未開始" };
-        document.getElementById('status-bar').innerText = "現在の状態: " + (stateLabels[event.data] || "不明");
     }
 
-    // 動画配信実行
     function sendVideo() {
         const url = document.getElementById('urlInput').value;
-        if (!url) return alert("URLを正しく入力してください");
-
-        let videoId = "";
-        if (url.includes('v=')) {
-            videoId = url.split('v=')[1].split('&')[0];
-        } else if (url.includes('youtu.be/')) {
-            videoId = url.split('youtu.be/')[1].split('?')[0];
-        } else {
-            videoId = url.split('/').pop();
-        }
-
+        let videoId = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
         if (videoId) {
-            db.ref('sync').set({
-                videoId: videoId,
-                state: 1,
-                time: 0,
-                lastUpdate: Date.now()
-            });
+            db.ref('sync').set({ videoId: videoId, state: 1, time: 0, lastUpdate: Date.now() });
             player.loadVideoById(videoId);
-        } else {
-            alert("YouTube IDが見つかりません");
         }
     }
 
-    // 0.5秒おきに「再生中」の秒数を強制同期
     setInterval(() => {
         if (player && typeof player.getPlayerState === 'function') {
             const currentState = player.getPlayerState();
             if (currentState === 1) {
                 db.ref('sync/time').set(player.getCurrentTime());
-                db.ref('sync/lastUpdate').set(Date.now());
             }
         }
     }, 500);
 </script>
-
 </body>
 </html>
