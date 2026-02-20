@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>スタッフ操作パネル</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #fafafa; }
+        .control-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: inline-block; }
+        input { width: 400px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 20px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        #player { margin-top: 20px; border-radius: 8px; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <div class="control-box">
+        <h2>スタッフ用コントロール</h2>
+        <input type="text" id="urlInput" placeholder="YouTubeのURLを貼り付け">
+        <button onclick="sendVideo()">配信開始 ＆ 保存</button>
+        <div id="player"></div>
+    </div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
+        authDomain: "club-d0011.firebaseapp.com",
+        databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "club-d0011",
+        storageBucket: "club-d0011.firebasestorage.app",
+        messagingSenderId: "51948793811",
+        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let player;
+
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            height: '360', width: '640',
+            playerVars: { 'origin': location.origin, 'enablejsapi': 1, 'rel': 0, 'modestbranding': 1 },
+            events: { 
+                'onStateChange': (e) => { 
+                    db.ref('sync/state').set(e.data);
+                    db.ref('sync/time').set(player.getCurrentTime());
+                } 
+            }
+        });
+    }
+
+    function sendVideo() {
+        const url = document.getElementById('urlInput').value;
+        const id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+        if(!id) return alert("URLが無効です");
+        const today = new Date().toLocaleDateString('ja-JP').replace(/\//g, '-');
+        db.ref('sync').set({ videoId: id, state: 1, time: 0, lastUpdate: Date.now() });
+        db.ref('playlists/' + today).push({ videoId: id, time: Date.now() });
+        player.loadVideoById(id);
+    }
+
+    setInterval(() => {
+        if(player && player.getPlayerState() === 1) {
+            db.ref('sync').update({ time: player.getCurrentTime(), lastUpdate: Date.now() });
+        }
+    }, 500);
+</script>
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
