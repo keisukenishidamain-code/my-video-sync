@@ -3,33 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>同時視聴・広告スキップ・音量調整版</title>
+    <title>ロゴ・動画自動切換同期版</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         body { margin: 0; padding: 0; background: #000; overflow: hidden; width: 100vw; height: 100vh; font-family: sans-serif; }
-        #player { width: 100%; height: 100%; pointer-events: none; }
         
+        /* 背後のYouTube */
+        #player { width: 100%; height: 100%; pointer-events: none; }
+
+        /* 前面のロゴ待機画面 */
+        #logo-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+        video#logo-video { width: 100%; height: 100%; object-fit: cover; }
+
         /* 音量操作パネル */
-        #ui-layer { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; align-items: center; background: rgba(0,0,0,0.6); padding: 15px 25px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.2); }
+        #ui-layer { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10001; display: flex; align-items: center; background: rgba(0,0,0,0.6); padding: 15px 25px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.2); }
         #ui-layer label { color: white; font-size: 12px; margin-right: 15px; font-weight: bold; }
         input[type=range] { width: 150px; cursor: pointer; }
-
-        #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 9999;
-            cursor: pointer; color: #fff;
-        }
-        .play-btn { width: 80px; height: 80px; background: #ff0000; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-        .play-btn::after { content: ""; border-style: solid; border-width: 15px 0 15px 25px; border-color: transparent transparent transparent #fff; margin-left: 5px; }
     </style>
 </head>
-<body>
+<body onclick="enableAudio()">
 
-<div id="overlay" onclick="initApp()">
-    <div class="play-btn"></div>
-    <div style="font-weight: bold; font-size: 1.2rem;">タップして広告スキップ同期を開始</div>
+<div id="logo-overlay">
+    <video id="logo-video" autoplay muted playsinline loop>
+        <source src="logo.mp4" type="video/mp4">
+    </video>
 </div>
 
 <div id="player"></div>
@@ -50,7 +52,7 @@
     const db = firebase.database();
     let player;
     let currentId = "";
-    let isReady = false;
+    let isAudioEnabled = false;
 
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
@@ -64,21 +66,37 @@
                     db.ref('sync').on('value', (snap) => {
                         const data = snap.val();
                         if (!data) return;
+                        
+                        // 動画切り替え
                         if (currentId !== data.videoId) {
                             player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
                             currentId = data.videoId;
                         }
+
+                        // 【重要】スタッフの状態に合わせてロゴの出し入れを制御
+                        const overlay = document.getElementById('logo-overlay');
+                        if (data.state === 1) {
+                            // 再生中ならロゴを消す
+                            overlay.style.opacity = '0';
+                            overlay.style.visibility = 'hidden';
+                            if (isAudioEnabled) player.playVideo();
+                        } else {
+                            // 停止中・終了後・未開始ならロゴを出す
+                            overlay.style.opacity = '1';
+                            overlay.style.visibility = 'visible';
+                            player.pauseVideo();
+                        }
                     });
-                    setInterval(syncLoop, 200); // 0.2秒の超高速同期（広告スキップ用）
+                    setInterval(syncLoop, 200); 
                 }
             }
         });
     }
 
-    function initApp() {
-        isReady = true;
-        document.getElementById('overlay').style.display = 'none';
-        if (player) {
+    // 最初に一度画面を触ることで音が出るようにする
+    function enableAudio() {
+        if (!isAudioEnabled && player) {
+            isAudioEnabled = true;
             player.unMute();
             player.setVolume(50);
             player.playVideo();
@@ -92,19 +110,19 @@
     function syncLoop() {
         db.ref('sync').once('value', (snap) => {
             const data = snap.val();
-            if (!data || !player || !player.getCurrentTime || !isReady) return;
+            if (!data || !player || !player.getCurrentTime) return;
 
             const diff = Math.abs(player.getCurrentTime() - data.time);
             
-            // 広告スキップ & 同時再生死守 (0.5秒以上のズレで強制ジャンプ)
-            if (diff > 0.5 && data.state === 1) {
-                player.seekTo(data.time, true);
-                player.playVideo();
-            }
-
-            // 停止同期
-            if ((data.state === 2 || data.state === 0) && player.getPlayerState() === 1) {
-                player.pauseVideo();
+            // 再生中(1)かつズレがある場合、広告中であっても強制スキップ
+            if (data.state === 1) {
+                if (diff > 0.5) {
+                    player.seekTo(data.time, true);
+                }
+                // バックグラウンド等で止まっている場合に強制再生
+                if (player.getPlayerState() !== 1 && isAudioEnabled) {
+                    player.playVideo();
+                }
             }
         });
     }
