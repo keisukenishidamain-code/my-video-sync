@@ -2,69 +2,189 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>スタッフ操作パネル - 同期強化版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スタッフ操作パネル - 完全同期版</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #fafafa; }
-        .control-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: inline-block; }
-        input { width: 400px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        button { padding: 10px 20px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        #player { margin-top: 20px; border-radius: 8px; }
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 20px; color: #ff0000; }
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        button {
+            padding: 12px 24px;
+            background-color: #ff0000;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #cc0000;
+        }
+        #player-container {
+            margin-top: 20px;
+            position: relative;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+            background: #000;
+        }
+        #player-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .status-badge {
+            margin-top: 15px;
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            background: #eee;
+        }
     </style>
 </head>
 <body>
-    <div class="control-box">
-        <h2>スタッフ・マスター操作</h2>
-        <input type="text" id="urlInput" placeholder="YouTube URLを貼り付け">
+
+<div class="container">
+    <h1>スタッフ・マスター操作</h1>
+    
+    <div class="input-group">
+        <input type="text" id="urlInput" placeholder="YouTubeのURLを入力 (例: https://www.youtube.com/watch?v=xxxx)">
         <button onclick="sendVideo()">配信開始</button>
+    </div>
+
+    <div id="player-container">
         <div id="player"></div>
     </div>
 
+    <div id="status" class="status-badge">同期待機中...</div>
+</div>
+
 <script>
+    // Firebase初期設定
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
+        authDomain: "club-d0011.firebaseapp.com",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
         projectId: "club-d0011",
+        storageBucket: "club-d0011.firebasestorage.app",
+        messagingSenderId: "51948793811",
         appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
     };
+    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let player;
+    let isApiReady = false;
+
+    // YouTube IFrame APIの読み込み
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
     function onYouTubeIframeAPIReady() {
+        isApiReady = true;
         player = new YT.Player('player', {
-            height: '360', width: '640',
-            playerVars: { 'origin': location.origin, 'enablejsapi': 1 },
-            events: { 
-                'onStateChange': (e) => {
-                    // 1:再生中, 2:一時停止, 0:終了
-                    db.ref('sync/state').set(e.data);
-                    db.ref('sync/time').set(player.getCurrentTime());
-                } 
+            height: '360',
+            width: '640',
+            playerVars: {
+                'origin': window.location.origin,
+                'enablejsapi': 1,
+                'rel': 0,
+                'modestbranding': 1
+            },
+            events: {
+                'onStateChange': onPlayerStateChange,
+                'onReady': () => { document.getElementById('status').innerText = "プレイヤー準備完了"; }
             }
         });
     }
 
-    function sendVideo() {
-        const url = document.getElementById('urlInput').value;
-        const id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-        if(!id) return alert("URL無効");
-        db.ref('sync').set({ videoId: id, state: 1, time: 0 });
-        player.loadVideoById(id);
+    // プレイヤーの状態が変わった（再生・停止・シーク）
+    function onPlayerStateChange(event) {
+        // event.data -> 1:再生中, 2:一時停止, 0:終了, 3:バッファ中
+        db.ref('sync/state').set(event.data);
+        db.ref('sync/time').set(player.getCurrentTime());
+        
+        const states = { 1: "再生中", 2: "一時停止", 0: "終了", 3: "読み込み中" };
+        document.getElementById('status').innerText = "状態: " + (states[event.data] || "待機中");
     }
 
-    // 定期的な同期（位置と状態の両方を送る）
+    // URLから動画IDを抽出して配信
+    function sendVideo() {
+        const url = document.getElementById('urlInput').value;
+        if (!url) return alert("URLを入力してください");
+
+        let videoId = "";
+        if (url.includes('v=')) {
+            videoId = url.split('v=')[1].split('&')[0];
+        } else {
+            videoId = url.split('/').pop();
+        }
+
+        if (videoId) {
+            // Firebaseを初期化（新しい動画ID、再生状態1、時間0）
+            db.ref('sync').set({
+                videoId: videoId,
+                state: 1,
+                time: 0,
+                lastUpdate: Date.now()
+            });
+            player.loadVideoById(videoId);
+        } else {
+            alert("有効なURLではありません");
+        }
+    }
+
+    // 0.5秒おきに「再生中」であれば時間を送信し続ける
     setInterval(() => {
-        if(player && typeof player.getPlayerState === 'function') {
+        if (player && typeof player.getPlayerState === 'function') {
             const currentState = player.getPlayerState();
-            db.ref('sync/state').set(currentState);
-            if(currentState === 1) { // 再生中のみ時間を更新
+            // 状態が再生中(1)の場合のみ、詳細な時間を同期する
+            if (currentState === 1) {
                 db.ref('sync/time').set(player.getCurrentTime());
+                db.ref('sync/lastUpdate').set(Date.now());
+            }
+            // 状態が一時停止(2)の場合も定期的に「停止中」であることを上書きする（確実性のため）
+            if (currentState === 2) {
+                db.ref('sync/state').set(2);
             }
         }
     }, 500);
 </script>
-<script src="https://www.youtube.com/iframe_api"></script>
+
 </body>
 </html>
