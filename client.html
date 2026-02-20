@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>同時視聴ページ - 完全同期・スキップ対応</title>
+    <title>視聴ページ - 完全同期版（省略なし）</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
@@ -18,35 +18,61 @@
         #player {
             width: 100%;
             height: 100%;
-            pointer-events: none;
+            pointer-events: none; /* 顧客が自分で触れないようにする */
         }
+        /* オーバーレイ：タップするまで表示される黒い画面 */
         #overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 9999;
             cursor: pointer;
             color: #fff;
             font-family: sans-serif;
-            font-size: 1.2rem;
+            transition: opacity 0.5s ease;
         }
+        .play-circle {
+            width: 80px;
+            height: 80px;
+            background: #ff0000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .play-circle::after {
+            content: "";
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 15px 0 15px 25px;
+            border-color: transparent transparent transparent #fff;
+            margin-left: 5px;
+        }
+        .text-main { font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; }
+        .text-sub { font-size: 0.9rem; color: #ccc; }
     </style>
 </head>
 <body>
 
-<div id="overlay" onclick="activate()">
-    タップして同期を開始（スキップ・停止対応）
+<div id="overlay" onclick="startApp()">
+    <div class="play-circle"></div>
+    <div class="text-main">画面をタップして同期を開始</div>
+    <div class="text-sub">スタッフの再生・スキップに自動連動します</div>
 </div>
 
 <div id="player"></div>
 
 <script>
+    // Firebase設定
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -58,7 +84,9 @@
     const db = firebase.database();
     let player;
     let currentVideoId = "";
+    let userHasStarted = false;
 
+    // YouTube API読み込み
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -71,35 +99,47 @@
                 'mute': 1,
                 'playsinline': 1,
                 'controls': 0,
+                'modestbranding': 1,
                 'origin': window.location.origin
             },
             events: {
                 'onReady': () => {
-                    // Firebaseの基本監視
+                    // Firebase監視開始
                     db.ref('sync').on('value', (snapshot) => {
                         const data = snapshot.val();
                         if (!data) return;
+                        // 動画切り替え判定
                         if (currentVideoId !== data.videoId) {
-                            player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
+                            player.loadVideoById({
+                                videoId: data.videoId,
+                                startSeconds: data.time
+                            });
                             currentVideoId = data.videoId;
                         }
                     });
-                    // 強制同期ループ開始
-                    startSyncLoop();
+                    // 強制同期ループ（0.4秒間隔）を開始
+                    runSyncLoop();
                 }
             }
         });
     }
 
-    function activate() {
-        document.getElementById('overlay').style.display = 'none';
+    // 画面タップ時の処理：オーバーレイを消し、音声を有効化
+    function startApp() {
+        userHasStarted = true;
+        const ovl = document.getElementById('overlay');
+        ovl.style.opacity = "0"; // フェードアウト
+        setTimeout(() => {
+            ovl.style.display = 'none'; // 完全に消去
+        }, 500);
+
         if (player) {
             player.unMute();
             player.playVideo();
         }
     }
 
-    function startSyncLoop() {
+    function runSyncLoop() {
         setInterval(() => {
             db.ref('sync').once('value', (snapshot) => {
                 const data = snapshot.val();
@@ -110,25 +150,25 @@
                 const myTime = player.getCurrentTime();
                 const myState = player.getPlayerState();
 
-                // 1. スキップ（位置）の同期
-                // スタッフと自分の時間が0.8秒以上ズレていたら強制シーク
-                const diff = Math.abs(myTime - staffTime);
-                if (diff > 0.8) {
+                // 1. 位置（スキップ）の同期：0.8秒以上のズレがあればジャンプ
+                const timeDiff = Math.abs(myTime - staffTime);
+                if (timeDiff > 0.8) {
                     player.seekTo(staffTime, true);
                 }
 
-                // 2. 停止・再生の強制同期
-                // スタッフが停止(2)なのに自分が再生中なら停止
+                // 2. 状態の同期（バックグラウンド停止からの強制復帰含む）
+                // スタッフが停止(2)または終了(0)だが、自分が動いている場合
                 if ((staffState === 2 || staffState === 0) && (myState === 1 || myState === 3)) {
                     player.pauseVideo();
-                } 
-                // スタッフが再生中(1)なのに自分が停止中なら再生（オーバーレイ非表示時のみ）
-                else if (staffState === 1 && myState === 2 && document.getElementById('overlay').style.display === 'none') {
+                }
+                // スタッフが再生中(1)だが、自分が止まっている場合（タップ済みであれば強制再生）
+                else if (staffState === 1 && myState !== 1 && userHasStarted) {
                     player.playVideo();
                 }
             });
-        }, 400); // 0.4秒間隔でチェック
+        }, 400); // 0.4秒ごとにチェック
     }
 </script>
+
 </body>
 </html>
