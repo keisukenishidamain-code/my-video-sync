@@ -2,27 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>視聴ページ - 同期強化版</title>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <style>
-        body { margin: 0; background: black; overflow: hidden; width: 100vw; height: 100vh; }
-        #player { width: 100%; height: 100%; pointer-events: none; }
-        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: flex; align-items: center; justify-content: center; z-index: 100; cursor: pointer; font-size: 1.2em; }
-    </style>
-</head>
-<body>
-    <div id="overlay" onclick="this.style.display='none'; player.playVideo();">タップして同期を開始</div>
-    <div id="player"></div>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>同時視聴ページ - 完全同期版</title>
+    <title>同時視聴ページ - 完全同期・スキップ対応</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
@@ -30,7 +11,6 @@
             margin: 0;
             padding: 0;
             background-color: #000;
-            color: #fff;
             overflow: hidden;
             width: 100vw;
             height: 100vh;
@@ -38,7 +18,7 @@
         #player {
             width: 100%;
             height: 100%;
-            pointer-events: none; /* 顧客が自分で操作できないようにする */
+            pointer-events: none;
         }
         #overlay {
             position: fixed;
@@ -46,50 +26,27 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 1000;
             cursor: pointer;
+            color: #fff;
             font-family: sans-serif;
-            text-align: center;
-        }
-        .play-button {
-            width: 80px;
-            height: 80px;
-            background: #ff0000;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        .play-button::after {
-            content: "";
-            display: block;
-            width: 0;
-            height: 0;
-            border-style: solid;
-            border-width: 15px 0 15px 25px;
-            border-color: transparent transparent transparent #fff;
-            margin-left: 5px;
+            font-size: 1.2rem;
         }
     </style>
 </head>
 <body>
 
-<div id="overlay" onclick="activatePlayer()">
-    <div class="play-button"></div>
-    <div style="font-size: 1.2rem; font-weight: bold;">画面をタップして同期を開始</div>
-    <div style="font-size: 0.9rem; margin-top: 10px; color: #ccc;">スタッフの操作に合わせて再生・停止します</div>
+<div id="overlay" onclick="activate()">
+    タップして同期を開始（スキップ・停止対応）
 </div>
 
 <div id="player"></div>
 
 <script>
-    // Firebase初期設定
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -101,9 +58,7 @@
     const db = firebase.database();
     let player;
     let currentVideoId = "";
-    let isFirstPlay = true;
 
-    // YouTube IFrame API読み込み
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -115,20 +70,28 @@
                 'autoplay': 1,
                 'mute': 1,
                 'playsinline': 1,
-                'controls': 0, // 操作パネルを隠す
-                'disablekb': 1,
-                'fs': 0,
-                'modestbranding': 1,
+                'controls': 0,
                 'origin': window.location.origin
             },
             events: {
-                'onReady': startMonitoring
+                'onReady': () => {
+                    // Firebaseの基本監視
+                    db.ref('sync').on('value', (snapshot) => {
+                        const data = snapshot.val();
+                        if (!data) return;
+                        if (currentVideoId !== data.videoId) {
+                            player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
+                            currentVideoId = data.videoId;
+                        }
+                    });
+                    // 強制同期ループ開始
+                    startSyncLoop();
+                }
             }
         });
     }
 
-    // 初回の画面タップで音声を出し再生を許可する
-    function activatePlayer() {
+    function activate() {
         document.getElementById('overlay').style.display = 'none';
         if (player) {
             player.unMute();
@@ -136,112 +99,36 @@
         }
     }
 
-    function startMonitoring() {
-        // 1. Firebaseの「即時通知」を監視
-        db.ref('sync').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
-
-            // 動画IDが新しければロード
-            if (currentVideoId !== data.videoId) {
-                player.loadVideoById({
-                    videoId: data.videoId,
-                    startSeconds: data.time
-                });
-                currentVideoId = data.videoId;
-            }
-        });
-
-        // 2. 【最重要】0.5秒おきの「強制ステータス同期」ループ
-        // 1回限りの命令(on value)が広告などで無視されても、ここで何度も命令を出す
+    function startSyncLoop() {
         setInterval(() => {
             db.ref('sync').once('value', (snapshot) => {
                 const data = snapshot.val();
                 if (!data || !player || typeof player.getPlayerState !== 'function') return;
 
-                const myState = player.getPlayerState();
-                const staffState = data.state;
                 const staffTime = data.time;
+                const staffState = data.state;
+                const myTime = player.getCurrentTime();
+                const myState = player.getPlayerState();
 
-                // --- 停止・再生の強制同期ロジック ---
-                
-                // スタッフが停止(2)または終了(0)しているが、自分が動いている場合
+                // 1. スキップ（位置）の同期
+                // スタッフと自分の時間が0.8秒以上ズレていたら強制シーク
+                const diff = Math.abs(myTime - staffTime);
+                if (diff > 0.8) {
+                    player.seekTo(staffTime, true);
+                }
+
+                // 2. 停止・再生の強制同期
+                // スタッフが停止(2)なのに自分が再生中なら停止
                 if ((staffState === 2 || staffState === 0) && (myState === 1 || myState === 3)) {
                     player.pauseVideo();
-                }
-                
-                // スタッフが再生中(1)だが、自分が止まっている場合（かつオーバーレイ非表示時）
+                } 
+                // スタッフが再生中(1)なのに自分が停止中なら再生（オーバーレイ非表示時のみ）
                 else if (staffState === 1 && myState === 2 && document.getElementById('overlay').style.display === 'none') {
                     player.playVideo();
                 }
-
-                // --- 位置の強制同期ロジック ---
-                const myTime = player.getCurrentTime();
-                const diff = Math.abs(myTime - staffTime);
-
-                // 1.2秒以上のズレがあればスタッフの位置へ強制ワープ
-                if (diff > 1.2 && staffState === 1) {
-                    player.seekTo(staffTime, true);
-                }
             });
-        }, 500);
+        }, 400); // 0.4秒間隔でチェック
     }
 </script>
-
 </body>
 </html>
-        databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "club-d0011",
-        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    let player;
-    let currentId = "";
-
-    function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            playerVars: { 'autoplay': 1, 'mute': 1, 'playsinline': 1, 'controls': 0, 'origin': location.origin }
-        });
-    }
-
-    // メインの同期処理（Firebaseからの通知を受け取る）
-    db.ref('sync').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if(!data || !player) return;
-
-        if(currentId !== data.videoId) {
-            player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
-            currentId = data.videoId;
-        }
-    });
-
-    // 0.5秒おきの強制ステータス同期（停止を確実にする）
-    setInterval(() => {
-        db.ref('sync').once('value', (snapshot) => {
-            const data = snapshot.val();
-            if(!data || !player || typeof player.getPlayerState !== 'function') return;
-
-            const myState = player.getPlayerState();
-            
-            // スタッフが停止(2)なのに自分が再生中なら停止させる
-            if (data.state === 2 && myState === 1) {
-                player.pauseVideo();
-            } 
-            // スタッフが再生中(1)なのに自分が停止中なら再生させる
-            else if (data.state === 1 && myState === 2) {
-                player.playVideo();
-            }
-
-            // 位置の同期（1秒以上のズレでシーク）
-            const diff = Math.abs(player.getCurrentTime() - data.time);
-            if (diff > 1.0) {
-                player.seekTo(data.time, true);
-            }
-        });
-    }, 500);
-</script>
-<script src="https://www.youtube.com/iframe_api"></script>
-</body>
-</html>
-
