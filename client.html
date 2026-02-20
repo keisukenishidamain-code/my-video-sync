@@ -2,17 +2,17 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>顧客視聴ページ</title>
+    <title>視聴ページ - 同期強化版</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         body { margin: 0; background: black; overflow: hidden; width: 100vw; height: 100vh; }
         #player { width: 100%; height: 100%; pointer-events: none; }
-        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: flex; align-items: center; justify-content: center; z-index: 100; cursor: pointer; }
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: flex; align-items: center; justify-content: center; z-index: 100; cursor: pointer; font-size: 1.2em; }
     </style>
 </head>
 <body>
-    <div id="overlay" onclick="this.style.display='none'; player.playVideo();">クリックして同期開始</div>
+    <div id="overlay" onclick="this.style.display='none'; player.playVideo();">タップして同期を開始</div>
     <div id="player"></div>
 
 <script>
@@ -33,29 +33,41 @@
         });
     }
 
+    // メインの同期処理（Firebaseからの通知を受け取る）
     db.ref('sync').on('value', (snapshot) => {
         const data = snapshot.val();
         if(!data || !player) return;
 
-        // 動画切り替え
         if(currentId !== data.videoId) {
             player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
             currentId = data.videoId;
         }
-
-        // 状態(state)の同期
-        if (data.state === 2) { 
-            player.pauseVideo(); // スタッフが止めたら止める
-        } else if (data.state === 1) {
-            player.playVideo();  // スタッフが再生したら再生する
-        }
-
-        // 位置(time)の同期（0.8秒以上のズレで修正）
-        const diff = Math.abs(player.getCurrentTime() - data.time);
-        if(diff > 0.8) {
-            player.seekTo(data.time, true);
-        }
     });
+
+    // 0.5秒おきの強制ステータス同期（停止を確実にする）
+    setInterval(() => {
+        db.ref('sync').once('value', (snapshot) => {
+            const data = snapshot.val();
+            if(!data || !player || typeof player.getPlayerState !== 'function') return;
+
+            const myState = player.getPlayerState();
+            
+            // スタッフが停止(2)なのに自分が再生中なら停止させる
+            if (data.state === 2 && myState === 1) {
+                player.pauseVideo();
+            } 
+            // スタッフが再生中(1)なのに自分が停止中なら再生させる
+            else if (data.state === 1 && myState === 2) {
+                player.playVideo();
+            }
+
+            // 位置の同期（1秒以上のズレでシーク）
+            const diff = Math.abs(player.getCurrentTime() - data.time);
+            if (diff > 1.0) {
+                player.seekTo(data.time, true);
+            }
+        });
+    }, 500);
 </script>
 <script src="https://www.youtube.com/iframe_api"></script>
 </body>
