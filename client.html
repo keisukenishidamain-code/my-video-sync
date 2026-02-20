@@ -2,17 +2,20 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>同時視聴ページ</title>
+    <title>同時視聴ページ（同期強化版）</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { margin: 0; padding: 0; background: black; overflow: hidden; width: 100vw; height: 100vh; }
-        #player { width: 100%; height: 100%; pointer-events: none; }
-        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); color: white; display: flex; align-items: center; justify-content: center; z-index: 100; cursor: pointer; font-family: sans-serif; }
+        body { margin: 0; background: black; overflow: hidden; width: 100vw; height: 100vh; }
+        #player { width: 100%; height: 100%; }
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; cursor: pointer; font-family: sans-serif; text-align: center; }
     </style>
 </head>
 <body>
-    <div id="overlay" onclick="startViewing()">ここをクリックして同期視聴を開始</div>
+    <div id="overlay" onclick="startViewing()">
+        <h2 style="margin-bottom:10px;">同期を開始します</h2>
+        <p>ここをクリックして音声を有効にしてください</p>
+    </div>
     <div id="player"></div>
 
 <script>
@@ -26,10 +29,15 @@
     const db = firebase.database();
     let player;
     let currentId = "";
+    let staffTime = 0;
+    let staffState = 1;
 
     function startViewing() {
         document.getElementById('overlay').style.display = 'none';
-        if(player) player.playVideo();
+        if(player) {
+            player.unMute(); // ミュート解除
+            player.playVideo();
+        }
     }
 
     function onYouTubeIframeAPIReady() {
@@ -39,32 +47,45 @@
                 'mute': 1, 
                 'playsinline': 1, 
                 'origin': window.location.origin, 
-                'controls': 0,          // コントロールバーを非表示
-                'rel': 0,               // 関連動画を非表示
-                'modestbranding': 1,    // YouTubeロゴを最小化
-                'iv_load_policy': 3     // 動画アノテーションを非表示
+                'controls': 1, // 広告が出た際に対処しやすいよう一時的に表示
+                'rel': 0
+            },
+            events: {
+                'onReady': onPlayerReady
             }
         });
     }
 
-    db.ref('sync').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if(!data || !player) return;
+    function onPlayerReady() {
+        // Firebaseの監視を開始
+        db.ref('sync').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(!data) return;
 
-        if(currentId !== data.videoId) {
-            player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
-            currentId = data.videoId;
-        }
+            staffTime = data.time;
+            staffState = data.state;
 
-        const diff = Math.abs(player.getCurrentTime() - data.time);
-        // 広告等でズレた場合も、1秒以上の差があれば強制的にスタッフの位置へ飛ばす
-        if(diff > 1.0) { 
-            player.seekTo(data.time, true); 
-        }
+            // 動画の切り替え
+            if(currentId !== data.videoId) {
+                player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
+                currentId = data.videoId;
+            }
+        });
 
-        if(data.state === 1) player.playVideo();
-        else if(data.state === 2) player.pauseVideo();
-    });
+        // 0.5秒ごとに強制同期（広告を無視して位置を合わせる）
+        setInterval(() => {
+            if(!player || !player.getCurrentTime) return;
+            
+            const myTime = player.getCurrentTime();
+            const diff = Math.abs(myTime - staffTime);
+
+            // 1秒以上ズレていたら、広告中であっても本編の位置へ強制ジャンプを試みる
+            if(diff > 1.0 && staffState === 1) {
+                player.seekTo(staffTime, true);
+                player.playVideo();
+            }
+        }, 500);
+    }
 </script>
 <script src="https://www.youtube.com/iframe_api"></script>
 </body>
