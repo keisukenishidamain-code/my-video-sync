@@ -3,27 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>顧客側（PCバックグラウンド補完版）</title>
+    <title>顧客側（完全同期・自立再生版）</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { margin: 0; background: #1a1a1a; display: flex; align-items: center; justify-content: center; width: 100vw; height: 100vh; overflow: hidden; }
+        body { margin: 0; background: #000; display: flex; align-items: center; justify-content: center; width: 100vw; height: 100vh; overflow: hidden; }
         .main-wrapper { position: relative; width: 95%; max-width: 800px; padding-top: 53.43%; background: #000; border-radius: 12px; overflow: hidden; }
         #player, #logo-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        #player { visibility: hidden; }
-        #logo-overlay { z-index: 10; background: #000; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; cursor: pointer; }
-        #ui-layer { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 40px; }
+        #logo-overlay { z-index: 10; background: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; }
     </style>
 </head>
 <body onclick="unlock()">
 <div class="main-wrapper">
     <div id="logo-overlay">
         <video id="logo-video" autoplay muted playsinline loop><source src="logo.mp4" type="video/mp4"></video>
-        <div style="position:absolute; color:white; font-weight:bold;">クリックして入場</div>
+        <div style="position:absolute; color:white; font-weight:bold; background:rgba(0,0,0,0.5); padding:10px 20px; border-radius:30px;">クリックして合流</div>
     </div>
     <div id="player"></div>
 </div>
-<div id="ui-layer"><input type="range" id="volumeBar" min="0" max="100" value="50" oninput="changeVolume(this.value)"></div>
 
 <script>
     const firebaseConfig = {
@@ -39,8 +36,7 @@
     function unlock() {
         isUnlocked = true;
         if (player) { player.unMute(); player.playVideo(); }
-        document.getElementById('logo-overlay').style.opacity = "0";
-        setTimeout(() => document.getElementById('logo-overlay').style.display = "none", 500);
+        document.getElementById('logo-overlay').style.display = "none";
     }
 
     const tag = document.createElement('script');
@@ -49,37 +45,49 @@
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: { 'autoplay': 1, 'mute': 1, 'controls': 0, 'disablekb': 1 },
-            events: { 'onReady': () => {
-                db.ref('sync').on('value', snap => {
-                    const data = snap.val();
-                    if (!data) return;
-
-                    if (currentId !== data.videoId) {
-                        player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
-                        currentId = data.videoId;
-                    }
-
-                    // 【最重要】スタッフが裏で間引かれても、サーバー時刻との差分で今あるべき時間を「線形補完」
-                    const offset = (Date.now() - data.serverTime) / 1000;
-                    const estimatedTime = data.time + offset;
-                    const diff = Math.abs(player.getCurrentTime() - estimatedTime);
-
-                    if (data.state === 1) {
-                        document.getElementById('player').style.visibility = "visible";
-                        if (isUnlocked) player.playVideo();
-                        // 0.5秒以上のズレがある場合のみシーク（頻繁なシークによるカクつき防止）
-                        if (diff > 0.5) player.seekTo(estimatedTime, true);
-                    } else {
-                        document.getElementById('player').style.visibility = "hidden";
-                        player.pauseVideo();
-                    }
-                });
-            }}
+            playerVars: { 'autoplay': 1, 'mute': 1, 'controls': 0, 'modestbranding': 1 },
+            events: { 'onReady': startSync }
         });
     }
 
-    function changeVolume(v) { if (player) player.setVolume(v); }
+    function startSync() {
+        db.ref('sync').on('value', snap => {
+            const data = snap.val();
+            if (!data) return;
+
+            if (currentId !== data.videoId) {
+                player.loadVideoById({ videoId: data.videoId, startSeconds: calculateCurrentTime(data) });
+                currentId = data.videoId;
+            }
+
+            if (data.state === 1) {
+                if (isUnlocked) player.playVideo();
+                // 定期的に自力計算による微調整を行う
+                if (!window.adjustInterval) {
+                    window.adjustInterval = setInterval(() => {
+                        db.ref('sync').once('value', s => {
+                            const d = s.val();
+                            if (d && d.state === 1 && player.getCurrentTime) {
+                                const target = calculateCurrentTime(d);
+                                const diff = Math.abs(player.getCurrentTime() - target);
+                                if (diff > 0.5) player.seekTo(target, true);
+                            }
+                        });
+                    }, 1000);
+                }
+            } else {
+                player.pauseVideo();
+            }
+        });
+    }
+
+    // 「スタッフが何秒目か」ではなく「サーバーの時刻から逆算して、今何秒目であるべきか」を出す
+    function calculateCurrentTime(data) {
+        if (!data.serverStartTime) return 0;
+        const now = Date.now();
+        const elapsedSinceStart = (now - data.serverStartTime) / 1000;
+        return data.baseTime + elapsedSinceStart;
+    }
 </script>
 </body>
 </html>
