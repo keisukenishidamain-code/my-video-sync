@@ -3,36 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>顧客用・完全同期（最小化対応版）</title>
+    <title>顧客側（PCバックグラウンド補完版）</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { margin: 0; padding: 0; background: #1a1a1a; display: flex; align-items: center; justify-content: center; width: 100vw; height: 100vh; font-family: sans-serif; overflow: hidden; }
-        .main-wrapper { position: relative; width: 95%; max-width: 800px; padding-top: 53.43%; background: #000; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; }
+        body { margin: 0; background: #1a1a1a; display: flex; align-items: center; justify-content: center; width: 100vw; height: 100vh; overflow: hidden; }
+        .main-wrapper { position: relative; width: 95%; max-width: 800px; padding-top: 53.43%; background: #000; border-radius: 12px; overflow: hidden; }
         #player, #logo-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        #player { pointer-events: none; visibility: hidden; }
+        #player { visibility: hidden; }
         #logo-overlay { z-index: 10; background: #000; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s; cursor: pointer; }
-        video#logo-video { width: 100%; height: 100%; object-fit: cover; }
-        .tap-hint { position: absolute; bottom: 20px; color: #fff; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; }
-        #ui-layer { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; background: rgba(0,0,0,0.7); padding: 12px 25px; border-radius: 40px; z-index: 10001; }
-        input[type=range] { width: 150px; cursor: pointer; }
+        #ui-layer { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 40px; }
     </style>
 </head>
-<body onclick="unlockAll()">
+<body onclick="unlock()">
 <div class="main-wrapper">
     <div id="logo-overlay">
-        <video id="logo-video" autoplay muted playsinline loop>
-            <source src="logo.mp4" type="video/mp4">
-        </video>
-        <div class="tap-hint">タップして入場（最小化対応）</div>
+        <video id="logo-video" autoplay muted playsinline loop><source src="logo.mp4" type="video/mp4"></video>
+        <div style="position:absolute; color:white; font-weight:bold;">クリックして入場</div>
     </div>
     <div id="player"></div>
-    <audio id="keepAliveAudio" loop>
-        <source src="https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3" type="audio/mp3">
-    </audio>
 </div>
-<div id="ui-layer"><label style="color:white; font-size:12px; margin-right:10px;">音量</label>
-<input type="range" id="volumeBar" min="0" max="100" value="50" oninput="changeVolume(this.value)"></div>
+<div id="ui-layer"><input type="range" id="volumeBar" min="0" max="100" value="50" oninput="changeVolume(this.value)"></div>
 
 <script>
     const firebaseConfig = {
@@ -43,18 +34,13 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let player, isUnlocked = false;
+    let player, isUnlocked = false, currentId = "";
 
-    function unlockAll() {
-        if (isUnlocked) return;
-        document.getElementById('keepAliveAudio').play();
-        if (player) {
-            player.unMute();
-            player.setVolume(50);
-            player.playVideo();
-        }
-        document.querySelector('.tap-hint').style.display = "none";
+    function unlock() {
         isUnlocked = true;
+        if (player) { player.unMute(); player.playVideo(); }
+        document.getElementById('logo-overlay').style.opacity = "0";
+        setTimeout(() => document.getElementById('logo-overlay').style.display = "none", 500);
     }
 
     const tag = document.createElement('script');
@@ -63,39 +49,37 @@
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: { 'autoplay': 1, 'mute': 1, 'playsinline': 1, 'controls': 0, 'origin': window.location.origin },
-            events: {
-                'onReady': () => {
-                    db.ref('sync').on('value', (snap) => {
-                        const data = snap.val(); if (!data) return;
-                        const overlay = document.getElementById('logo-overlay');
-                        const pEl = document.getElementById('player');
-                        if (data.state === 1) {
-                            overlay.style.opacity = '0'; pEl.style.visibility = 'visible';
-                            if (isUnlocked) player.playVideo();
-                        } else {
-                            overlay.style.opacity = '1'; pEl.style.visibility = 'hidden';
-                            player.pauseVideo();
-                        }
-                        if (currentId !== data.videoId) {
-                            player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
-                            currentId = data.videoId;
-                        }
-                    });
-                    setInterval(() => {
-                        db.ref('sync').once('value', snap => {
-                            const d = snap.val();
-                            if (d && player && player.getCurrentTime && d.state === 1) {
-                                if (Math.abs(player.getCurrentTime() - d.time) > 0.3) player.seekTo(d.time, true);
-                            }
-                        });
-                    }, 200);
-                }
-            }
+            playerVars: { 'autoplay': 1, 'mute': 1, 'controls': 0, 'disablekb': 1 },
+            events: { 'onReady': () => {
+                db.ref('sync').on('value', snap => {
+                    const data = snap.val();
+                    if (!data) return;
+
+                    if (currentId !== data.videoId) {
+                        player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
+                        currentId = data.videoId;
+                    }
+
+                    // 【最重要】スタッフが裏で間引かれても、サーバー時刻との差分で今あるべき時間を「線形補完」
+                    const offset = (Date.now() - data.serverTime) / 1000;
+                    const estimatedTime = data.time + offset;
+                    const diff = Math.abs(player.getCurrentTime() - estimatedTime);
+
+                    if (data.state === 1) {
+                        document.getElementById('player').style.visibility = "visible";
+                        if (isUnlocked) player.playVideo();
+                        // 0.5秒以上のズレがある場合のみシーク（頻繁なシークによるカクつき防止）
+                        if (diff > 0.5) player.seekTo(estimatedTime, true);
+                    } else {
+                        document.getElementById('player').style.visibility = "hidden";
+                        player.pauseVideo();
+                    }
+                });
+            }}
         });
     }
-    let currentId = "";
-    function changeVolume(v) { if (player && player.setVolume) player.setVolume(v); }
+
+    function changeVolume(v) { if (player) player.setVolume(v); }
 </script>
 </body>
 </html>
