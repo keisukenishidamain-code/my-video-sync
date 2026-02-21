@@ -2,24 +2,30 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>マスター配信（PCバックグラウンド完全同期版）</title>
+    <title>マスター・統合コントロールパネル</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f0f0; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
-        #player { width: 100%; aspect-ratio: 16/9; background: #000; margin-top: 20px; }
-        input { width: 60%; padding: 10px; }
-        button { padding: 10px 20px; background: #ff0000; color: white; border: none; cursor: pointer; }
+        body { font-family: sans-serif; margin: 0; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; height: 100vh; }
+        .controls { width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; background: #333; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 5px; border: none; }
+        button { padding: 12px 24px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .video-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; background: #000; }
+        #player { width: 90%; aspect-ratio: 16/9; }
+        #status-bar { width: 100%; background: #222; padding: 5px 20px; font-size: 12px; color: #0f0; }
     </style>
 </head>
 <body>
-<div class="container">
-    <h2>マスター配信（PC同期維持）</h2>
-    <input type="text" id="urlInput" placeholder="YouTube URL">
-    <button onclick="sendVideo()">配信開始</button>
+
+<div class="controls">
+    <input type="text" id="urlInput" placeholder="YouTube URLを貼り付け">
+    <button onclick="loadAndPlay()">配信開始</button>
+</div>
+
+<div id="status-bar">同期状態: 待機中</div>
+
+<div class="video-wrapper">
     <div id="player"></div>
-    <p id="status">ステータス: 待機中</p>
 </div>
 
 <script>
@@ -39,40 +45,43 @@
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: { 'origin': location.origin, 'enablejsapi': 1 },
+            playerVars: { 'autoplay': 1, 'controls': 1, 'enablejsapi': 1 },
             events: {
                 'onStateChange': (e) => {
-                    // 再生開始時に開始時刻を記録（これがズレない鍵）
-                    if (e.data === 1) {
-                        db.ref('sync').update({
-                            state: 1,
-                            baseTime: player.getCurrentTime(),
-                            serverStartTime: firebase.database.ServerValue.TIMESTAMP
-                        });
-                    } else {
-                        db.ref('sync').update({ state: e.data });
-                    }
+                    updateFirebase(e.data);
                 }
             }
         });
     }
 
-    function sendVideo() {
+    function loadAndPlay() {
         const url = document.getElementById('urlInput').value;
         const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
         if (id) {
-            db.ref('sync').set({ videoId: id, state: 1, baseTime: 0, serverStartTime: firebase.database.ServerValue.TIMESTAMP });
             player.loadVideoById(id);
+            db.ref('sync').update({ videoId: id, state: 1, time: 0, lastUpdate: Date.now() });
         }
     }
 
-    // 最小化対策：通信が間引かれても「生存確認」だけは送り続ける
+    function updateFirebase(state) {
+        db.ref('sync').update({
+            state: state,
+            time: player.getCurrentTime(),
+            lastUpdate: Date.now()
+        });
+    }
+
+    // 0.5秒おきに「実際の再生位置」を送信
+    // この画面が表示されている限り、送信が止まることはありません
     setInterval(() => {
         if (player && player.getPlayerState && player.getPlayerState() === 1) {
-            db.ref('sync').update({ lastAlive: firebase.database.ServerValue.TIMESTAMP });
-            document.getElementById('status').innerText = "配信中: " + player.getCurrentTime().toFixed(1) + "秒";
+            db.ref('sync').update({
+                time: player.getCurrentTime(),
+                lastUpdate: Date.now()
+            });
+            document.getElementById('status-bar').innerText = "同期中: " + player.getCurrentTime().toFixed(1) + "s";
         }
-    }, 1000);
+    }, 500);
 </script>
 </body>
 </html>
