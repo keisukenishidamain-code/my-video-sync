@@ -2,27 +2,32 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>スタッフ・マスター操作パネル（高精度同期版）</title>
+    <title>スタッフ・マスター（バックグラウンド維持版）</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f0f0; margin: 0; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .input-group { margin-bottom: 20px; }
         input { width: 60%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; }
         button { padding: 12px 24px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .video-container { position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 10px; overflow: hidden; margin-top: 20px; }
-        .video-container iframe, .video-container div { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-container div { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #status { color: green; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
-<body>
+<body onclick="startKeepAlive()">
 <div class="container">
-    <h2>マスター配信（裏側動作・同期維持）</h2>
+    <h2>マスター配信（最小化対策済）</h2>
+    <p style="font-size: 0.8rem; color: #666;">開始前に一度画面をタップしてください</p>
     <div class="input-group">
         <input type="text" id="urlInput" placeholder="YouTube URLを入力">
         <button onclick="sendVideo()">配信開始</button>
     </div>
     <div class="video-container"><div id="player"></div></div>
+    <div id="status">● 待機中</div>
+    <audio id="keepAliveAudio" loop>
+        <source src="https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3" type="audio/mp3">
+    </audio>
 </div>
 
 <script>
@@ -35,6 +40,12 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let player;
+
+    function startKeepAlive() {
+        const audio = document.getElementById('keepAliveAudio');
+        audio.play().catch(e => console.log("Audio play failed"));
+        document.getElementById('status').innerText = "● バックグラウンド維持有効";
+    }
 
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
@@ -60,13 +71,14 @@
         }
     }
 
-    function syncTick() {
-        if (player && typeof player.getPlayerState === 'function' && player.getPlayerState() === 1) {
+    // WebWorker + Firebase送信
+    const blob = new Blob([`setInterval(() => self.postMessage('tick'), 200);`], {type:'text/javascript'});
+    const worker = new Worker(URL.createObjectURL(blob));
+    worker.onmessage = () => {
+        if (player && player.getPlayerState && player.getPlayerState() === 1) {
             db.ref('sync').update({ time: player.getCurrentTime(), lastUpdate: Date.now() });
         }
-        setTimeout(syncTick, 200);
-    }
-    syncTick();
+    };
 </script>
 </body>
 </html>
