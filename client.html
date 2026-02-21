@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>顧客用・同期システム（ボックス型）</title>
+    <title>顧客用・完全同期（最小化対応版）</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
@@ -15,24 +15,25 @@
         video#logo-video { width: 100%; height: 100%; object-fit: cover; }
         .tap-hint { position: absolute; bottom: 20px; color: #fff; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; }
         #ui-layer { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; background: rgba(0,0,0,0.7); padding: 12px 25px; border-radius: 40px; z-index: 10001; }
-        #ui-layer label { color: white; font-size: 12px; margin-right: 12px; }
         input[type=range] { width: 150px; cursor: pointer; }
     </style>
 </head>
-<body onclick="enableAudio()">
+<body onclick="unlockAll()">
 <div class="main-wrapper">
     <div id="logo-overlay">
         <video id="logo-video" autoplay muted playsinline loop>
             <source src="logo.mp4" type="video/mp4">
         </video>
-        <div class="tap-hint">タップして入場（音声同期）</div>
+        <div class="tap-hint">タップして入場（最小化対応）</div>
     </div>
     <div id="player"></div>
+    <audio id="keepAliveAudio" loop>
+        <source src="https://raw.githubusercontent.com/anars/blank-audio/master/10-seconds-of-silence.mp3" type="audio/mp3">
+    </audio>
 </div>
-<div id="ui-layer">
-    <label>音量調整</label>
-    <input type="range" id="volumeBar" min="0" max="100" value="50" oninput="changeVolume(this.value)">
-</div>
+<div id="ui-layer"><label style="color:white; font-size:12px; margin-right:10px;">音量</label>
+<input type="range" id="volumeBar" min="0" max="100" value="50" oninput="changeVolume(this.value)"></div>
+
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
@@ -42,64 +43,59 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let player;
-    let currentId = "";
-    let isAudioUnlocked = false;
+    let player, isUnlocked = false;
+
+    function unlockAll() {
+        if (isUnlocked) return;
+        document.getElementById('keepAliveAudio').play();
+        if (player) {
+            player.unMute();
+            player.setVolume(50);
+            player.playVideo();
+        }
+        document.querySelector('.tap-hint').style.display = "none";
+        isUnlocked = true;
+    }
+
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
+
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: { 'autoplay': 1, 'mute': 1, 'playsinline': 1, 'controls': 0, 'modestbranding': 1, 'origin': window.location.origin },
+            playerVars: { 'autoplay': 1, 'mute': 1, 'playsinline': 1, 'controls': 0, 'origin': window.location.origin },
             events: {
                 'onReady': () => {
                     db.ref('sync').on('value', (snap) => {
-                        const data = snap.val();
-                        if (!data) return;
+                        const data = snap.val(); if (!data) return;
+                        const overlay = document.getElementById('logo-overlay');
+                        const pEl = document.getElementById('player');
+                        if (data.state === 1) {
+                            overlay.style.opacity = '0'; pEl.style.visibility = 'visible';
+                            if (isUnlocked) player.playVideo();
+                        } else {
+                            overlay.style.opacity = '1'; pEl.style.visibility = 'hidden';
+                            player.pauseVideo();
+                        }
                         if (currentId !== data.videoId) {
                             player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
                             currentId = data.videoId;
                         }
-                        const overlay = document.getElementById('logo-overlay');
-                        const pEl = document.getElementById('player');
-                        if (data.state === 1) {
-                            overlay.style.opacity = '0';
-                            overlay.style.pointerEvents = 'none';
-                            pEl.style.visibility = 'visible';
-                            if (isAudioUnlocked) player.playVideo();
-                        } else {
-                            overlay.style.opacity = '1';
-                            overlay.style.pointerEvents = 'auto';
-                            pEl.style.visibility = 'hidden';
-                            player.pauseVideo();
-                        }
                     });
-                    setInterval(forceSync, 100);
+                    setInterval(() => {
+                        db.ref('sync').once('value', snap => {
+                            const d = snap.val();
+                            if (d && player && player.getCurrentTime && d.state === 1) {
+                                if (Math.abs(player.getCurrentTime() - d.time) > 0.3) player.seekTo(d.time, true);
+                            }
+                        });
+                    }, 200);
                 }
             }
         });
     }
-    function forceSync() {
-        db.ref('sync').once('value', (snap) => {
-            const data = snap.val();
-            if (!data || !player || typeof player.getCurrentTime !== 'function' || data.state !== 1) return;
-            const diff = Math.abs(player.getCurrentTime() - data.time);
-            if (diff > 0.3) {
-                player.seekTo(data.time, true);
-                if (isAudioUnlocked) player.playVideo();
-            }
-        });
-    }
-    function enableAudio() {
-        if (!isAudioUnlocked && player) {
-            isAudioUnlocked = true;
-            player.unMute();
-            player.setVolume(50);
-            player.playVideo();
-            document.querySelector('.tap-hint').style.display = "none";
-        }
-    }
-    function changeVolume(val) { if (player && typeof player.setVolume === 'function') player.setVolume(val); }
+    let currentId = "";
+    function changeVolume(v) { if (player && player.setVolume) player.setVolume(v); }
 </script>
 </body>
 </html>
