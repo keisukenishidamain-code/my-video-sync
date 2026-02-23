@@ -14,18 +14,19 @@
         header { padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
         .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
+        
         .nav-links { display: flex; gap: 20px; }
-        .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; }
+        /* ボタンのスタイル */
+        .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; }
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
         .hero { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
         #player-wrapper { width: 85%; max-width: 1200px; aspect-ratio: 16/9; position: relative; background: #000; }
         #player { width: 100%; height: 100%; border: 1px solid #111; pointer-events: none; }
 
-        /* 動画の上に表示する情報エリア */
         #track-info {
             position: absolute;
-            top: -70px; /* 動画の少し上 */
+            top: -70px;
             left: 0;
             width: 100%;
             display: flex;
@@ -38,7 +39,6 @@
         .info-label { font-size: 10px; color: var(--main-red); letter-spacing: 2px; font-weight: 900; }
         .info-value { font-size: 18px; color: #ffffff; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
 
-        /* 待機中のロゴオーバーレイ */
         #brand-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; opacity: 1; transition: opacity 0.8s ease; }
         .brand-logo-big { font-size: clamp(30px, 5vw, 60px); font-weight: 900; letter-spacing: 15px; color: #ffffff; }
         .brand-logo-big span { color: var(--main-red); text-shadow: var(--neon); }
@@ -46,11 +46,12 @@
     </style>
 </head>
 <body>
+
 <header>
-    <a href="#" class="logo"><span>27</span> CLUB</a>
+    <a href="index.html" class="logo"><span>27</span> CLUB</a>
     <div class="nav-links">
         <a href="gallery.html" class="nav-btn">GALLERY</a>
-        <a href="backnumber.html" class="nav-btn">BACK NUMBERS</a>
+        <a href="archive.html" class="nav-btn">BACK NUMBERS</a>
     </div>
 </header>
 
@@ -95,12 +96,12 @@
                 'onStateChange': (e) => {
                     const ov = document.getElementById('brand-overlay');
                     const info = document.getElementById('track-info');
-                    if (e.data === 1) { // 再生中
+                    if (e.data === 1) {
                         ov.style.opacity = "0"; 
                         info.style.opacity = "1";
                         setTimeout(() => { if(player.getPlayerState()===1) ov.style.display="none"; }, 800);
                         updateTitle();
-                    } else { // 停止中
+                    } else {
                         ov.style.display = "flex"; 
                         ov.style.opacity = "1";
                         info.style.opacity = "0";
@@ -122,19 +123,16 @@
             const data = snap.val();
             if (!data || !player) return;
 
-            // リクエスト名の更新
             if (data.requester) {
                 document.getElementById('requester-name').innerText = data.requester.toUpperCase();
             }
 
-            // 新しい曲のロード
             if (currentVideoId !== data.videoId) {
                 currentVideoId = data.videoId;
                 player.loadVideoById(data.videoId, data.time);
                 return;
             }
 
-            // 同期ロジック
             const latency = (Date.now() - data.lastUpdate) / 1000;
             const targetTime = data.time + (data.state === 1 ? latency : 0);
             if (data.state === 1) {
