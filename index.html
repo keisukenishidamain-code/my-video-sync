@@ -1,168 +1,32 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <title>27 Club - Official Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <style>
-        :root { --main-red: #ff0033; --neon-glow: 0 0 15px #ff0033, 0 0 30px #ff0033; --bg-black: #050505; }
-        body { margin: 0; background: var(--bg-black); color: white; font-family: 'Orbitron', sans-serif; overflow-x: hidden; }
-
-        header { 
-            background: rgba(0,0,0,0.95); padding: 20px 40px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            border-bottom: 2px solid #1a1a1a; position: sticky; top: 0; z-index: 100; 
-        }
-        .logo { font-size: 28px; font-weight: 900; color: white; text-shadow: var(--neon-glow); letter-spacing: 5px; }
-        .logo span { color: var(--main-red); }
-
-        nav a { color: #555; text-decoration: none; font-size: 14px; cursor: pointer; transition: 0.3s; margin-left: 25px; letter-spacing: 1px; font-weight: 900; }
-        nav a:hover { color: white; text-shadow: 0 0 8px white; }
-
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .section { display: none; width: 100%; min-height: 80vh; flex-direction: column; align-items: center; }
-        .active { display: flex; animation: fadeIn 0.8s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .player-box { width: 90%; max-width: 950px; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,1), 0 0 20px rgba(255,0,51,0.3); border: 1px solid #222; }
-        iframe { width: 100%; height: 100%; border: none; }
-
-        h2 { font-family: 'Anton', sans-serif; font-size: 50px; letter-spacing: 12px; text-align: center; margin: 40px 0 20px; text-transform: uppercase; color: #fff; text-shadow: 2px 2px 10px rgba(255,0,51,0.5); }
-
-        /* カルーセル周り */
-        .carousel-container { width: 100%; max-width: 1000px; overflow: hidden; position: relative; margin-top: 20px; }
-        .carousel-view { display: flex; justify-content: center; align-items: center; height: 380px; perspective: 1500px; }
-        .carousel-track { display: flex; gap: 20px; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
-        
-        .carousel-item { width: 300px; flex-shrink: 0; transition: all 0.6s ease; filter: brightness(0.2) grayscale(1); transform: scale(0.75) translateZ(-200px); cursor: pointer; }
-        .carousel-item.center { filter: brightness(1) grayscale(0); transform: scale(1.1) translateZ(150px); z-index: 10; }
-        .carousel-item img { width: 100%; border-radius: 8px; border: 1px solid #333; }
-        .carousel-item.center img { border-color: var(--main-red); box-shadow: var(--neon-glow); }
-
-        .dj-controls { display: flex; gap: 40px; margin-top: 40px; margin-bottom: 60px; }
-        .btn-circle { width: 70px; height: 70px; border-radius: 50%; border: 1px solid #333; background: #000; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: 0.4s; }
-        .btn-circle:hover { background: var(--main-red); border-color: var(--main-red); box-shadow: var(--neon-glow); transform: scale(1.1); }
-    </style>
-</head>
-<body>
-
-<header>
-    <div class="logo"><span>27</span> CLUB</div>
-    <nav>
-        <a onclick="switchTab('top')">LIVE</a>
-        <a onclick="switchTab('backnumber')">ARCHIVE</a>
-    </nav>
-</header>
-
-<div class="container">
-    <div id="top" class="section active">
-        <div class="player-box"><div id="player-live"></div></div>
-        <p style="margin-top:25px; font-weight:bold; letter-spacing:4px; color:var(--main-red); text-shadow: var(--neon-glow);">● BROADCASTING NOW</p>
-    </div>
-
-    <div id="backnumber" class="section">
-        <h2>Archive</h2>
-        <div class="player-box"><div id="player-archive"></div></div>
-        <div class="carousel-container">
-            <div class="carousel-view">
-                <div id="bn-track" class="carousel-track"></div>
-            </div>
-        </div>
-        <div class="dj-controls">
-            <button class="btn-circle" onclick="moveCarousel(-1)">◀</button>
-            <button class="btn-circle" onclick="moveCarousel(1)">▶</button>
-        </div>
-    </div>
-</div>
-
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
-        databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "club-d0011",
-        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let livePlayer, archivePlayer, currentLiveId = "", historyData = [], currentIndex = 0;
-
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
+    // ... (Firebase初期化部分は同じ) ...
 
     function onYouTubeIframeAPIReady() {
-        livePlayer = new YT.Player('player-live', { playerVars: { 'autoplay': 1, 'controls': 1 } });
-        archivePlayer = new YT.Player('player-archive', { playerVars: { 'autoplay': 0, 'controls': 1 } });
+        livePlayer = new YT.Player('player-live', {
+            playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1 } // リスナーは操作不可
+        });
         
+        // ★スタッフの操作を監視
         db.ref('sync').on('value', snap => {
             const data = snap.val();
-            if (data && currentLiveId !== data.videoId) {
-                livePlayer.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
+            if (!data) return;
+
+            // 1. 動画の切り替え
+            if (currentLiveId !== data.videoId) {
+                livePlayer.loadVideoById(id: data.videoId, startSeconds: data.time);
                 currentLiveId = data.videoId;
+            }
+
+            // 2. 再生・停止の同期
+            if (data.state === 1) livePlayer.playVideo();
+            if (data.state === 2) livePlayer.pauseVideo();
+
+            // 3. 時間のズレを強制補正（3秒以上ズレたらワープ）
+            const diff = Math.abs(livePlayer.getCurrentTime() - data.time);
+            if (diff > 3) {
+                livePlayer.seekTo(data.time, true);
             }
         });
     }
-
-    function switchTab(id) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if (id === 'backnumber') {
-            loadHistory();
-            if (livePlayer && livePlayer.pauseVideo) livePlayer.pauseVideo();
-        } else {
-            if (archivePlayer && archivePlayer.pauseVideo) archivePlayer.pauseVideo();
-            if (livePlayer && livePlayer.playVideo) livePlayer.playVideo();
-        }
-    }
-
-    function loadHistory() {
-        db.ref('backnumbers').orderByChild('timestamp').limitToLast(15).once('value', snap => {
-            historyData = [];
-            snap.forEach(c => historyData.push(c.val()));
-            historyData.reverse();
-            currentIndex = 0;
-            renderCarousel();
-        });
-    }
-
-    function renderCarousel() {
-        const track = document.getElementById('bn-track');
-        track.innerHTML = "";
-        if (historyData.length === 0) return;
-
-        historyData.forEach((item, i) => {
-            const div = document.createElement('div');
-            div.className = `carousel-item ${i === currentIndex ? 'center' : ''}`;
-            div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">`;
-            div.onclick = () => { currentIndex = i; updateCarousel(); };
-            track.appendChild(div);
-        });
-        updateCarousel();
-    }
-
-    function moveCarousel(step) {
-        if (historyData.length === 0) return;
-        currentIndex = Math.max(0, Math.min(historyData.length - 1, currentIndex + step));
-        updateCarousel();
-    }
-
-    function updateCarousel() {
-        const track = document.getElementById('bn-track');
-        const offset = -currentIndex * 320; // 300px + 20px gap
-        track.style.transform = `translateX(${offset}px)`;
-
-        document.querySelectorAll('.carousel-item').forEach((item, i) => {
-            item.className = `carousel-item ${i === currentIndex ? 'center' : ''}`;
-        });
-
-        const target = historyData[currentIndex];
-        if (target && archivePlayer.cueVideoById) {
-            archivePlayer.cueVideoById(target.videoId);
-        }
-    }
+    // ... (その他のタブ切り替え・アーカイブ処理) ...
 </script>
-</body>
-</html>
