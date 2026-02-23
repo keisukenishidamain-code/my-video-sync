@@ -1,47 +1,93 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>27 Club - LIVE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>27 Club - Main Screen</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
-        body { margin: 0; background: #050505; color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; }
-        header { background: #000; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a1a1a; position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
-        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: white; }
-        .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        nav a { color: #666; text-decoration: none; font-size: 12px; font-weight: 900; margin-left: 30px; letter-spacing: 2px; }
-        nav a:hover { color: white; }
-        .main-content { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        .player-outer { width: 85%; max-width: 950px; position: relative; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #222; box-shadow: 0 0 40px rgba(0,0,0,1); }
-        .player-inner { position: relative; width: 100%; padding-top: 56.25%; }
-        #player-live { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        #standby-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 10; transition: 0.5s; pointer-events: none; opacity: 0; }
-        #standby-overlay.active { opacity: 1; }
-        .overlay-logo { font-size: clamp(30px, 6vw, 60px); font-weight: 900; letter-spacing: 15px; text-shadow: var(--neon); }
-        .overlay-logo span { color: var(--main-red); }
-        .status { margin-top: 25px; color: var(--main-red); font-size: 12px; letter-spacing: 3px; display: flex; align-items: center; gap: 8px; }
-        .dot { width: 7px; height: 7px; background: var(--main-red); border-radius: 50%; box-shadow: var(--neon); animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.2; } }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif;
+        }
+
+        /* プレーヤーを画面いっぱいに配置 */
+        #player-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            pointer-events: none; /* 視聴者が操作できないようにする */
+        }
+
+        /* 再生終了時に表示される店のロゴ画面 */
+        #brand-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            display: flex; /* 最初はロゴを表示しておく */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 1s ease;
+        }
+
+        .brand-logo { 
+            font-size: 8vw; 
+            font-weight: 900; 
+            letter-spacing: 20px; 
+            margin-bottom: 20px;
+            color: white;
+        }
+        .brand-logo span { color: var(--main-red); text-shadow: var(--neon); }
+        .brand-text { 
+            font-size: 1.5vw; 
+            color: #444; 
+            letter-spacing: 10px; 
+            text-transform: uppercase;
+        }
+
+        /* 画面下のテロップ（任意：リクエスト名を表示する場合） */
+        #requester-info {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            letter-spacing: 3px;
+            z-index: 20;
+            text-shadow: 0 0 10px #000;
+        }
     </style>
 </head>
 <body>
-<header>
-    <a href="index.html" class="logo"><span>27</span> CLUB</a>
-    <nav><a href="archive.html">ARCHIVE</a><a href="gallery.html">GALLERY</a></nav>
-</header>
-<div class="main-content">
-    <div class="player-outer">
-        <div class="player-inner">
-            <div id="player-live"></div>
-            <div id="standby-overlay"><div class="overlay-logo"><span>27</span> CLUB</div></div>
-        </div>
+
+<div id="player-container">
+    <div id="player"></div>
+    
+    <div id="brand-overlay">
+        <div class="brand-logo"><span>27</span> CLUB</div>
+        <div class="brand-text">TOKYO UNDERGROUND</div>
     </div>
-    <div class="status"><div class="dot"></div> LIVE STREAMING</div>
+
+    <div id="requester-info"></div>
 </div>
+
 <script>
+    // Firebase設定（管理画面と同じものを使用）
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -50,21 +96,70 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let livePlayer, currentVid = "";
+
+    let player;
+    let currentVideoId = "";
+
+    // YouTube APIの読み込み
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
+
     function onYouTubeIframeAPIReady() {
-        livePlayer = new YT.Player('player-live', { playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1, 'modestbranding': 1 } });
-        db.ref('sync').on('value', snap => {
-            const data = snap.val(); if (!data || !data.videoId) return;
-            const overlay = document.getElementById('standby-overlay');
-            if (currentVid !== data.videoId) { livePlayer.loadVideoById({ videoId: data.videoId, startSeconds: data.time }); currentVid = data.videoId; }
-            if (data.state === 1) { livePlayer.playVideo(); overlay.classList.remove('active'); } 
-            else if (data.state === 2) { livePlayer.pauseVideo(); overlay.classList.add('active'); }
-            if (Math.abs(livePlayer.getCurrentTime() - data.time) > 2) livePlayer.seekTo(data.time, true);
+        player = new YT.Player('player', {
+            playerVars: {
+                'autoplay': 1,
+                'controls': 0,      // コントロール非表示
+                'rel': 0,           // 関連動画を自身のチャンネルに限定（完全排除は不可）
+                'modestbranding': 1,
+                'iv_load_policy': 3,
+                'disablekb': 1
+            },
+            events: {
+                'onReady': startSync,
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    }
+
+    function onPlayerStateChange(event) {
+        const overlay = document.getElementById('brand-overlay');
+        // 動画が終了(0)または未開始(-1)の時にロゴを表示
+        if (event.data === 0 || event.data === -1) {
+            overlay.style.opacity = "1";
+            overlay.style.display = "flex";
+        } else if (event.data === 1) { // 再生中
+            overlay.style.opacity = "0";
+            setTimeout(() => { if(player.getPlayerState() === 1) overlay.style.display = "none"; }, 1000);
+        }
+    }
+
+    function startSync() {
+        // Firebaseの「sync」ノードを監視して管理画面の操作を反映
+        db.ref('sync').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            // 動画が切り替わった場合
+            if (currentVideoId !== data.videoId) {
+                currentVideoId = data.videoId;
+                player.loadVideoById(data.videoId, data.time);
+            }
+
+            // 再生状態の同期
+            if (data.state === 1) { // Play
+                const diff = (Date.now() - data.lastUpdate) / 1000;
+                player.seekTo(data.time + diff, true);
+                player.playVideo();
+            } else if (data.state === 2) { // Pause
+                player.pauseVideo();
+                player.seekTo(data.time, true);
+            } else if (data.state === 0) { // End
+                player.stopVideo();
+            }
         });
     }
 </script>
+
 </body>
 </html>
