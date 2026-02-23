@@ -41,7 +41,6 @@
             flex-direction: column;
         }
 
-        /* 月別ナビゲーション：デフォルトを白に修正 */
         .month-nav {
             padding: 15px 40px 0;
             display: flex;
@@ -54,10 +53,9 @@
         }
         .month-btn:hover { color: var(--main-red); border-color: var(--main-red); opacity: 1; }
 
-        /* カルーセルエリア */
         .archive-selector {
             flex-shrink: 0;
-            height: 180px;
+            height: 200px; /* 少し高さを確保 */
             display: flex;
             align-items: center;
             overflow-x: auto;
@@ -70,19 +68,33 @@
         .archive-selector::-webkit-scrollbar { display: none; }
 
         .date-card {
-            flex: 0 0 240px;
-            height: 120px;
+            flex: 0 0 280px; /* 横幅を少し広げました */
+            height: 140px; /* 高さを少し上げました */
             background: #0a0a0a;
             border: 1px solid #333;
             border-radius: 4px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             cursor: pointer; transition: 0.4s;
             scroll-snap-align: center;
+            padding: 0 10px;
+            text-align: center;
         }
         .date-card:hover { border-color: var(--main-red); transform: translateY(-5px); }
         .date-card.active { border-color: var(--main-red); box-shadow: var(--neon); background: #111; }
-        .date-card .date-text { font-size: 18px; font-weight: 900; letter-spacing: 2px; }
-        .date-card .event-title { font-size: 8px; color: var(--main-red); margin-top: 8px; letter-spacing: 2px; text-transform: uppercase; }
+        
+        /* 日付のフォントサイズ調整 */
+        .date-card .date-text { font-size: 14px; font-weight: 400; letter-spacing: 4px; color: #888; margin-bottom: 5px; }
+        
+        /* サブタイトルの強調修正 */
+        .date-card .event-title { 
+            font-size: 14px; /* サイズアップ */
+            font-weight: 900; 
+            color: #fff; /* 白に変更して赤ネオンを背景に引くイメージ */
+            text-shadow: 0 0 10px var(--main-red);
+            letter-spacing: 2px; 
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
 
         .content-area {
             flex-grow: 1;
@@ -195,7 +207,7 @@
         const months = new Set();
 
         dates.forEach(date => {
-            // その日の最初の曲からイベント名を取得（なければデフォルト）
+            // その日の最初の曲からイベント名を取得
             const eventTitle = groupedData[date][0].eventTitle || "NIGHT SESSION";
 
             const card = document.createElement('div');
