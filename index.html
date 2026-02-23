@@ -13,81 +13,76 @@
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif;
-        }
-
-        /* プレーヤーを画面いっぱいに配置 */
-        #player-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background: #000;
-        }
-
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            pointer-events: none; /* 視聴者が操作できないようにする */
-        }
-
-        /* 再生終了時に表示される店のロゴ画面 */
-        #brand-overlay {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: #000;
-            display: flex; /* 最初はロゴを表示しておく */
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            transition: opacity 1s ease;
-        }
-
-        .brand-logo { 
-            font-size: 8vw; 
-            font-weight: 900; 
-            letter-spacing: 20px; 
-            margin-bottom: 20px;
             color: white;
         }
-        .brand-logo span { color: var(--main-red); text-shadow: var(--neon); }
-        .brand-text { 
-            font-size: 1.5vw; 
-            color: #444; 
-            letter-spacing: 10px; 
-            text-transform: uppercase;
-        }
 
-        /* 画面下のテロップ（任意：リクエスト名を表示する場合） */
-        #requester-info {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 14px;
-            letter-spacing: 3px;
-            z-index: 20;
-            text-shadow: 0 0 10px #000;
+        /* ヘッダー：ナビゲーションのみを表示 */
+        header {
+            padding: 30px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%);
+            position: fixed; top: 0; width: 100%; z-index: 100;
+            box-sizing: border-box;
         }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: white; }
+        .logo span { color: var(--main-red); text-shadow: var(--neon); }
+        
+        .nav-links { display: flex; gap: 20px; }
+        .nav-btn { 
+            color: #888; text-decoration: none; font-size: 10px; letter-spacing: 2px;
+            border: 1px solid #222; padding: 8px 18px; border-radius: 4px;
+            background: rgba(0,0,0,0.5); transition: 0.3s;
+        }
+        .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
+
+        /* メインプレーヤーエリア（全画面） */
+        .hero-section {
+            width: 100%; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; background: #000;
+        }
+        #player-wrapper {
+            width: 80%; max-width: 1200px; aspect-ratio: 16/9;
+            position: relative; background: #050505;
+            box-shadow: 0 0 100px rgba(0,0,0,1);
+        }
+        #player { width: 100%; height: 100%; border: 1px solid #111; }
+
+        /* 再生終了・停止時のブランドロゴ表示 */
+        #brand-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 10;
+            opacity: 1; transition: opacity 0.8s ease;
+        }
+        .brand-logo-big { font-size: clamp(30px, 5vw, 60px); font-weight: 900; letter-spacing: 15px; }
+        .brand-logo-big span { color: var(--main-red); text-shadow: var(--neon); }
+        .brand-sub { color: #333; font-size: clamp(8px, 1vw, 12px); letter-spacing: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div id="player-container">
-    <div id="player"></div>
-    
-    <div id="brand-overlay">
-        <div class="brand-logo"><span>27</span> CLUB</div>
-        <div class="brand-text">TOKYO UNDERGROUND</div>
+<header>
+    <a href="#" class="logo"><span>27</span> CLUB</a>
+    <div class="nav-links">
+        <a href="gallery.html" class="nav-btn">GALLERY</a>
+        <a href="backnumber.html" class="nav-btn">BACK NUMBERS</a>
     </div>
+</header>
 
-    <div id="requester-info"></div>
-</div>
+<section class="hero-section">
+    <div id="player-wrapper">
+        <div id="player"></div>
+        <div id="brand-overlay">
+            <div class="brand-logo-big"><span>27</span> CLUB</div>
+            <div class="brand-sub">TOKYO UNDERGROUND</div>
+        </div>
+    </div>
+</section>
 
 <script>
-    // Firebase設定（管理画面と同じものを使用）
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -97,69 +92,63 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let player;
-    let currentVideoId = "";
+    let player, currentVideoId = "";
 
-    // YouTube APIの読み込み
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: {
-                'autoplay': 1,
-                'controls': 0,      // コントロール非表示
-                'rel': 0,           // 関連動画を自身のチャンネルに限定（完全排除は不可）
-                'modestbranding': 1,
+            playerVars: { 
+                'autoplay': 1, 
+                'controls': 0, 
+                'rel': 0, 
+                'modestbranding': 1, 
                 'iv_load_policy': 3,
                 'disablekb': 1
             },
-            events: {
-                'onReady': startSync,
-                'onStateChange': onPlayerStateChange
+            events: { 
+                'onReady': startSync, 
+                'onStateChange': onPlayerStateChange 
             }
         });
     }
 
+    // YouTubeの状態変化を監視してロゴを出す
     function onPlayerStateChange(event) {
         const overlay = document.getElementById('brand-overlay');
-        // 動画が終了(0)または未開始(-1)の時にロゴを表示
+        // 0:終了, -1:未開始, 2:一時停止(必要なら)
         if (event.data === 0 || event.data === -1) {
-            overlay.style.opacity = "1";
             overlay.style.display = "flex";
+            overlay.style.opacity = "1";
         } else if (event.data === 1) { // 再生中
             overlay.style.opacity = "0";
-            setTimeout(() => { if(player.getPlayerState() === 1) overlay.style.display = "none"; }, 1000);
+            setTimeout(() => { 
+                if(player.getPlayerState() === 1) overlay.style.display = "none"; 
+            }, 800);
         }
     }
 
     function startSync() {
-        // Firebaseの「sync」ノードを監視して管理画面の操作を反映
-        db.ref('sync').on('value', (snapshot) => {
-            const data = snapshot.val();
+        db.ref('sync').on('value', (snap) => {
+            const data = snap.val();
             if (!data) return;
 
-            // 動画が切り替わった場合
             if (currentVideoId !== data.videoId) {
                 currentVideoId = data.videoId;
                 player.loadVideoById(data.videoId, data.time);
             }
 
-            // 再生状態の同期
             if (data.state === 1) { // Play
                 const diff = (Date.now() - data.lastUpdate) / 1000;
                 player.seekTo(data.time + diff, true);
                 player.playVideo();
             } else if (data.state === 2) { // Pause
                 player.pauseVideo();
-                player.seekTo(data.time, true);
-            } else if (data.state === 0) { // End
-                player.stopVideo();
             }
         });
     }
 </script>
-
 </body>
 </html>
