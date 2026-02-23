@@ -41,7 +41,7 @@
             flex-direction: column;
         }
 
-        /* 月別ナビゲーション */
+        /* 月別ナビゲーション：デフォルトを白に修正 */
         .month-nav {
             padding: 15px 40px 0;
             display: flex;
@@ -49,10 +49,10 @@
             flex-wrap: wrap;
         }
         .month-btn {
-            font-size: 9px; color: #666; cursor: pointer; border-bottom: 1px solid transparent;
-            transition: 0.3s; letter-spacing: 1px;
+            font-size: 10px; color: #ffffff; cursor: pointer; border-bottom: 1px solid transparent;
+            transition: 0.3s; letter-spacing: 1px; opacity: 0.6;
         }
-        .month-btn:hover { color: var(--main-red); border-color: var(--main-red); }
+        .month-btn:hover { color: var(--main-red); border-color: var(--main-red); opacity: 1; }
 
         /* カルーセルエリア */
         .archive-selector {
@@ -64,10 +64,10 @@
             padding: 0 40px;
             gap: 20px;
             scroll-behavior: smooth;
-            scrollbar-width: none; /* Firefox用 */
+            scrollbar-width: none;
             scroll-snap-type: x proximity;
         }
-        .archive-selector::-webkit-scrollbar { display: none; } /* Chrome, Safari用 */
+        .archive-selector::-webkit-scrollbar { display: none; }
 
         .date-card {
             flex: 0 0 240px;
@@ -82,7 +82,7 @@
         .date-card:hover { border-color: var(--main-red); transform: translateY(-5px); }
         .date-card.active { border-color: var(--main-red); box-shadow: var(--neon); background: #111; }
         .date-card .date-text { font-size: 18px; font-weight: 900; letter-spacing: 2px; }
-        .date-card .event-title { font-size: 8px; color: var(--main-red); margin-top: 8px; letter-spacing: 2px; }
+        .date-card .event-title { font-size: 8px; color: var(--main-red); margin-top: 8px; letter-spacing: 2px; text-transform: uppercase; }
 
         .content-area {
             flex-grow: 1;
@@ -131,7 +131,6 @@
 
 <div class="master-wrapper">
     <div class="month-nav" id="monthNav"></div>
-    
     <div class="archive-selector" id="dateSelector"></div>
 
     <div class="content-area" id="contentArea">
@@ -196,22 +195,21 @@
         const months = new Set();
 
         dates.forEach(date => {
-            // カセット作成
+            // その日の最初の曲からイベント名を取得（なければデフォルト）
+            const eventTitle = groupedData[date][0].eventTitle || "NIGHT SESSION";
+
             const card = document.createElement('div');
             card.className = 'date-card';
             card.setAttribute('data-date', date);
             card.onclick = () => showTracks(date, card);
             card.innerHTML = `
                 <div class="date-text">${date}</div>
-                <div class="event-title">NIGHT SESSION</div>
+                <div class="event-title">${eventTitle}</div>
             `;
             selector.appendChild(card);
-
-            // 月別メニュー用の月文字列 (YYYY.MM)
             months.add(date.substring(0, 7));
         });
 
-        // 月別ジャンプボタン作成
         Array.from(months).sort().reverse().forEach(m => {
             const btn = document.createElement('div');
             btn.className = 'month-btn';
@@ -221,7 +219,6 @@
         });
     }
 
-    // 月別ジャンプ機能
     function jumpToMonth(monthStr) {
         const firstCard = document.querySelector(`.date-card[data-date^="${monthStr}"]`);
         if (firstCard) {
@@ -229,7 +226,6 @@
         }
     }
 
-    // ホイールで横スクロール
     const selectorEl = document.getElementById('dateSelector');
     selectorEl.addEventListener('wheel', (e) => {
         if (e.deltaY !== 0) {
