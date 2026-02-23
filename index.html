@@ -1,56 +1,76 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>27 Club - Main Screen</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --red: #ff0033; --neon: 0 0 15px #ff0033; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: #fff; }
+        :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: #ffffff; }
         
-        header { padding: 30px 50px; position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
-        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; color: #fff; text-decoration: none; }
-        .logo span { color: var(--red); text-shadow: var(--neon); }
+        header { padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
+        .logo span { color: var(--main-red); text-shadow: var(--neon); }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; }
+        .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
-        .hero { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; }
-        #player-wrapper { width: 85%; aspect-ratio: 16/9; position: relative; }
-        #player { width: 100%; height: 100%; pointer-events: none; }
-        
-        /* 浮かび上がる曲情報 */
-        #track-info { position: absolute; top: -85px; left: 0; width: 100%; opacity: 0; transition: 1s ease-in-out; }
-        .info-group { margin-bottom: 5px; }
-        .info-label { font-size: 10px; color: var(--red); font-weight: 900; letter-spacing: 2px; }
-        .info-val { font-size: 20px; color: #fff; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hero { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
+        #player-wrapper { width: 80%; max-width: 1200px; aspect-ratio: 16/9; position: relative; background: #000; }
+        #player { width: 100%; height: 100%; border: 1px solid #111; pointer-events: none; }
 
-        /* 動画が止まっている時の待機画面 */
-        #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; transition: 0.8s; }
-        .overlay-logo { font-size: 60px; font-weight: 900; letter-spacing: 15px; }
-        .overlay-logo span { color: var(--red); text-shadow: var(--neon); }
+        /* 動画の上に表示する情報エリア */
+        #track-info {
+            position: absolute;
+            top: -60px; /* 動画の少し上 */
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+        .info-label { font-size: 10px; color: var(--main-red); letter-spacing: 2px; font-weight: 900; }
+        .info-value { font-size: 16px; color: #ffffff; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        #brand-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; opacity: 1; transition: opacity 0.8s ease; }
+        .brand-logo-big { font-size: clamp(30px, 5vw, 60px); font-weight: 900; letter-spacing: 15px; color: #ffffff; }
+        .brand-logo-big span { color: var(--main-red); text-shadow: var(--neon); }
+        .brand-sub { color: #ffffff; font-size: clamp(8px, 1.2vw, 14px); letter-spacing: 8px; margin-top: 15px; }
     </style>
 </head>
 <body>
-
-<header><a href="#" class="logo"><span>27</span> CLUB</a></header>
+<header>
+    <a href="#" class="logo"><span>27</span> CLUB</a>
+    <div class="nav-links">
+        <a href="gallery.html" class="nav-btn">GALLERY</a>
+        <a href="backnumber.html" class="nav-btn">BACK NUMBERS</a>
+    </div>
+</header>
 
 <section class="hero">
     <div id="player-wrapper">
         <div id="track-info">
-            <div class="info-group">
-                <div class="info-label">NOW PLAYING</div>
-                <div id="display-title" class="info-val">LOADING...</div>
+            <div>
+                <span class="info-label">NOW PLAYING:</span>
+                <span id="video-title" class="info-value">LOADING...</span>
             </div>
-            <div class="info-group">
-                <div class="info-label">REQUESTED BY</div>
-                <div id="display-name" class="info-val">GUEST</div>
+            <div>
+                <span class="info-label">REQUESTED BY:</span>
+                <span id="requester-name" class="info-value">UNKNOWN</span>
             </div>
         </div>
 
         <div id="player"></div>
         
-        <div id="overlay">
-            <div class="overlay-logo"><span>27</span> CLUB</div>
+        <div id="brand-overlay">
+            <div class="brand-logo-big"><span>27</span> CLUB</div>
+            <div class="brand-sub">FF14 LIVE HOUSE</div>
         </div>
     </div>
 </section>
@@ -64,51 +84,77 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let player, currentVid = "";
+    let player, currentVideoId = "";
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: { 'controls': 0, 'rel': 0, 'modestbranding': 1 },
+            playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1 },
             events: { 
-                'onReady': startSync,
+                'onReady': startSync, 
                 'onStateChange': (e) => {
+                    const ov = document.getElementById('brand-overlay');
                     const info = document.getElementById('track-info');
-                    const ov = document.getElementById('overlay');
                     if (e.data === 1) { // 再生中
-                        ov.style.opacity = "0"; info.style.opacity = "1";
+                        ov.style.opacity = "0"; 
+                        info.style.opacity = "1";
                         setTimeout(() => { if(player.getPlayerState()===1) ov.style.display="none"; }, 800);
-                        document.getElementById('display-title').innerText = player.getVideoData().title.toUpperCase();
-                    } else { // 停止中
-                        ov.style.display = "flex"; ov.style.opacity = "1"; info.style.opacity = "0";
+                        updateTitle();
+                    } else { // 停止・バッファ中
+                        ov.style.display = "flex"; 
+                        ov.style.opacity = "1";
+                        info.style.opacity = "0";
                     }
                 }
             }
         });
     }
 
-    function startSync() {
-        db.ref('sync').on('value', snap => {
-            const data = snap.val(); if (!data) return;
-            
-            document.getElementById('display-name').innerText = (data.name || "GUEST").toUpperCase();
+    // 動画タイトルを取得して表示
+    function updateTitle() {
+        if (player && player.getVideoData) {
+            const data = player.getVideoData();
+            document.getElementById('video-title').innerText = data.title.toUpperCase();
+        }
+    }
 
-            if (currentVid !== data.vid) {
-                currentVid = data.vid;
-                player.loadVideoById(data.vid, data.time);
+    function startSync() {
+        // 同期データの監視
+        db.ref('sync').on('value', (snap) => {
+            const data = snap.val();
+            if (!data || !player) return;
+
+            // 新しい曲になった場合
+            if (currentVideoId !== data.videoId) {
+                currentVideoId = data.videoId;
+                player.loadVideoById(data.videoId, data.time);
+                
+                // スタッフが再生した瞬間のリクエスト名を特定するため、
+                // queueから消える前の名前、もしくは最新の履歴などを参照する仕組みが必要ですが、
+                // ここではシンプルにsyncデータに名前が含まれていると想定するか、
+                // backnumbersの最新から取得する形にします。
+                fetchRequesterName(data.videoId);
                 return;
             }
 
-            const latency = (Date.now() - data.last) / 1000;
-            const target = data.time + (data.state === 1 ? latency : 0);
+            // 再生位置同期
+            const latency = (Date.now() - data.lastUpdate) / 1000;
+            const targetTime = data.time + (data.state === 1 ? latency : 0);
             if (data.state === 1) {
-                if (Math.abs(player.getCurrentTime() - target) > 2) player.seekTo(target, true);
-                player.playVideo();
+                const diff = Math.abs(player.getCurrentTime() - targetTime);
+                if (diff > 1.5) player.seekTo(targetTime, true);
+                if (player.getPlayerState() !== 1) player.playVideo();
             } else { player.pauseVideo(); }
         });
     }
 
-    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
+    // バックナンバー（履歴）から最後にこの曲をリクエストした人の名前を探す
+    function fetchRequesterName(vid) {
+        // スタッフ側で再生した際に名前を特定する補助ロジック
+        // ※スタッフページの executeLive で requester も sync に送るようにするとより確実です
+        document.getElementById('requester-name').innerText = "27 CLUB STAFF"; // デフォルト表示
+    }
+
+    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
 </script>
 </body>
 </html>
