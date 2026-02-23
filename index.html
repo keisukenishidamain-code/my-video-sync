@@ -10,56 +10,25 @@
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: #ffffff; }
-        
         header { padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
         .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        
         .nav-links { display: flex; gap: 20px; }
         .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; }
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
-
         .hero { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
-        #player-wrapper { 
-            width: 85%; 
-            max-width: 1200px; 
-            aspect-ratio: 16/9; 
-            position: relative; 
-            background: #000; 
-            overflow: visible; /* 情報表示のためにvisible */
-        }
-        
-        /* プレイヤー自体の枠線を排除 */
-        #player { width: 100%; height: 100%; border: none; pointer-events: none; display: block; }
-
-        /* トラック情報 */
+        #player-wrapper { width: 85%; max-width: 1200px; aspect-ratio: 16/9; position: relative; background: #000; }
+        #player { width: 100%; height: 100%; border: none; pointer-events: none; }
         #track-info { position: absolute; top: -75px; left: 0; width: 100%; display: flex; flex-direction: column; gap: 5px; z-index: 50; opacity: 0; transition: opacity 1s ease; }
         .info-label { font-size: 10px; color: var(--main-red); letter-spacing: 2px; font-weight: 900; }
         .info-value { font-size: 18px; color: #ffffff; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
-
-        /* ボリュームコントロール */
-        #volume-ctrl { position: absolute; bottom: -60px; right: 0; display: flex; align-items: center; gap: 15px; z-index: 110; }
-        .vol-slider { -webkit-appearance: none; width: 140px !important; height: 2px; background: #333; outline: none; cursor: pointer; }
+        #volume-ctrl { position: absolute; bottom: -50px; right: 0; display: flex; align-items: center; z-index: 110; }
+        .vol-slider { -webkit-appearance: none; width: 140px !important; height: 2px; background: #333; outline: none; cursor: pointer; margin: 0; }
         .vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--main-red); border-radius: 50%; box-shadow: var(--neon); }
-        .unmute-btn { font-family: 'Orbitron'; font-size: 10px; color: var(--main-red); background: #000; border: 1px solid var(--main-red); padding: 6px 12px; cursor: pointer; font-weight: 900; border-radius: 4px; }
-
-        /* --- 修正ポイント：ブランドロゴ・オーバーレイ --- */
-        #brand-overlay { 
-            position: absolute; 
-            top: -2px; left: -2px; right: -2px; bottom: -2px; /* プレイヤーより僅かに大きくして隙間を殺す */
-            background: #000; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 60; /* infoより上に配置 */
-            opacity: 1; 
-            transition: opacity 0.8s ease;
-            pointer-events: none;
-        }
-        .brand-logo-big { font-size: clamp(40px, 8vw, 80px); font-weight: 900; letter-spacing: 20px; color: #ffffff; margin-left: 20px; /* 文字間隔のバランス調整 */ }
+        #brand-overlay { position: absolute; top: -5px; left: -5px; right: -5px; bottom: -5px; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 60; opacity: 1; transition: opacity 0.8s ease; pointer-events: none; }
+        .brand-logo-big { font-size: clamp(40px, 8vw, 90px); font-weight: 900; letter-spacing: 25px; color: #ffffff; margin-left: 25px; }
         .brand-logo-big span { color: var(--main-red); text-shadow: var(--neon); }
-        .brand-sub { color: #ffffff; font-size: clamp(10px, 1.5vw, 16px); letter-spacing: 10px; margin-top: 20px; text-transform: uppercase; opacity: 0.8; }
+        .brand-sub { color: #ffffff; font-size: clamp(10px, 1.5vw, 18px); letter-spacing: 12px; margin-top: 25px; text-transform: uppercase; opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -70,75 +39,46 @@
         <a href="archive.html" class="nav-btn">BACK NUMBERS</a>
     </div>
 </header>
-
 <section class="hero">
     <div id="player-wrapper">
         <div id="track-info">
             <div><span class="info-label">NOW PLAYING:</span><span id="video-title" class="info-value">LOADING...</span></div>
             <div><span class="info-label">REQUESTED BY:</span><span id="requester-name" class="info-value">27 CLUB STAFF</span></div>
         </div>
-
         <div id="player"></div>
-
         <div id="volume-ctrl">
-            <button id="unmute-btn" class="unmute-btn" onclick="unmute()">TAP TO UNMUTE</button>
-            <input type="range" id="volRange" class="vol-slider" min="0" max="100" value="50" oninput="changeVolume(this.value)">
+            <input type="range" id="volRange" class="vol-slider" min="0" max="100" value="100" oninput="changeVolume(this.value)">
         </div>
-        
         <div id="brand-overlay">
             <div class="brand-logo-big"><span>27</span> CLUB</div>
             <div class="brand-sub">FF14 LIVE HOUSE</div>
         </div>
     </div>
 </section>
-
 <script>
     const firebaseConfig = { apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE", databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "club-d0011", appId: "1:51948793811:web:1edecab7c41c1d84ad8926" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let player, currentVideoId = "";
-
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1, 'mute': 1 },
+            playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1 },
             events: { 
-                'onReady': startSync, 
+                'onReady': (e) => { e.target.setVolume(100); startSync(); }, 
                 'onStateChange': (e) => {
                     const ov = document.getElementById('brand-overlay');
                     const info = document.getElementById('track-info');
-                    if (e.data === YT.PlayerState.PLAYING) {
-                        ov.style.opacity = "0"; 
-                        info.style.opacity = "1";
+                    if (e.data === 1) { 
+                        ov.style.opacity = "0"; info.style.opacity = "1";
                         setTimeout(() => { if(player.getPlayerState()===1) ov.style.display="none"; }, 800);
                         updateTitle();
-                    } else {
-                        ov.style.display = "flex"; 
-                        ov.style.opacity = "1";
-                        info.style.opacity = "0";
-                    }
+                    } else { ov.style.display = "flex"; ov.style.opacity = "1"; info.style.opacity = "0"; }
                 }
             }
         });
     }
-
-    function changeVolume(val) {
-        if (player && player.setVolume) {
-            player.setVolume(val);
-            if (val > 0) { player.unMute(); document.getElementById('unmute-btn').style.display = "none"; }
-        }
-    }
-
-    function unmute() {
-        if (player) { player.unMute(); player.setVolume(50); document.getElementById('volRange').value = 50; document.getElementById('unmute-btn').style.display = "none"; }
-    }
-
-    function updateTitle() {
-        if (player && player.getVideoData) {
-            const data = player.getVideoData();
-            if(data.title) document.getElementById('video-title').innerText = data.title.toUpperCase();
-        }
-    }
-
+    function changeVolume(val) { if (player && player.setVolume) { player.setVolume(val); if (val > 0 && player.isMuted()) player.unMute(); } }
+    function updateTitle() { if (player && player.getVideoData) { const data = player.getVideoData(); if(data.title) document.getElementById('video-title').innerText = data.title.toUpperCase(); } }
     function startSync() {
         db.ref('sync').on('value', (snap) => {
             const data = snap.val();
