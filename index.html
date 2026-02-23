@@ -9,71 +9,23 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
-        
-        body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif;
-            color: white;
-        }
-
-        /* ヘッダー：ナビゲーション */
-        header {
-            padding: 30px 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%);
-            position: fixed; top: 0; width: 100%; z-index: 100;
-            box-sizing: border-box;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: white; }
+        header { padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
         .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: white; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        
         .nav-links { display: flex; gap: 20px; }
-        .nav-btn { 
-            color: #888; text-decoration: none; font-size: 10px; letter-spacing: 2px;
-            border: 1px solid #222; padding: 8px 18px; border-radius: 4px;
-            background: rgba(0,0,0,0.5); transition: 0.3s;
-        }
+        .nav-btn { color: #888; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #222; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; }
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
-
-        /* メインプレーヤーエリア */
-        .hero-section {
-            width: 100%; height: 100vh;
-            display: flex; justify-content: center; align-items: center;
-            position: relative; background: #000;
-        }
-        #player-wrapper {
-            width: 80%; max-width: 1200px; aspect-ratio: 16/9;
-            position: relative; background: #050505;
-            box-shadow: 0 0 100px rgba(0,0,0,1);
-        }
-        #player { width: 100%; height: 100%; border: 1px solid #111; }
-
-        /* 一時停止・終了・未開始時に表示されるロゴオーバーレイ */
-        #brand-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 10;
-            opacity: 1; transition: opacity 0.8s ease;
-            pointer-events: none;
-        }
+        .hero-section { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; position: relative; background: #000; }
+        #player-wrapper { width: 80%; max-width: 1200px; aspect-ratio: 16/9; position: relative; background: #050505; box-shadow: 0 0 100px rgba(0,0,0,1); }
+        #player { width: 100%; height: 100%; border: 1px solid #111; pointer-events: none; }
+        #brand-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; opacity: 1; transition: opacity 0.8s ease; pointer-events: none; }
         .brand-logo-big { font-size: clamp(30px, 5vw, 60px); font-weight: 900; letter-spacing: 15px; }
         .brand-logo-big span { color: var(--main-red); text-shadow: var(--neon); }
-        
-        /* サブテキストの設定: 白に変更 */
-        .brand-sub { 
-            color: #ffffff; /* 白色に変更 */
-            font-size: clamp(8px, 1.2vw, 14px); 
-            letter-spacing: 8px; 
-            margin-top: 15px;
-            font-weight: 400;
-            text-shadow: 0 0 5px rgba(255,255,255,0.3);
-        }
+        .brand-sub { color: #ffffff; font-size: clamp(8px, 1.2vw, 14px); letter-spacing: 8px; margin-top: 15px; font-weight: 400; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
     </style>
 </head>
 <body>
-
 <header>
     <a href="#" class="logo"><span>27</span> CLUB</a>
     <div class="nav-links">
@@ -81,7 +33,6 @@
         <a href="backnumber.html" class="nav-btn">BACK NUMBERS</a>
     </div>
 </header>
-
 <section class="hero-section">
     <div id="player-wrapper">
         <div id="player"></div>
@@ -101,69 +52,57 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
     let player, currentVideoId = "";
-
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: { 
-                'autoplay': 1, 'controls': 0, 'rel': 0, 
-                'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1
-            },
-            events: { 
-                'onReady': startSync, 
-                'onStateChange': onPlayerStateChange 
-            }
+            playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1 },
+            events: { 'onReady': startSync, 'onStateChange': onPlayerStateChange }
         });
     }
 
     function onPlayerStateChange(event) {
         const overlay = document.getElementById('brand-overlay');
         if (event.data === 0 || event.data === -1 || event.data === 2) {
-            showOverlay();
+            overlay.style.display = "flex";
+            overlay.style.opacity = "1";
         } else if (event.data === 1) {
-            hideOverlay();
+            overlay.style.opacity = "0";
+            setTimeout(() => { if(player.getPlayerState() === 1) overlay.style.display = "none"; }, 800);
         }
-    }
-
-    function showOverlay() {
-        const overlay = document.getElementById('brand-overlay');
-        overlay.style.display = "flex";
-        setTimeout(() => { overlay.style.opacity = "1"; }, 10);
-    }
-
-    function hideOverlay() {
-        const overlay = document.getElementById('brand-overlay');
-        overlay.style.opacity = "0";
-        setTimeout(() => { 
-            if(player.getPlayerState() === 1) overlay.style.display = "none"; 
-        }, 800);
     }
 
     function startSync() {
         db.ref('sync').on('value', (snap) => {
             const data = snap.val();
-            if (!data) return;
+            if (!data || !player) return;
 
+            // 動画変更
             if (currentVideoId !== data.videoId) {
                 currentVideoId = data.videoId;
                 player.loadVideoById(data.videoId, data.time);
+                return;
             }
 
-            if (data.state === 1) {
-                const diff = (Date.now() - data.lastUpdate) / 1000;
-                player.seekTo(data.time + diff, true);
-                player.playVideo();
+            // 同期ロジックの改善（スムーズな再生のため）
+            if (data.state === 1) { 
+                const serverTime = data.time + ((Date.now() - data.lastUpdate) / 1000);
+                const localTime = player.getCurrentTime();
+                
+                // ズレが2秒以上ある場合のみ強制シーク（カクつき防止）
+                if (Math.abs(serverTime - localTime) > 2) {
+                    player.seekTo(serverTime, true);
+                }
+                if (player.getPlayerState() !== 1) player.playVideo();
             } else if (data.state === 2) {
                 player.pauseVideo();
-                showOverlay();
             }
         });
     }
+
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
 </script>
 </body>
 </html>
