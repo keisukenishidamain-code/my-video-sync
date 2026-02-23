@@ -12,21 +12,23 @@
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background: #000; color: #fff; font-family: 'Orbitron', sans-serif; 
-            overflow: hidden; /* 画面全体のスクロールを禁止 */
+            overflow: hidden; display: flex; justify-content: center; 
         }
         
         .master-container { 
             display: flex; width: 100vw; height: 100vh; 
-            background: #0a0a0a; overflow: hidden;
+            max-width: 1800px; /* ワイド画面でも中央に寄るように制限 */
+            background: #0a0a0a; overflow: hidden; justify-content: center;
         }
         
-        /* 左：固定パネル */
+        /* 左：固定操作パネル */
         .left { 
             width: 320px; flex-shrink: 0; padding: 20px; border-right: 1px solid var(--border-color); 
             display: flex; flex-direction: column; background: #0d0d0d; box-sizing: border-box;
+            overflow-y: auto;
         }
         
-        /* 各リストカラム */
+        /* 各管理カラム（独立スクロール） */
         .list-section { 
             flex: 1; min-width: 0; background: #050505; display: flex; flex-direction: column; 
             height: 100%; border-right: 1px solid var(--border-color); 
@@ -34,101 +36,112 @@
         .list-section:last-child { border-right: none; }
         
         .section-header { 
-            padding: 20px; border-bottom: 1px solid var(--border-color); background: #080808;
-            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+            padding: 20px; display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid var(--border-color); background: #080808; flex-shrink: 0;
         }
-        .section-label { font-size: 10px; letter-spacing: 2px; font-weight: 900; color: #aaa; }
+        .section-label { font-size: 10px; color: #fff; letter-spacing: 2px; text-transform: uppercase; font-weight: 900; opacity: 0.8; }
         .clear-link { font-size: 8px; color: #444; cursor: pointer; text-decoration: underline; }
         .clear-link:hover { color: var(--main-red); }
 
-        /* 縦スクロール専用エリア */
+        /* 縦スクロールエリア */
         .scroll-list { 
             flex: 1; overflow-y: scroll; overflow-x: hidden; padding: 15px; 
+            box-sizing: border-box;
         }
         .scroll-list::-webkit-scrollbar { width: 4px; }
+        .scroll-list::-webkit-scrollbar-track { background: transparent; }
         .scroll-list::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .scroll-list::-webkit-scrollbar-thumb:hover { background: var(--main-red); }
 
         /* UIパーツ */
-        .input-group { background: #111; padding: 12px; border: 1px solid #222; margin-bottom: 15px; border-radius: 4px; }
-        input[type="text"] { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; font-family: 'Orbitron'; font-size: 10px; box-sizing: border-box; margin-bottom: 5px; outline: none; }
-        .event-input { border-color: var(--main-red) !important; color: var(--main-red); }
-        .btn-ui { width: 100%; height: 40px; border: none; background: var(--main-red); color: #fff; font-family: 'Orbitron'; font-weight: 900; font-size: 10px; cursor: pointer; box-shadow: var(--neon); }
+        .input-group { background: #111; padding: 12px; border-radius: 4px; border: 1px solid #222; margin-bottom: 15px; }
+        input[type="text"] { width: 100%; padding: 10px; background: #000; border: 1px solid #333; color: #fff; font-family: 'Orbitron'; font-size: 10px; box-sizing: border-box; margin-bottom: 8px; outline: none; }
+        .event-input { border-color: var(--main-red) !important; color: var(--main-red) !important; font-weight: 900; }
+        .btn-ui { width: 100%; height: 45px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; font-size: 11px; cursor: pointer; color: #fff; background: var(--main-red); box-shadow: var(--neon); }
+        
         #player { width: 100%; aspect-ratio: 16/9; border: 1px solid #222; background:#000; margin-bottom: 15px; }
-
+        
         /* リストアイテム */
         .list-item { background: #0d0d0d; padding: 8px; margin-bottom: 8px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red); position: relative; }
         .history-item { border-left-color: #444; }
         .gallery-item-staff { border-left-color: #00ffcc; }
-        .list-item img { width: 50px; height: 30px; object-fit: cover; }
-        .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; width: 70%; }
-        .mini-del-btn { position: absolute; right: 5px; color: #444; background: none; border: none; cursor: pointer; }
+        .list-item img { width: 55px; height: 32px; object-fit: cover; border-radius: 2px; }
+        .list-info { flex: 1; min-width: 0; }
+        .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; width: 75%; }
+        
+        .mini-del-btn { position: absolute; right: 5px; top: 10px; background: none; border: none; color: #444; cursor: pointer; }
         .mini-del-btn:hover { color: var(--main-red); }
+        
+        .file-label { width: 100%; height: 40px; background: #1a1a1a; border: 1px solid #333; color: #fff; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-weight: 900; }
+        .staff-date-divider { font-size: 8px; color: var(--main-red); padding: 10px 0 5px; border-bottom: 1px solid #222; margin-bottom: 10px; letter-spacing: 1px; font-weight: 900; }
     </style>
 </head>
 <body>
 <div class="master-container">
     <div class="left">
-        <div style="font-size:16px; font-weight:900; margin-bottom:20px;"><span>27</span> STAFF</div>
+        <div style="font-size:18px; font-weight:900; margin-bottom:20px; text-align:center;"><span>27</span> STAFF</div>
         <div class="input-group">
-            <input type="text" id="eventTitleInput" class="event-input" placeholder="EVENT TITLE...">
+            <div class="section-label" style="margin-bottom:8px">EVENT TITLE</div>
+            <input type="text" id="eventTitleInput" class="event-input" placeholder="NIGHT SESSION...">
         </div>
         <div class="input-group">
+            <div class="section-label" style="margin-bottom:8px">REQUEST</div>
             <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
             <input type="text" id="nameInput" placeholder="REQUESTER...">
             <button class="btn-ui" onclick="addToQueue()">ADD TO QUEUE</button>
         </div>
         <div id="player"></div>
-        <label class="btn-ui" style="display:flex; align-items:center; justify-content:center; background:#222; cursor:pointer;">
-            UPLOAD IMAGE<input type="file" id="imageFileInput" accept="image/*" onchange="autoUpload(this)" style="display:none">
-        </label>
+        <div class="input-group">
+            <div class="section-label" style="margin-bottom:8px">GALLERY UPLOAD</div>
+            <label for="imageFileInput" class="file-label">SELECT & POST IMAGE</label>
+            <input type="file" id="imageFileInput" accept="image/*" onchange="autoUpload(this)" style="display:none">
+        </div>
     </div>
+
     <div class="list-section">
         <div class="section-header"><div class="section-label">RESERVATION</div></div>
         <div id="reserve-list" class="scroll-list"></div>
     </div>
+
     <div class="list-section">
-        <div class="section-header"><div class="section-label">BACK NUMBERS</div><div class="clear-link" onclick="clearBackNumbers()">CLEAR</div></div>
+        <div class="section-header">
+            <div class="section-label">BACK NUMBERS</div>
+            <div class="clear-link" onclick="clearBackNumbers()">ALL CLEAR</div>
+        </div>
         <div id="history-edit-list" class="scroll-list"></div>
     </div>
+
     <div class="list-section">
-        <div class="section-header"><div class="section-label">GALLERY CONTROL</div><div class="clear-link" onclick="clearGallery()">CLEAR</div></div>
+        <div class="section-header">
+            <div class="section-label">GALLERY CONTROL</div>
+            <div class="clear-link" onclick="clearGallery()">ALL CLEAR</div>
+        </div>
         <div id="gallery-edit-list" class="scroll-list"></div>
     </div>
 </div>
+
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE", databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "club-d0011", appId: "1:51948793811:web:1edecab7c41c1d84ad8926" };
+    const firebaseConfig = {
+        apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
+        databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "club-d0011",
+        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let player, currentId = "", currentRequester = "27 CLUB";
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', { height: '100%', width: '100%', events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } });
-        loadData();
+        loadQueue(); loadHistoryEditor(); loadGalleryEditor();
     }
-    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
+    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
 
-    function loadData() {
-        db.ref('queue').on('value', snap => {
-            const list = document.getElementById('reserve-list'); list.innerHTML = "";
-            snap.forEach(c => {
-                const item = c.val();
-                const div = document.createElement('div'); div.className = "list-item";
-                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester}</span><button class="mini-del-btn" onclick="db.ref('queue/${c.key}').remove()">✕</button></div><button style="font-size:8px; background:#222; color:#fff; border:1px solid #444; height:24px;" onclick="playSelected('${c.key}','${item.videoId}','${item.requester}')">PLAY</button>`;
-                list.appendChild(div);
-            });
-        });
-        db.ref('backnumbers').on('value', snap => {
-            const list = document.getElementById('history-edit-list'); list.innerHTML = "";
-            let items = []; snap.forEach(c => { items.push({key:c.key, ...c.val()}); });
-            items.reverse().forEach(item => {
-                const div = document.createElement('div'); div.className = "list-item history-item";
-                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester}</span><button class="mini-del-btn" onclick="deleteHistoryItem('${item.key}')">✕</button></div>`;
-                list.appendChild(div);
-            });
-        });
+    function loadGalleryEditor() {
         db.ref('gallery').on('value', snap => {
             const list = document.getElementById('gallery-edit-list'); list.innerHTML = "";
-            let items = []; snap.forEach(c => { items.push({key:c.key, ...c.val()}); });
+            let items = []; snap.forEach(c => { items.push({ key: c.key, ...c.val() }); });
             items.reverse().forEach(item => {
                 const div = document.createElement('div'); div.className = "list-item gallery-item-staff";
                 div.innerHTML = `<img src="${item.url}"><div class="list-info"><span>${item.key.substring(1,8)}</span><button class="mini-del-btn" onclick="deleteGalleryItem('${item.key}')">✕</button></div>`;
@@ -137,6 +150,40 @@
         });
     }
 
+    function loadQueue() {
+        db.ref('queue').on('value', snap => {
+            const list = document.getElementById('reserve-list'); list.innerHTML = "";
+            snap.forEach(c => {
+                const item = c.val();
+                const div = document.createElement('div'); div.className = "list-item";
+                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester.toUpperCase()}</span><button class="mini-del-btn" onclick="db.ref('queue/${c.key}').remove()">✕</button></div><button class="btn-ui" style="width:40px; height:25px; font-size:8px; background:#222; box-shadow:none;" onclick="playSelected('${c.key}','${item.videoId}','${item.requester}')">PLAY</button>`;
+                list.appendChild(div);
+            });
+        });
+    }
+
+    function loadHistoryEditor() {
+        db.ref('backnumbers').on('value', snap => {
+            const list = document.getElementById('history-edit-list'); list.innerHTML = "";
+            let items = []; snap.forEach(c => { items.push({ key: c.key, ...c.val() }); });
+            items.reverse(); let lastDate = "";
+            items.forEach(item => {
+                const dateStr = new Date(item.timestamp).toLocaleDateString();
+                if (dateStr !== lastDate) {
+                    const div = document.createElement('div'); div.className = 'staff-date-divider'; div.innerText = dateStr; list.appendChild(div); lastDate = dateStr;
+                }
+                const div = document.createElement('div'); div.className = "list-item history-item";
+                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester.toUpperCase()}</span><button class="mini-del-btn" onclick="deleteHistoryItem('${item.key}')">✕</button></div>`;
+                list.appendChild(div);
+            });
+        });
+    }
+
+    function deleteGalleryItem(k) { if(confirm("DELETE IMAGE?")) db.ref(`gallery/${k}`).remove(); }
+    function deleteHistoryItem(k) { if(confirm("DELETE HISTORY?")) db.ref(`backnumbers/${k}`).remove(); }
+    function clearGallery() { if(confirm("CLEAR ALL GALLERY?")) db.ref('gallery').remove(); }
+    function clearBackNumbers() { if(confirm("CLEAR ALL HISTORY?")) db.ref('backnumbers').remove(); }
+
     function addToQueue() {
         const url = document.getElementById('urlInput').value;
         const name = document.getElementById('nameInput').value || "GUEST";
@@ -144,13 +191,23 @@
         if (id) db.ref('queue').push({ videoId: id, requester: name, timestamp: firebase.database.ServerValue.TIMESTAMP });
         document.getElementById('urlInput').value = ""; document.getElementById('nameInput').value = "";
     }
-    function playSelected(k, v, n) { currentId = v; currentRequester = n; player.loadVideoById(v, 0); syncDB(1, 0); db.ref('backnumbers').push({ videoId: v, requester: n, timestamp: firebase.database.ServerValue.TIMESTAMP }); db.ref(`queue/${k}`).remove(); }
-    function syncDB(s, t) { db.ref('sync').set({ videoId: currentId, state: s, time: t, requester: currentRequester, lastUpdate: Date.now() }); }
-    function deleteGalleryItem(k) { if(confirm("DELETE?")) db.ref(`gallery/${k}`).remove(); }
-    function deleteHistoryItem(k) { if(confirm("DELETE?")) db.ref(`backnumbers/${k}`).remove(); }
-    function clearGallery() { if(confirm("ALL CLEAR?")) db.ref('gallery').remove(); }
-    function clearBackNumbers() { if(confirm("ALL CLEAR?")) db.ref('backnumbers').remove(); }
-    function autoUpload(input) { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload=(e)=>{ db.ref('gallery').push({url:e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP}); input.value=""; }; reader.readAsDataURL(file); }
+
+    function playSelected(k, v, n) { 
+        currentId = v; currentRequester = n; 
+        const title = document.getElementById('eventTitleInput').value || "NIGHT SESSION";
+        player.loadVideoById(v, 0); syncDB(1, 0); 
+        db.ref('backnumbers').push({ videoId: v, requester: n, eventTitle: title, timestamp: firebase.database.ServerValue.TIMESTAMP }); 
+        db.ref(`queue/${k}`).remove(); 
+    }
+
+    function syncDB(s, t) { if(currentId) db.ref('sync').set({ videoId: currentId, state: s, time: t, requester: currentRequester, lastUpdate: Date.now() }); }
+    
+    function autoUpload(input) { 
+        const file = input.files[0]; if (!file) return; 
+        const reader = new FileReader(); 
+        reader.onload = (e) => { db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP }); input.value = ""; };
+        reader.readAsDataURL(file); 
+    }
 </script>
 </body>
 </html>
