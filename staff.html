@@ -2,33 +2,60 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>マスター・統合コントロールパネル</title>
+    <title>マスター・コントロールパネル（再生窓なし）</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; height: 100vh; }
-        .controls { width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; background: #333; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 5px; border: none; }
-        button { padding: 12px 24px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .video-wrapper { width: 100%; flex: 1; display: flex; justify-content: center; align-items: center; background: #000; }
-        #player { width: 90%; aspect-ratio: 16/9; }
-        #status-bar { width: 100%; background: #222; padding: 5px 20px; font-size: 12px; color: #0f0; }
+        :root { --main-red: #ff4444; --bg-dark: #121212; --panel-bg: #1e1e1e; }
+        body { font-family: sans-serif; background: var(--bg-dark); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .panel { width: 100%; max-width: 600px; background: var(--panel-bg); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { border-left: 4px solid var(--main-red); padding-left: 15px; margin-bottom: 25px; }
+        
+        .status-box { background: #000; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
+        .status-label { font-size: 12px; color: #888; margin-bottom: 5px; }
+        #current-title { font-weight: bold; color: var(--main-red); }
+
+        .input-group { margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #444; background: #2a2a2a; color: white; box-sizing: border-box; margin-bottom: 10px; }
+        
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-ready { background: #444; color: white; }
+        .btn-start { background: var(--main-red); color: white; grid-column: span 2; font-size: 18px; }
+        .btn-stop { background: #555; color: white; }
+        button:hover { opacity: 0.8; transform: scale(0.98); }
+        
+        #log { margin-top: 20px; font-size: 12px; color: #666; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="controls">
-    <input type="text" id="urlInput" placeholder="YouTube URLを貼り付け">
-    <button onclick="loadAndPlay()">配信開始</button>
-</div>
+<div class="panel">
+    <h2>配信コントロール</h2>
 
-<div id="status-bar">同期状態: 待機中</div>
+    <div class="status-box">
+        <div class="status-label">現在放送中（顧客側の画面）</div>
+        <div id="current-title">停止中</div>
+        <div id="current-time" style="font-family: monospace; font-size: 20px; margin-top:10px;">00:00</div>
+    </div>
 
-<div class="video-wrapper">
-    <div id="player"></div>
+    <div class="input-group">
+        <div class="status-label">次の曲を準備（YouTube URL）</div>
+        <input type="text" id="nextUrl" placeholder="https://www.youtube.com/watch?v=...">
+        <div id="next-preview" style="font-size: 12px; color: #0f0; margin-top: -5px; margin-bottom: 10px; display: none;">✓ 次の曲をセットしました</div>
+    </div>
+
+    <div class="btn-grid">
+        <button class="btn-start" onclick="startNextTrack()">🚀 次の曲を開始（＆保存）</button>
+        <button class="btn-stop" onclick="togglePause()">一時停止 / 再開</button>
+        <button class="btn-stop" onclick="stopVideo()">完全停止（ロゴへ）</button>
+    </div>
+
+    <div id="log">システム待機中</div>
 </div>
 
 <script>
+    // Firebase初期化（あなたの設定）
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -37,51 +64,84 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let player;
 
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
+    let playStartTime = 0;
+    let timerInterval = null;
+    let isPaused = false;
+    let currentVideoId = "";
 
-    function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            playerVars: { 'autoplay': 1, 'controls': 1, 'enablejsapi': 1 },
-            events: {
-                'onStateChange': (e) => {
-                    updateFirebase(e.data);
-                }
-            }
-        });
+    // YouTube IDを抽出する関数
+    function getID(url) {
+        if (!url) return null;
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : url;
     }
 
-    function loadAndPlay() {
-        const url = document.getElementById('urlInput').value;
-        const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
-        if (id) {
-            player.loadVideoById(id);
-            db.ref('sync').update({ videoId: id, state: 1, time: 0, lastUpdate: Date.now() });
+    // 次の曲を開始
+    function startNextTrack() {
+        const url = document.getElementById('nextUrl').value;
+        const id = getID(url);
+        
+        if (!id) {
+            alert("有効なYouTube URLを入力してください");
+            return;
         }
-    }
 
-    function updateFirebase(state) {
-        db.ref('sync').update({
-            state: state,
-            time: player.getCurrentTime(),
-            lastUpdate: Date.now()
+        currentVideoId = id;
+        playStartTime = Date.now();
+        isPaused = false;
+
+        // Firebase更新（現在の再生）
+        db.ref('sync').set({
+            videoId: id,
+            state: 1,
+            serverStartTime: firebase.database.ServerValue.TIMESTAMP,
+            baseTime: 0
         });
+
+        // 自動保存（バックナンバー）
+        const now = new Date();
+        db.ref('backnumbers').push({
+            title: `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} 配信開始`,
+            videoId: id,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+
+        // UI更新
+        document.getElementById('current-title').innerText = "動画ID: " + id;
+        document.getElementById('nextUrl').value = "";
+        document.getElementById('log').innerText = "新しい曲を開始しました";
+        
+        startTimer();
     }
 
-    // 0.5秒おきに「実際の再生位置」を送信
-    // この画面が表示されている限り、送信が止まることはありません
-    setInterval(() => {
-        if (player && player.getPlayerState && player.getPlayerState() === 1) {
-            db.ref('sync').update({
-                time: player.getCurrentTime(),
-                lastUpdate: Date.now()
-            });
-            document.getElementById('status-bar').innerText = "同期中: " + player.getCurrentTime().toFixed(1) + "s";
-        }
-    }, 500);
+    // 停止（ロゴ画面に戻す）
+    function stopVideo() {
+        db.ref('sync').update({ state: 0 });
+        clearInterval(timerInterval);
+        document.getElementById('current-title').innerText = "停止中";
+        document.getElementById('current-time').innerText = "00:00";
+    }
+
+    // 一時停止・再開（簡易的なもの）
+    function togglePause() {
+        isPaused = !isPaused;
+        db.ref('sync').update({ state: isPaused ? 2 : 1 });
+        document.getElementById('log').innerText = isPaused ? "一時停止中" : "再開しました";
+    }
+
+    // 手元の経過時間タイマー
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (isPaused) return;
+            const elapsed = Math.floor((Date.now() - playStartTime) / 1000);
+            const m = Math.floor(elapsed / 60);
+            const s = elapsed % 60;
+            document.getElementById('current-time').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }, 1000);
+    }
 </script>
 </body>
 </html>
