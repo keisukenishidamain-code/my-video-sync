@@ -11,31 +11,51 @@
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: #ffffff; }
         
-        header { padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
+        /* ヘッダー固定設定 */
+        header { 
+            padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; 
+            background: rgba(0,0,0,0.9); /* 背後を少し暗くして被りを防止 */
+            position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
+        }
         .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
         .nav-links { display: flex; gap: 20px; }
         .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; }
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
-        .hero { width: 100%; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; }
-        .archive-player-box { width: 85%; max-width: 1200px; aspect-ratio: 16/9; background: #000; border: 1px solid #111; position: relative; }
-        #archive-player { width: 100%; height: 100%; }
+        /* コンテンツ配置：ヘッダー分（約100px）を確保 */
+        .main-content { 
+            width: 100%; height: 100vh; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; padding-top: 80px; box-sizing: border-box; 
+        }
 
-        .carousel-container { width: 100%; max-width: 1200px; margin-top: 30px; position: relative; }
+        /* プレイヤーサイズを調整（大きすぎないサイズへ） */
+        .archive-player-box { 
+            width: 70%; max-width: 850px; aspect-ratio: 16/9; 
+            background: #000; border: 1px solid #222; position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+        #archive-player { width: 100%; height: 100%; border: none; }
+
+        /* カルーセル */
+        .carousel-container { width: 100%; max-width: 1200px; margin-top: 20px; position: relative; }
         .carousel-wrap { width: 100%; overflow: hidden; padding: 10px 0; }
-        .carousel-track { display: flex; gap: 20px; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); padding-left: calc(50% - 150px); }
+        .carousel-track { display: flex; gap: 15px; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); padding-left: calc(50% - 130px); }
         
-        .bn-card { width: 300px; flex-shrink: 0; cursor: pointer; filter: grayscale(1) brightness(0.3); transition: 0.5s; transform: scale(0.9); border-radius: 4px; overflow: hidden; border: 1px solid #222; }
+        .bn-card { 
+            width: 260px; flex-shrink: 0; cursor: pointer; filter: grayscale(1) brightness(0.3); 
+            transition: 0.5s; transform: scale(0.85); border-radius: 4px; overflow: hidden; border: 1px solid #111; 
+        }
         .bn-card.active { filter: grayscale(0) brightness(1); transform: scale(1.0); border-color: var(--main-red); box-shadow: var(--neon); }
         .bn-card img { width: 100%; display: block; }
 
         .controls { position: absolute; top: 50%; width: 100%; display: flex; justify-content: space-between; transform: translateY(-50%); pointer-events: none; z-index: 10; }
-        .btn-bn { background: rgba(0,0,0,0.6); border: 1px solid #333; color: white; font-size: 20px; cursor: pointer; width: 50px; height: 50px; border-radius: 50%; transition: 0.3s; pointer-events: auto; display: flex; align-items: center; justify-content: center; margin: 0 10px; }
+        .btn-bn { background: rgba(0,0,0,0.6); border: 1px solid #333; color: white; font-size: 18px; cursor: pointer; width: 44px; height: 44px; border-radius: 50%; transition: 0.3s; pointer-events: auto; display: flex; align-items: center; justify-content: center; margin: 0 5px; }
         .btn-bn:hover { border-color: var(--main-red); color: var(--main-red); box-shadow: var(--neon); }
     </style>
 </head>
 <body>
+
 <header>
     <a href="index.html" class="logo"><span>27</span> CLUB</a>
     <div class="nav-links">
@@ -43,16 +63,23 @@
         <a href="gallery.html" class="nav-btn">GALLERY</a>
     </div>
 </header>
-<section class="hero">
-    <div class="archive-player-box"><div id="archive-player"></div></div>
+
+<div class="main-content">
+    <div class="archive-player-box">
+        <div id="archive-player"></div>
+    </div>
+    
     <div class="carousel-container">
-        <div class="carousel-wrap"><div id="bn-track" class="carousel-track"></div></div>
+        <div class="carousel-wrap">
+            <div id="bn-track" class="carousel-track"></div>
+        </div>
         <div class="controls">
             <button class="btn-bn" onclick="move(-1)">◀</button>
             <button class="btn-bn" onclick="move(1)">▶</button>
         </div>
     </div>
-</section>
+</div>
+
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
@@ -62,12 +89,20 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
     let arcPlayer, historyData = [], currentIndex = 0;
-    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
+
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+
     function onYouTubeIframeAPIReady() {
-        arcPlayer = new YT.Player('archive-player', { playerVars: { 'autoplay': 0, 'controls': 1, 'modestbranding': 1, 'rel': 0 } });
+        arcPlayer = new YT.Player('archive-player', {
+            playerVars: { 'autoplay': 0, 'controls': 1, 'modestbranding': 1, 'rel': 0 }
+        });
         loadHistory();
     }
+
     function loadHistory() {
         db.ref('backnumbers').limitToLast(20).once('value', snap => {
             historyData = [];
@@ -76,6 +111,7 @@
             render();
         });
     }
+
     function render() {
         const track = document.getElementById('bn-track');
         track.innerHTML = "";
@@ -83,22 +119,37 @@
             const div = document.createElement('div');
             div.className = `bn-card ${i === currentIndex ? 'active' : ''}`;
             div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">`;
-            div.onclick = () => { currentIndex = i; update(); };
+            div.onclick = () => { currentIndex = i; update(true); }; // クリックで即再生
             track.appendChild(div);
         });
-        update();
+        update(false); // 初回読み込み時はcueのみ
     }
+
     function move(dir) {
         if (historyData.length === 0) return;
         currentIndex = (currentIndex + dir + historyData.length) % historyData.length;
-        update();
+        update(true); // ボタン移動で即再生
     }
-    function update() {
+
+    function update(autoPlay) {
         const track = document.getElementById('bn-track');
-        track.style.transform = `translateX(-${currentIndex * 320}px)`;
-        document.querySelectorAll('.bn-card').forEach((card, i) => card.classList.toggle('active', i === currentIndex));
+        const cardWidth = 275; // 260px + gap 15px
+        track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+        
+        document.querySelectorAll('.bn-card').forEach((card, i) => {
+            card.classList.toggle('active', i === currentIndex);
+        });
+
         const target = historyData[currentIndex];
-        if (target && arcPlayer.cueVideoById) arcPlayer.cueVideoById(target.videoId);
+        if (target && arcPlayer) {
+            if (autoPlay) {
+                // 動画を切り替えて即時再生
+                arcPlayer.loadVideoById(target.videoId);
+            } else {
+                // 最初だけ読み込み準備
+                arcPlayer.cueVideoById(target.videoId);
+            }
+        }
     }
 </script>
 </body>
