@@ -2,26 +2,29 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>マスター・コントロールパネル</title>
+    <title>CLUB D-0011 - STAFF ONLY</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; height: 100vh; }
-        .controls { width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; background: #333; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 5px; border: none; }
-        button { padding: 12px 24px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        #status-bar { width: 100%; background: #222; padding: 5px 20px; font-size: 12px; color: #0f0; }
-        #player { width: 90%; aspect-ratio: 16/9; margin-top: 20px; }
+        body { font-family: sans-serif; background: #111; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .panel { background: #222; padding: 20px; border-radius: 10px; width: 100%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        input { width: 70%; padding: 12px; border-radius: 5px; border: none; margin-right: 5px; }
+        button { padding: 12px 20px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        #status { margin-top: 15px; color: #0f0; font-size: 14px; text-align: center; }
+        #player { width: 100%; aspect-ratio: 16/9; margin-top: 20px; border-radius: 8px; }
     </style>
 </head>
 <body>
 
-<div class="controls">
-    <input type="text" id="urlInput" placeholder="YouTube URLを貼り付け">
-    <button onclick="loadAndPlay()">配信開始（保存）</button>
+<div class="panel">
+    <h3>DJ CONTROL PANEL</h3>
+    <div style="display:flex;">
+        <input type="text" id="urlInput" placeholder="YouTube URLを貼り付け">
+        <button onclick="broadcast()">配信開始</button>
+    </div>
+    <div id="status">待機中...</div>
+    <div id="player"></div>
 </div>
-<div id="status-bar">同期状態: 接続中...</div>
-<div id="player"></div>
 
 <script>
     const firebaseConfig = {
@@ -40,44 +43,34 @@
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            events: { 'onStateChange': (e) => { updateFirebase(e.data); } }
+            events: { 'onStateChange': (e) => syncState(e.data) }
         });
     }
 
-    function loadAndPlay() {
+    function broadcast() {
         const url = document.getElementById('urlInput').value;
         const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
-        
         if (id) {
-            // 1. YouTubeを再生
             player.loadVideoById(id);
-            
-            // 2. リアルタイム同期を更新
-            db.ref('sync').update({ videoId: id, state: 1, time: 0, lastUpdate: Date.now() });
+            db.ref('sync').set({ videoId: id, state: 1, time: 0, lastUpdate: Date.now() });
 
-            // 3. バックナンバー（DB）へ自動保存
-            const now = new Date();
+            // バックナンバー自動保存
             db.ref('backnumbers').push({
-                title: now.toLocaleString() + " 配信曲",
+                title: new Date().toLocaleString() + " 配信曲",
                 videoId: id,
                 timestamp: firebase.database.ServerValue.TIMESTAMP
-            }).then(() => {
-                document.getElementById('status-bar').innerText = "✅ 配信開始 & バックナンバー登録完了";
-            }).catch(e => {
-                document.getElementById('status-bar').innerText = "❌ 保存失敗: " + e.message;
             });
+            document.getElementById('status').innerText = "✅ 放送中 & アーカイブ保存完了";
         }
     }
 
-    function updateFirebase(state) {
+    function syncState(state) {
         db.ref('sync').update({ state: state, time: player.getCurrentTime(), lastUpdate: Date.now() });
     }
 
     setInterval(() => {
-        if (player && player.getPlayerState && player.getPlayerState() === 1) {
-            updateFirebase(1);
-        }
-    }, 500);
+        if (player && player.getPlayerState() === 1) syncState(1);
+    }, 1000);
 </script>
 </body>
 </html>
