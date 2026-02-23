@@ -10,25 +10,41 @@
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; --bg-black: #000; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg-black); color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; }
         
-        /* トップページと共通のヘッダー */
+        /* トップページの画像デザインを完全移植したヘッダー */
         header { 
-            padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; 
-            background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%); 
+            padding: 40px 60px; display: flex; justify-content: space-between; align-items: center; 
             position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
         }
         .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: white; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        .nav-links { display: flex; gap: 20px; }
-        .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; }
-        .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
+        
+        .nav-links { display: flex; gap: 15px; }
+        /* 画像にあったボタンデザイン */
+        .nav-btn { 
+            color: #ffffff; 
+            text-decoration: none; 
+            font-size: 11px; 
+            letter-spacing: 2px; 
+            border: 1px solid #ffffff; 
+            padding: 10px 25px; 
+            border-radius: 6px; 
+            background: transparent; 
+            transition: 0.3s ease; 
+            text-transform: uppercase;
+        }
+        .nav-btn:hover { 
+            border-color: var(--main-red); 
+            color: var(--main-red);
+            box-shadow: var(--neon);
+        }
 
         .hero { width: 100%; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; }
         
         /* 中央プレイヤー */
         .archive-player-box { 
-            width: 85%; max-width: 900px; aspect-ratio: 16/9; 
+            width: 80%; max-width: 900px; aspect-ratio: 16/9; 
             background: #000; border: 1px solid #222; position: relative;
-            box-shadow: 0 0 50px rgba(0,0,0,1); margin-top: 40px;
+            box-shadow: 0 0 50px rgba(0,0,0,1); margin-top: 50px;
         }
         #archive-player { width: 100%; height: 100%; }
 
@@ -39,12 +55,11 @@
         
         .bn-card { 
             width: 300px; flex-shrink: 0; cursor: pointer; filter: grayscale(1) brightness(0.3); 
-            transition: 0.5s; transform: scale(0.85); position: relative; border-radius: 4px; overflow: hidden; border: 1px solid #222;
+            transition: 0.5s; transform: scale(0.85); border-radius: 4px; overflow: hidden; border: 1px solid #222;
         }
         .bn-card.active { filter: grayscale(0) brightness(1); transform: scale(1.0); border-color: var(--main-red); box-shadow: var(--neon); }
         .bn-card img { width: 100%; display: block; }
 
-        /* コントロールボタン */
         .controls { position: absolute; top: 50%; width: 100%; display: flex; justify-content: space-between; transform: translateY(-50%); pointer-events: none; z-index: 10; }
         .btn-bn { 
             background: rgba(0,0,0,0.6); border: 1px solid #333; color: white; font-size: 20px; cursor: pointer; 
@@ -104,14 +119,10 @@
     }
 
     function loadHistory() {
-        // 最新20件を取得
         db.ref('backnumbers').limitToLast(20).once('value', snap => {
             historyData = [];
-            snap.forEach(c => {
-                const val = c.val();
-                historyData.push(val);
-            });
-            historyData.reverse(); // 最新を先頭に
+            snap.forEach(c => historyData.push(c.val()));
+            historyData.reverse();
             render();
         });
     }
@@ -137,13 +148,10 @@
 
     function update() {
         const track = document.getElementById('bn-track');
-        // カード幅(300px) + gap(20px) = 320px
         track.style.transform = `translateX(-${currentIndex * 320}px)`;
-        
         document.querySelectorAll('.bn-card').forEach((card, i) => {
             card.classList.toggle('active', i === currentIndex);
         });
-
         const target = historyData[currentIndex];
         if (target && arcPlayer.cueVideoById) {
             arcPlayer.cueVideoById(target.videoId);
