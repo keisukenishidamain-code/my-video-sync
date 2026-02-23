@@ -7,90 +7,137 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; --terminal-green: #0f0; }
-        body { font-family: 'Orbitron', sans-serif; background: #000; color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; --terminal-green: #0f0; --bg-dark: #000; --panel-bg: #0a0a0a; }
         
-        /* Layout Layout */
-        .left { width: 40%; padding: 30px; border-right: 1px solid #222; background: linear-gradient(145deg, #111, #000); overflow-y: auto; }
-        .right { width: 60%; padding: 30px; background: #050505; display: flex; flex-direction: column; overflow-y: auto; }
+        /* 中央寄せの基盤 */
+        body { 
+            font-family: 'Orbitron', sans-serif; 
+            background: var(--bg-dark); 
+            color: white; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; /* 左右中央 */
+            height: 100vh; 
+            overflow: hidden; 
+        }
 
-        .logo { font-size: 24px; font-weight: 900; margin-bottom: 20px; letter-spacing: 5px; }
+        /* メインコンテナ：最大幅を制限して中央に配置 */
+        .master-container {
+            width: 100%;
+            max-width: 1200px; /* ここで横幅を絞る */
+            display: flex;
+            height: 100%;
+            border-left: 1px solid #111;
+            border-right: 1px solid #111;
+            background: var(--panel-bg);
+        }
+
+        /* 左カラム：操作系 */
+        .left { 
+            width: 45%; 
+            padding: 40px; 
+            border-right: 1px solid #222; 
+            overflow-y: auto; 
+            background: linear-gradient(180deg, #0a0a0a 0%, #000 100%);
+        }
+
+        /* 右カラム：予約リスト */
+        .right { 
+            width: 55%; 
+            padding: 40px; 
+            background: #050505; 
+            display: flex; 
+            flex-direction: column; 
+            overflow-y: auto; 
+        }
+
+        .logo { font-size: 26px; font-weight: 900; margin-bottom: 30px; letter-spacing: 5px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        .section-label { font-size: 10px; color: #555; letter-spacing: 2px; margin: 20px 0 10px; border-bottom: 1px solid #222; padding-bottom: 5px; text-transform: uppercase; }
+        .section-label { font-size: 10px; color: #444; letter-spacing: 2px; margin: 25px 0 12px; border-bottom: 1px solid #222; padding-bottom: 5px; text-transform: uppercase; }
 
-        /* Input Area & Controls */
-        .input-area { background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 15px; }
-        input { width: 100%; padding: 10px; background: #000; border: 1px solid #444; color: var(--terminal-green); font-family: monospace; margin-bottom: 10px; box-sizing: border-box; font-size: 11px; }
+        /* 入力エリア */
+        .input-area { background: #151515; padding: 20px; border-radius: 8px; border: 1px solid #222; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: var(--terminal-green); font-family: monospace; margin-bottom: 12px; box-sizing: border-box; font-size: 12px; }
         
-        .btn-main { width: 100%; padding: 12px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 11px; letter-spacing: 1px; }
-        .btn-live { background: var(--main-red); color: white; margin-bottom: 5px; }
-        .btn-queue { background: #333; color: #ccc; }
-        .btn-ss { background: #444; color: #fff; }
-        .btn-ss:hover { background: #666; color: var(--terminal-green); }
+        .btn-main { width: 100%; padding: 14px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+        .btn-live { background: var(--main-red); color: white; margin-bottom: 8px; }
+        .btn-live:hover { box-shadow: var(--neon); opacity: 0.9; }
+        .btn-queue { background: #222; color: #888; }
+        .btn-queue:hover { background: #333; color: #fff; }
 
-        /* Gallery Panel Integration */
-        .gallery-panel { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-        #preview-container { width: 100%; height: 120px; border: 1px solid #333; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; }
+        /* ギャラリーパネル統合 */
+        .gallery-panel { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        #preview-container { width: 100%; height: 160px; border: 1px solid #222; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; }
         #imagePreview { max-width: 100%; max-height: 100%; display: none; }
-        .gallery-controls { display: flex; width: 100%; gap: 10px; align-items: center; }
-        #imageFileInput { margin-bottom: 0; flex: 1; font-size: 9px; }
+        .gallery-controls { display: flex; width: 100%; gap: 12px; align-items: center; }
+        #imageFileInput { margin-bottom: 0; flex: 1; font-size: 10px; border: none; padding: 5px; }
+        .btn-ss { background: #333; color: #fff; border: 1px solid #444; }
+        .btn-ss:hover { background: #fff; color: #000; }
 
-        /* Playback Controls */
-        .playback-ctrl { margin-top: 20px; display: flex; gap: 10px; justify-content: center; background: #000; padding: 15px; border-radius: 50px; border: 1px solid #222; }
-        .ctrl-icon { width: 50px; height: 50px; border-radius: 50%; background: #222; color: white; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .ctrl-icon:hover { background: var(--main-red); box-shadow: var(--neon); }
+        /* 再生コントロール */
+        .playback-ctrl { margin-top: 25px; display: flex; gap: 15px; justify-content: center; background: #000; padding: 20px; border-radius: 50px; border: 1px solid #1a1a1a; }
+        .ctrl-icon { width: 55px; height: 55px; border-radius: 50%; background: #151515; color: white; border: 1px solid #333; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .ctrl-icon:hover { background: var(--main-red); border-color: var(--main-red); box-shadow: var(--neon); }
 
-        #player { width: 100%; aspect-ratio: 16/9; margin-top: 20px; border-radius: 8px; border: 1px solid #333; }
+        #player { width: 100%; aspect-ratio: 16/9; margin-top: 25px; border-radius: 8px; border: 1px solid #222; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
-        /* List Styling */
-        #reserve-list { flex-grow: 1; }
-        .list-item { background: #111; padding: 12px; margin-bottom: 8px; border-radius: 8px; display: flex; align-items: center; gap: 15px; border-left: 4px solid #333; }
-        .list-item img { width: 80px; border-radius: 4px; }
-        .item-btns { display: flex; gap: 8px; }
-        .btn-sm { padding: 6px 10px; font-size: 9px; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff; cursor: pointer; font-family: 'Orbitron'; }
+        /* 予約リスト */
+        .list-item { background: #0d0d0d; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; gap: 20px; border: 1px solid #1a1a1a; border-left: 4px solid #333; transition: 0.2s; }
+        .list-item:hover { border-left-color: var(--main-red); background: #111; }
+        .list-item img { width: 100px; border-radius: 4px; }
+        .item-btns { display: flex; gap: 10px; }
+        .btn-sm { padding: 8px 12px; font-size: 10px; border-radius: 4px; border: 1px solid #333; background: #1a1a1a; color: #fff; cursor: pointer; font-family: 'Orbitron'; }
+        
+        /* スクロールバーのカスタマイズ */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--main-red); }
     </style>
 </head>
 <body>
 
-<div class="left">
-    <div class="logo"><span>27</span> CLUB STAFF</div>
-    
-    <div class="section-label">LIVE BROADCAST</div>
-    <div class="input-area">
-        <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
-        <button class="btn-main btn-live" onclick="handleAction('live')">IMMEDIATE LIVE</button>
-        <button class="btn-main btn-queue" onclick="handleAction('queue')">ADD TO QUEUE</button>
-    </div>
-
-    <div class="playback-ctrl">
-        <button class="ctrl-icon" onclick="control('restart')">⏮</button>
-        <button class="ctrl-icon" onclick="control('play')">▶</button>
-        <button class="ctrl-icon" onclick="control('pause')">⏸</button>
-    </div>
-    
-    <div id="player"></div>
-
-    <div class="section-label">GALLERY MANAGEMENT</div>
-    <div class="input-area gallery-panel">
-        <div id="preview-container">
-            <span id="preview-placeholder" style="font-size: 8px; color:#444;">IMAGE PREVIEW READY</span>
-            <img id="imagePreview">
+<div class="master-container">
+    <div class="left">
+        <div class="logo"><span>27</span> CLUB STAFF</div>
+        
+        <div class="section-label">LIVE BROADCAST</div>
+        <div class="input-area">
+            <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
+            <button class="btn-main btn-live" onclick="handleAction('live')">IMMEDIATE LIVE</button>
+            <button class="btn-main btn-queue" onclick="handleAction('queue')">ADD TO QUEUE</button>
         </div>
-        <div class="gallery-controls">
-            <input type="file" id="imageFileInput" accept="image/*" onchange="previewFile()">
-            <button class="btn-main btn-ss" onclick="postSS()" style="width: auto; padding: 10px 15px; white-space: nowrap;">POST TO GALLERY</button>
-        </div>
-        <div id="uploadStatus" style="font-size: 9px; color: var(--terminal-green); height: 10px;"></div>
-    </div>
-</div>
 
-<div class="right">
-    <div class="section-label">RESERVATION QUEUE</div>
-    <div id="reserve-list"></div>
+        <div class="playback-ctrl">
+            <button class="ctrl-icon" onclick="control('restart')">⏮</button>
+            <button class="ctrl-icon" onclick="control('play')">▶</button>
+            <button class="ctrl-icon" onclick="control('pause')">⏸</button>
+        </div>
+        
+        <div id="player"></div>
+
+        <div class="section-label">GALLERY MANAGEMENT</div>
+        <div class="input-area gallery-panel">
+            <div id="preview-container">
+                <span id="preview-placeholder" style="font-size: 9px; color:#333;">AWAITING IMAGE SELECTION...</span>
+                <img id="imagePreview">
+            </div>
+            <div class="gallery-controls">
+                <input type="file" id="imageFileInput" accept="image/*" onchange="previewFile()">
+                <button class="btn-main btn-ss" onclick="postSS()" style="width: auto; padding: 12px 20px; white-space: nowrap;">POST SNAPSHOT</button>
+            </div>
+            <div id="uploadStatus" style="font-size: 9px; color: var(--terminal-green); height: 10px; font-family: monospace;"></div>
+        </div>
+    </div>
+
+    <div class="right">
+        <div class="section-label">RESERVATION QUEUE</div>
+        <div id="reserve-list"></div>
+    </div>
 </div>
 
 <script>
-    // Firebase 設定
+    // Firebase設定
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -101,7 +148,7 @@
     const db = firebase.database();
     let player, currentVideoId = "";
 
-    // YouTube API 読み込み
+    // YouTube API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
@@ -113,23 +160,17 @@
         loadQueue();
     }
 
-    // 放送操作
     function handleAction(type) {
         const url = document.getElementById('urlInput').value;
         const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
         if (!id) return;
-        if (type === 'live') { 
-            executeLive(id); 
-        } else { 
-            db.ref('queue').push({ videoId: id, timestamp: Date.now() }); 
-        }
+        if (type === 'live') { executeLive(id); } 
+        else { db.ref('queue').push({ videoId: id, timestamp: Date.now() }); }
         document.getElementById('urlInput').value = "";
     }
 
     function executeLive(id) {
-        currentVideoId = id; 
-        player.loadVideoById(id, 0); 
-        syncDB(1, 0);
+        currentVideoId = id; player.loadVideoById(id, 0); syncDB(1, 0);
         db.ref('backnumbers').push({ videoId: id, timestamp: firebase.database.ServerValue.TIMESTAMP });
     }
 
@@ -147,7 +188,6 @@
         db.ref('sync').set({ videoId: currentVideoId, state: state, time: time, lastUpdate: Date.now() });
     }
 
-    // 予約リスト読み込み
     function loadQueue() {
         db.ref('queue').on('value', snap => {
             const list = document.getElementById('reserve-list'); list.innerHTML = "";
@@ -156,10 +196,10 @@
                 const div = document.createElement('div'); div.className = "list-item";
                 div.innerHTML = `
                     <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
-                    <div style="flex-grow:1; font-size:10px;">${item.videoId}</div>
+                    <div style="flex-grow:1; font-size:11px; color:#eee;">ID: ${item.videoId}</div>
                     <div class="item-btns">
-                        <button class="btn-sm" style="color:#0f0;" onclick="playFromQueue('${c.key}','${item.videoId}')">PLAY</button>
-                        <button class="btn-sm" style="color:#f00;" onclick="removeFromQueue('${c.key}')">DEL</button>
+                        <button class="btn-sm" style="color:#0f0; border-color:#050;" onclick="playFromQueue('${c.key}','${item.videoId}')">PLAY</button>
+                        <button class="btn-sm" style="color:#f00; border-color:#500;" onclick="removeFromQueue('${c.key}')">DEL</button>
                     </div>`;
                 list.appendChild(div);
             });
@@ -169,19 +209,13 @@
     function playFromQueue(k, id) { executeLive(id); removeFromQueue(k); }
     function removeFromQueue(k) { db.ref(`queue/${k}`).remove(); }
 
-    // ギャラリー投稿処理（Base64形式）
     function previewFile() {
         const file = document.getElementById('imageFileInput').files[0];
         const preview = document.getElementById('imagePreview');
         const placeholder = document.getElementById('preview-placeholder');
-        
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                preview.src = reader.result;
-                preview.style.display = "block";
-                placeholder.style.display = "none";
-            }
+            reader.onloadend = () => { preview.src = reader.result; preview.style.display = "block"; placeholder.style.display = "none"; }
             reader.readAsDataURL(file);
         }
     }
@@ -190,40 +224,25 @@
         const fileInput = document.getElementById('imageFileInput');
         const status = document.getElementById('uploadStatus');
         const file = fileInput.files[0];
+        if (!file) return alert("SELECT IMAGE FILE");
+        if (file.size > 900000) return alert("FILE TOO LARGE");
 
-        if (!file) {
-            alert("SELECT IMAGE FILE");
-            return;
-        }
-
-        // Firebase RTDBの制限を考慮し、約800KB以下を推奨
-        if (file.size > 800000) {
-            alert("FILE TOO LARGE (MAX 800KB)");
-            return;
-        }
-
-        status.innerText = ">> UPLOADING...";
+        status.innerText = ">> INITIALIZING UPLOAD...";
         const reader = new FileReader();
         reader.onload = function(e) {
-            db.ref('gallery').push({ 
-                url: e.target.result, 
-                timestamp: firebase.database.ServerValue.TIMESTAMP 
-            }).then(() => { 
-                status.innerText = ">> POST SUCCESS";
+            db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP })
+            .then(() => { 
+                status.innerText = ">> SNAPSHOT DEPLOYED";
                 fileInput.value = ""; 
                 document.getElementById('imagePreview').style.display = "none";
                 document.getElementById('preview-placeholder').style.display = "block";
-                setTimeout(() => { status.innerText = ""; }, 2000);
+                setTimeout(() => { status.innerText = ""; }, 3000);
             });
         };
         reader.readAsDataURL(file);
     }
 
-    // 同期ループ
-    setInterval(() => { 
-        if (player && player.getPlayerState() === 1 && currentVideoId) syncDB(1, player.getCurrentTime()); 
-    }, 1000);
+    setInterval(() => { if (player && player.getPlayerState() === 1 && currentVideoId) syncDB(1, player.getCurrentTime()); }, 1000);
 </script>
-
 </body>
 </html>
