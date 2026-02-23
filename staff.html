@@ -2,28 +2,51 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>CLUB D-0011 - STAFF ONLY</title>
+    <title>CLUB D-0011 - STAFF CONTROL</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; background: #111; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .panel { background: #222; padding: 20px; border-radius: 10px; width: 100%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        input { width: 70%; padding: 12px; border-radius: 5px; border: none; margin-right: 5px; }
-        button { padding: 12px 20px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        #status { margin-top: 15px; color: #0f0; font-size: 14px; text-align: center; }
-        #player { width: 100%; aspect-ratio: 16/9; margin-top: 20px; border-radius: 8px; }
+        :root { --main-red: #ff0000; --panel-bg: #1a1a1a; }
+        body { font-family: sans-serif; background: #0a0a0a; color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        /* 左パネル：操作 */
+        .left-panel { width: 40%; padding: 30px; border-right: 2px solid #222; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+        .input-group { background: var(--panel-bg); padding: 20px; border-radius: 12px; }
+        input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; margin-bottom: 10px; }
+        .btn-main { width: 100%; padding: 15px; background: var(--main-red); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        #player { width: 100%; aspect-ratio: 16/9; border-radius: 8px; background: #000; }
+        #status-msg { font-size: 13px; color: #0f0; min-height: 20px; }
+
+        /* 右パネル：リスト */
+        .right-panel { width: 60%; padding: 30px; overflow-y: auto; }
+        h2 { border-left: 4px solid var(--main-red); padding-left: 15px; font-size: 20px; margin-bottom: 20px; }
+        .history-item { 
+            background: var(--panel-bg); padding: 12px; border-radius: 8px; margin-bottom: 10px; 
+            display: flex; align-items: center; gap: 15px; border: 1px solid #333;
+        }
+        .history-item img { width: 80px; aspect-ratio: 16/9; object-fit: cover; border-radius: 4px; }
+        .history-info { flex-grow: 1; }
+        .history-title { font-size: 13px; font-weight: bold; }
+        .btn-del { padding: 5px 10px; font-size: 11px; background: #300; color: #f66; border: 1px solid #500; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div class="panel">
-    <h3>DJ CONTROL PANEL</h3>
-    <div style="display:flex;">
+<div class="left-panel">
+    <h1 style="color:var(--main-red); margin:0; font-size: 24px;">DJ COMMAND</h1>
+    <div id="status-msg"></div>
+    
+    <div class="input-group">
         <input type="text" id="urlInput" placeholder="YouTube URLを貼り付け">
-        <button onclick="broadcast()">配信開始</button>
+        <button class="btn-main" onclick="broadcast()">最初から配信 ＆ 保存</button>
     </div>
-    <div id="status">待機中...</div>
+
     <div id="player"></div>
+</div>
+
+<div class="right-panel">
+    <h2>BACK NUMBER (重複自動整理)</h2>
+    <div id="history-list"></div>
 </div>
 
 <script>
@@ -43,33 +66,73 @@
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            events: { 'onStateChange': (e) => syncState(e.data) }
+            events: { 'onStateChange': (e) => syncToFirebase(e.data) }
+        });
+        loadHistory();
+    }
+
+    async function broadcast() {
+        const url = document.getElementById('urlInput').value;
+        const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
+        if (!id) return alert("正しいURLを入力してください");
+
+        document.getElementById('status-msg').innerText = "処理中...";
+
+        // 1. 同期データを更新（0秒から再生）
+        player.loadVideoById(id, 0);
+        db.ref('sync').set({ videoId: id, state: 1, time: 0, lastUpdate: Date.now() });
+
+        // 2. 重複チェック ＆ バックナンバー保存
+        const snapshot = await db.ref('backnumbers').once('value');
+        snapshot.forEach(child => {
+            if (child.val().videoId === id) {
+                // すでに同じ曲があれば古い方を削除
+                db.ref(`backnumbers/${child.key}`).remove();
+            }
+        });
+
+        // 新しく追加（これで常に最新が1つだけ残る）
+        await db.ref('backnumbers').push({
+            title: new Date().toLocaleString() + " 配信",
+            videoId: id,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+
+        document.getElementById('status-msg').innerText = "✅ 配信開始：重複を整理しました";
+        document.getElementById('urlInput').value = "";
+    }
+
+    function loadHistory() {
+        db.ref('backnumbers').orderByChild('timestamp').on('value', snap => {
+            const list = document.getElementById('history-list');
+            list.innerHTML = "";
+            let items = [];
+            snap.forEach(c => { items.push({key: c.key, ...c.val()}); });
+            items.reverse().forEach(item => {
+                const div = document.createElement('div');
+                div.className = "history-item";
+                div.innerHTML = `
+                    <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
+                    <div class="history-info">
+                        <div class="history-title">${item.title}</div>
+                    </div>
+                    <button class="btn-del" onclick="deleteItem('${item.key}')">削除</button>
+                `;
+                list.appendChild(div);
+            });
         });
     }
 
-    function broadcast() {
-        const url = document.getElementById('urlInput').value;
-        const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
-        if (id) {
-            player.loadVideoById(id);
-            db.ref('sync').set({ videoId: id, state: 1, time: 0, lastUpdate: Date.now() });
-
-            // バックナンバー自動保存
-            db.ref('backnumbers').push({
-                title: new Date().toLocaleString() + " 配信曲",
-                videoId: id,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
-            document.getElementById('status').innerText = "✅ 放送中 & アーカイブ保存完了";
-        }
+    function deleteItem(key) {
+        if(confirm("削除しますか？")) db.ref(`backnumbers/${key}`).remove();
     }
 
-    function syncState(state) {
+    function syncToFirebase(state) {
         db.ref('sync').update({ state: state, time: player.getCurrentTime(), lastUpdate: Date.now() });
     }
 
     setInterval(() => {
-        if (player && player.getPlayerState() === 1) syncState(1);
+        if (player && player.getPlayerState() === 1) syncToFirebase(1);
     }, 1000);
 </script>
 </body>
