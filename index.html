@@ -9,75 +9,27 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: white; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: #ffffff; }
         header { padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
-        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: white; }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
         .nav-links { display: flex; gap: 20px; }
-        .nav-btn { color: #888; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #222; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; }
+        .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; }
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
         .hero { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
-        #player-wrapper { width: 80%; max-width: 1200px; aspect-ratio: 16/9; position: relative; background: #000; box-shadow: 0 0 100px #000; }
+        #player-wrapper { width: 80%; max-width: 1200px; aspect-ratio: 16/9; position: relative; background: #000; }
         #player { width: 100%; height: 100%; border: 1px solid #111; pointer-events: none; }
         #brand-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; opacity: 1; transition: opacity 0.8s ease; }
-        .brand-logo-big { font-size: clamp(30px, 5vw, 60px); font-weight: 900; letter-spacing: 15px; }
+        .brand-logo-big { font-size: clamp(30px, 5vw, 60px); font-weight: 900; letter-spacing: 15px; color: #ffffff; }
         .brand-logo-big span { color: var(--main-red); text-shadow: var(--neon); }
-        .brand-sub { color: white; font-size: clamp(8px, 1.2vw, 14px); letter-spacing: 8px; margin-top: 15px; text-shadow: 0 0 5px rgba(255,255,255,0.3); }
+        .brand-sub { color: #ffffff; font-size: clamp(8px, 1.2vw, 14px); letter-spacing: 8px; margin-top: 15px; }
     </style>
 </head>
 <body>
 <header><a href="#" class="logo"><span>27</span> CLUB</a><div class="nav-links"><a href="gallery.html" class="nav-btn">GALLERY</a><a href="backnumber.html" class="nav-btn">BACK NUMBERS</a></div></header>
 <section class="hero"><div id="player-wrapper"><div id="player"></div><div id="brand-overlay"><div class="brand-logo-big"><span>27</span> CLUB</div><div class="brand-sub">FF14 LIVE HOUSE</div></div></div></section>
-
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "club-d0011",
-        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    let player, currentVideoId = "", lastSyncedTime = 0;
-
-    function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1 },
-            events: { 'onReady': startSync, 'onStateChange': (e) => {
-                const ov = document.getElementById('brand-overlay');
-                if (e.data === 1) { ov.style.opacity = "0"; setTimeout(() => { if(player.getPlayerState()===1) ov.style.display="none"; }, 800); }
-                else { ov.style.display = "flex"; ov.style.opacity = "1"; }
-            }}
-        });
-    }
-
-    function startSync() {
-        db.ref('sync').on('value', (snap) => {
-            const data = snap.val();
-            if (!data || !player) return;
-
-            if (currentVideoId !== data.videoId) {
-                currentVideoId = data.videoId;
-                player.loadVideoById(data.videoId, data.time);
-                return;
-            }
-
-            // ネットワーク遅延を考慮したミリ秒単位の同期計算
-            const latency = (Date.now() - data.lastUpdate) / 1000;
-            const targetTime = data.time + (data.state === 1 ? latency : 0);
-            
-            if (data.state === 1) {
-                const diff = Math.abs(player.getCurrentTime() - targetTime);
-                if (diff > 1.5) { // 1.5秒以上のズレがある場合のみ補正
-                    player.seekTo(targetTime, true);
-                }
-                if (player.getPlayerState() !== 1) player.playVideo();
-            } else {
-                player.pauseVideo();
-            }
-        });
-    }
-    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
-</script>
-</body>
-</html>
+        projectId: "club-d0
