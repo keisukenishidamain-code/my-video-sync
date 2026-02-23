@@ -2,61 +2,28 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>マスター・プロ管理パネル (曲名＆並べ替え対応)</title>
+    <title>マスター・コントロールパネル</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        :root { --main-red: #ff4444; --bg: #0f0f0f; --panel: #1e1e1e; }
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; }
-        .wrapper { display: flex; gap: 20px; max-width: 1200px; margin: 0 auto; height: 90vh; }
-        .left-panel { flex: 1; background: var(--panel); padding: 25px; border-radius: 15px; border: 1px solid #333; }
-        .right-panel { width: 450px; background: var(--panel); padding: 25px; border-radius: 15px; border: 1px solid #333; display: flex; flex-direction: column; }
-        h3 { border-left: 4px solid var(--main-red); padding-left: 10px; margin-top: 0; font-size: 16px; }
-        .status-box { background: #000; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-        #current-time { font-family: monospace; font-size: 32px; color: var(--main-red); }
-        input { width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #444; background: #2a2a2a; color: white; box-sizing: border-box; margin-bottom: 10px; }
-        .btn-main { background: var(--main-red); color: white; border: none; padding: 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; }
-        .btn-sub { background: #444; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 48%; margin-top:10px; }
-        
-        /* 予約リストのスタイル */
-        #queue-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; border: 1px dashed #444; border-radius: 5px; }
-        .queue-item { 
-            background: #2a2a2a; padding: 12px; border-radius: 5px; margin: 5px; 
-            font-size: 13px; display: flex; align-items: center; 
-            cursor: grab; border-left: 4px solid #666; 
-        }
-        .queue-item:active { cursor: grabbing; }
-        .queue-item .title-text { flex: 1; margin-right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .remove-btn { color: #888; border: none; background: none; font-size: 18px; cursor: pointer; }
+        body { font-family: sans-serif; margin: 0; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; height: 100vh; }
+        .controls { width: 100%; max-width: 800px; padding: 20px; box-sizing: border-box; background: #333; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 5px; border: none; }
+        button { padding: 12px 24px; background: #ff0000; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        #status-bar { width: 100%; background: #222; padding: 5px 20px; font-size: 12px; color: #0f0; }
+        #player { width: 90%; aspect-ratio: 16/9; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div class="wrapper">
-    <div class="left-panel">
-        <h3>CONTROLS</h3>
-        <div class="status-box">
-            <div id="current-title" style="font-size: 14px; color: #ffaaaa; margin-bottom: 5px;">停止中</div>
-            <div id="current-time">00:00</div>
-        </div>
-        <input type="text" id="nextUrl" placeholder="YouTube URLを貼り付け">
-        <button class="btn-main" onclick="addToQueue()">予約リストに追加</button>
-        <div style="display:flex; justify-content:space-between;">
-            <button class="btn-sub" onclick="togglePause()">一時停止/再開</button>
-            <button class="btn-sub" onclick="stopVideo()">完全停止</button>
-        </div>
-    </div>
-
-    <div class="right-panel">
-        <h3>RESERVE LIST (ドラッグで並べ替え)</h3>
-        <ul id="queue-list"></ul>
-        <button class="btn-main" style="margin-top: 15px; background: #28a745;" onclick="playNextFromQueue()">リストの先頭を再生 🚀</button>
-    </div>
+<div class="controls">
+    <input type="text" id="urlInput" placeholder="YouTube URLを貼り付け">
+    <button onclick="loadAndPlay()">配信開始（保存）</button>
 </div>
+<div id="status-bar">同期状態: 接続中...</div>
+<div id="player"></div>
 
 <script>
-    // Firebase設定（既存のものをそのまま使用）
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -65,118 +32,52 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    let player;
 
-    let queue = []; // {id: "xxx", title: "曲名"} の形式で保存
-    let playStartTime = 0;
-    let timerInterval = null;
-    let isPaused = false;
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
 
-    // 並べ替え機能を有効化
-    const el = document.getElementById('queue-list');
-    Sortable.create(el, {
-        animation: 150,
-        onEnd: function() {
-            // ドラッグ終了時に配列の順番を更新
-            const items = el.querySelectorAll('.queue-item');
-            const newQueue = [];
-            items.forEach(item => {
-                newQueue.push({
-                    id: item.dataset.id,
-                    title: item.dataset.title
-                });
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            events: { 'onStateChange': (e) => { updateFirebase(e.data); } }
+        });
+    }
+
+    function loadAndPlay() {
+        const url = document.getElementById('urlInput').value;
+        const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
+        
+        if (id) {
+            // 1. YouTubeを再生
+            player.loadVideoById(id);
+            
+            // 2. リアルタイム同期を更新
+            db.ref('sync').update({ videoId: id, state: 1, time: 0, lastUpdate: Date.now() });
+
+            // 3. バックナンバー（DB）へ自動保存
+            const now = new Date();
+            db.ref('backnumbers').push({
+                title: now.toLocaleString() + " 配信曲",
+                videoId: id,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                document.getElementById('status-bar').innerText = "✅ 配信開始 & バックナンバー登録完了";
+            }).catch(e => {
+                document.getElementById('status-bar').innerText = "❌ 保存失敗: " + e.message;
             });
-            queue = newQueue;
         }
-    });
-
-    function getID(url) {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : url;
     }
 
-    // 曲名を取得してリストに追加
-    async function addToQueue() {
-        const url = document.getElementById('nextUrl').value;
-        const id = getID(url);
-        if (!id) return;
+    function updateFirebase(state) {
+        db.ref('sync').update({ state: state, time: player.getCurrentTime(), lastUpdate: Date.now() });
+    }
 
-        document.getElementById('nextUrl').value = "取得中...";
-        
-        try {
-            // YouTubeの埋め込み用oEmbed APIを使用してタイトルを取得
-            const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`);
-            const data = await response.json();
-            queue.push({ id: id, title: data.title });
-        } catch (e) {
-            queue.push({ id: id, title: "不明なタイトル" });
+    setInterval(() => {
+        if (player && player.getPlayerState && player.getPlayerState() === 1) {
+            updateFirebase(1);
         }
-
-        renderQueue();
-        document.getElementById('nextUrl').value = "";
-    }
-
-    function renderQueue() {
-        const list = document.getElementById('queue-list');
-        list.innerHTML = queue.map((item, index) => `
-            <li class="queue-item" data-id="${item.id}" data-title="${item.title}">
-                <div class="title-text"><strong>${index + 1}.</strong> ${item.title}</div>
-                <button class="remove-btn" onclick="removeAt(${index})">×</button>
-            </li>
-        `).join('');
-    }
-
-    function removeAt(index) {
-        queue.splice(index, 1);
-        renderQueue();
-    }
-
-    function playNextFromQueue() {
-        if (queue.length === 0) return;
-        const track = queue.shift();
-        renderQueue();
-        
-        playStartTime = Date.now();
-        db.ref('sync').set({
-            videoId: track.id,
-            state: 1,
-            serverStartTime: firebase.database.ServerValue.TIMESTAMP,
-            baseTime: 0
-        });
-
-        // 履歴保存（バックナンバー）
-        db.ref('backnumbers').push({
-            title: track.title, // 曲名で保存
-            videoId: track.id,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-
-        document.getElementById('current-title').innerText = "再生中: " + track.title;
-        startTimer();
-    }
-
-    function stopVideo() {
-        db.ref('sync').update({ state: 0, videoId: "" });
-        clearInterval(timerInterval);
-        document.getElementById('current-time').innerText = "00:00";
-        document.getElementById('current-title').innerText = "停止中";
-    }
-
-    function togglePause() {
-        isPaused = !isPaused;
-        db.ref('sync').update({ state: isPaused ? 2 : 1 });
-    }
-
-    function startTimer() {
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            if (isPaused) return;
-            const elapsed = Math.floor((Date.now() - playStartTime) / 1000);
-            const m = Math.floor(elapsed / 60);
-            const s = elapsed % 60;
-            document.getElementById('current-time').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-        }, 1000);
-    }
+    }, 500);
 </script>
 </body>
 </html>
