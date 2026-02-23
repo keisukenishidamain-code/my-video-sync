@@ -19,13 +19,13 @@
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
         .hero { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
-        #player-wrapper { width: 80%; max-width: 1200px; aspect-ratio: 16/9; position: relative; background: #000; }
+        #player-wrapper { width: 85%; max-width: 1200px; aspect-ratio: 16/9; position: relative; background: #000; }
         #player { width: 100%; height: 100%; border: 1px solid #111; pointer-events: none; }
 
         /* 動画の上に表示する情報エリア */
         #track-info {
             position: absolute;
-            top: -60px; /* 動画の少し上 */
+            top: -70px; /* 動画の少し上 */
             left: 0;
             width: 100%;
             display: flex;
@@ -36,8 +36,9 @@
             transition: opacity 1s ease;
         }
         .info-label { font-size: 10px; color: var(--main-red); letter-spacing: 2px; font-weight: 900; }
-        .info-value { font-size: 16px; color: #ffffff; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .info-value { font-size: 18px; color: #ffffff; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
 
+        /* 待機中のロゴオーバーレイ */
         #brand-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; opacity: 1; transition: opacity 0.8s ease; }
         .brand-logo-big { font-size: clamp(30px, 5vw, 60px); font-weight: 900; letter-spacing: 15px; color: #ffffff; }
         .brand-logo-big span { color: var(--main-red); text-shadow: var(--neon); }
@@ -62,7 +63,7 @@
             </div>
             <div>
                 <span class="info-label">REQUESTED BY:</span>
-                <span id="requester-name" class="info-value">UNKNOWN</span>
+                <span id="requester-name" class="info-value">27 CLUB STAFF</span>
             </div>
         </div>
 
@@ -99,7 +100,7 @@
                         info.style.opacity = "1";
                         setTimeout(() => { if(player.getPlayerState()===1) ov.style.display="none"; }, 800);
                         updateTitle();
-                    } else { // 停止・バッファ中
+                    } else { // 停止中
                         ov.style.display = "flex"; 
                         ov.style.opacity = "1";
                         info.style.opacity = "0";
@@ -109,7 +110,6 @@
         });
     }
 
-    // 動画タイトルを取得して表示
     function updateTitle() {
         if (player && player.getVideoData) {
             const data = player.getVideoData();
@@ -118,40 +118,33 @@
     }
 
     function startSync() {
-        // 同期データの監視
         db.ref('sync').on('value', (snap) => {
             const data = snap.val();
             if (!data || !player) return;
 
-            // 新しい曲になった場合
+            // リクエスト名の更新
+            if (data.requester) {
+                document.getElementById('requester-name').innerText = data.requester.toUpperCase();
+            }
+
+            // 新しい曲のロード
             if (currentVideoId !== data.videoId) {
                 currentVideoId = data.videoId;
                 player.loadVideoById(data.videoId, data.time);
-                
-                // スタッフが再生した瞬間のリクエスト名を特定するため、
-                // queueから消える前の名前、もしくは最新の履歴などを参照する仕組みが必要ですが、
-                // ここではシンプルにsyncデータに名前が含まれていると想定するか、
-                // backnumbersの最新から取得する形にします。
-                fetchRequesterName(data.videoId);
                 return;
             }
 
-            // 再生位置同期
+            // 同期ロジック
             const latency = (Date.now() - data.lastUpdate) / 1000;
             const targetTime = data.time + (data.state === 1 ? latency : 0);
             if (data.state === 1) {
                 const diff = Math.abs(player.getCurrentTime() - targetTime);
-                if (diff > 1.5) player.seekTo(targetTime, true);
+                if (diff > 2) player.seekTo(targetTime, true);
                 if (player.getPlayerState() !== 1) player.playVideo();
-            } else { player.pauseVideo(); }
+            } else {
+                player.pauseVideo();
+            }
         });
-    }
-
-    // バックナンバー（履歴）から最後にこの曲をリクエストした人の名前を探す
-    function fetchRequesterName(vid) {
-        // スタッフ側で再生した際に名前を特定する補助ロジック
-        // ※スタッフページの executeLive で requester も sync に送るようにするとより確実です
-        document.getElementById('requester-name').innerText = "27 CLUB STAFF"; // デフォルト表示
     }
 
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
