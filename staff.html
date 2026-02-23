@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>27 Club - Staff Cockpit</title>
@@ -9,90 +9,95 @@
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; --terminal-green: #0f0; --bg-dark: #000; --panel-bg: #0a0a0a; }
         
-        /* 中央寄せの基盤 */
         body { 
             font-family: 'Orbitron', sans-serif; 
             background: var(--bg-dark); 
             color: white; 
             margin: 0; 
             display: flex; 
-            justify-content: center; /* 左右中央 */
+            justify-content: center; 
             height: 100vh; 
             overflow: hidden; 
         }
 
-        /* メインコンテナ：最大幅を制限して中央に配置 */
+        /* 1枚目の画像のような凝縮された中央レイアウト */
         .master-container {
             width: 100%;
-            max-width: 1200px; /* ここで横幅を絞る */
+            max-width: 1100px; 
             display: flex;
             height: 100%;
-            border-left: 1px solid #111;
-            border-right: 1px solid #111;
             background: var(--panel-bg);
+            border-left: 1px solid #1a1a1a;
+            border-right: 1px solid #1a1a1a;
         }
 
-        /* 左カラム：操作系 */
         .left { 
             width: 45%; 
-            padding: 40px; 
+            padding: 30px; 
             border-right: 1px solid #222; 
             overflow-y: auto; 
-            background: linear-gradient(180deg, #0a0a0a 0%, #000 100%);
+            display: flex;
+            flex-direction: column;
         }
 
-        /* 右カラム：予約リスト */
         .right { 
             width: 55%; 
-            padding: 40px; 
+            padding: 30px; 
             background: #050505; 
-            display: flex; 
-            flex-direction: column; 
             overflow-y: auto; 
         }
 
-        .logo { font-size: 26px; font-weight: 900; margin-bottom: 30px; letter-spacing: 5px; }
+        .logo { font-size: 22px; font-weight: 900; margin-bottom: 20px; letter-spacing: 5px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        .section-label { font-size: 10px; color: #444; letter-spacing: 2px; margin: 25px 0 12px; border-bottom: 1px solid #222; padding-bottom: 5px; text-transform: uppercase; }
+        .section-label { font-size: 10px; color: #444; letter-spacing: 2px; margin: 20px 0 10px; border-bottom: 1px solid #222; padding-bottom: 5px; text-transform: uppercase; }
 
-        /* 入力エリア */
-        .input-area { background: #151515; padding: 20px; border-radius: 8px; border: 1px solid #222; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: var(--terminal-green); font-family: monospace; margin-bottom: 12px; box-sizing: border-box; font-size: 12px; }
+        /* 入力エリアの調整（2枚目のように伸びすぎないよう制御） */
+        .input-area { background: #151515; padding: 15px; border-radius: 8px; border: 1px solid #222; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
+        input[type="text"] { width: 100%; padding: 10px; background: #000; border: 1px solid #333; color: var(--terminal-green); font-family: monospace; box-sizing: border-box; }
         
-        .btn-main { width: 100%; padding: 14px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
-        .btn-live { background: var(--main-red); color: white; margin-bottom: 8px; }
-        .btn-live:hover { box-shadow: var(--neon); opacity: 0.9; }
-        .btn-queue { background: #222; color: #888; }
-        .btn-queue:hover { background: #333; color: #fff; }
+        .btn-main { width: 100%; padding: 12px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+        .btn-live { background: var(--main-red); color: white; }
+        .btn-live:hover { box-shadow: var(--neon); }
+        .btn-queue { background: #222; color: #777; }
 
-        /* ギャラリーパネル統合 */
-        .gallery-panel { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        #preview-container { width: 100%; height: 160px; border: 1px solid #222; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; }
+        /* GALLERY MANAGEMENT デザイン */
+        .gallery-panel { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        #preview-container { width: 100%; height: 140px; border: 1px solid #222; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; }
         #imagePreview { max-width: 100%; max-height: 100%; display: none; }
-        .gallery-controls { display: flex; width: 100%; gap: 12px; align-items: center; }
-        #imageFileInput { margin-bottom: 0; flex: 1; font-size: 10px; border: none; padding: 5px; }
-        .btn-ss { background: #333; color: #fff; border: 1px solid #444; }
-        .btn-ss:hover { background: #fff; color: #000; }
-
-        /* 再生コントロール */
-        .playback-ctrl { margin-top: 25px; display: flex; gap: 15px; justify-content: center; background: #000; padding: 20px; border-radius: 50px; border: 1px solid #1a1a1a; }
-        .ctrl-icon { width: 55px; height: 55px; border-radius: 50%; background: #151515; color: white; border: 1px solid #333; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .ctrl-icon:hover { background: var(--main-red); border-color: var(--main-red); box-shadow: var(--neon); }
-
-        #player { width: 100%; aspect-ratio: 16/9; margin-top: 25px; border-radius: 8px; border: 1px solid #222; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-
-        /* 予約リスト */
-        .list-item { background: #0d0d0d; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; gap: 20px; border: 1px solid #1a1a1a; border-left: 4px solid #333; transition: 0.2s; }
-        .list-item:hover { border-left-color: var(--main-red); background: #111; }
-        .list-item img { width: 100px; border-radius: 4px; }
-        .item-btns { display: flex; gap: 10px; }
-        .btn-sm { padding: 8px 12px; font-size: 10px; border-radius: 4px; border: 1px solid #333; background: #1a1a1a; color: #fff; cursor: pointer; font-family: 'Orbitron'; }
         
-        /* スクロールバーのカスタマイズ */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--main-red); }
+        .gallery-controls { display: flex; width: 100%; gap: 10px; align-items: center; }
+        
+        /* ブラウザ標準の「ファイルを選択」を隠す */
+        #imageFileInput { display: none; }
+        
+        /* 英語表記のカスタムボタン（CHOOSE FILE） */
+        .file-custom-label {
+            flex: 1;
+            padding: 10px;
+            background: #111;
+            border: 1px solid #333;
+            color: #555;
+            font-size: 9px;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 4px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-ss { background: #333; color: #fff; border: 1px solid #444; width: auto; padding: 10px 15px; white-space: nowrap; }
+
+        /* YouTube Controls */
+        .playback-ctrl { margin: 20px 0; display: flex; gap: 12px; justify-content: center; background: #000; padding: 15px; border-radius: 50px; border: 1px solid #1a1a1a; }
+        .ctrl-icon { width: 45px; height: 45px; border-radius: 50%; background: #151515; color: white; border: 1px solid #222; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .ctrl-icon:hover { background: var(--main-red); box-shadow: var(--neon); }
+
+        #player { width: 100%; aspect-ratio: 16/9; margin-top: 10px; border-radius: 4px; border: 1px solid #222; }
+
+        .list-item { background: #0d0d0d; padding: 12px; margin-bottom: 8px; border-radius: 6px; display: flex; align-items: center; gap: 15px; border-left: 3px solid #333; }
+        .list-item img { width: 80px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -119,14 +124,16 @@
         <div class="section-label">GALLERY MANAGEMENT</div>
         <div class="input-area gallery-panel">
             <div id="preview-container">
-                <span id="preview-placeholder" style="font-size: 9px; color:#333;">AWAITING IMAGE SELECTION...</span>
+                <span id="preview-placeholder" style="font-size: 8px; color:#333;">IMAGE PREVIEW READY</span>
                 <img id="imagePreview">
             </div>
             <div class="gallery-controls">
+                <label for="imageFileInput" class="file-custom-label" id="fileLabel">NO FILE SELECTED</label>
                 <input type="file" id="imageFileInput" accept="image/*" onchange="previewFile()">
-                <button class="btn-main btn-ss" onclick="postSS()" style="width: auto; padding: 12px 20px; white-space: nowrap;">POST SNAPSHOT</button>
+                
+                <button class="btn-main btn-ss" onclick="postSS()">POST SNAPSHOT</button>
             </div>
-            <div id="uploadStatus" style="font-size: 9px; color: var(--terminal-green); height: 10px; font-family: monospace;"></div>
+            <div id="uploadStatus" style="font-size: 9px; color: var(--terminal-green); height: 10px; font-family: monospace; text-align: center;"></div>
         </div>
     </div>
 
@@ -137,7 +144,6 @@
 </div>
 
 <script>
-    // Firebase設定
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -148,15 +154,12 @@
     const db = firebase.database();
     let player, currentVideoId = "";
 
-    // YouTube API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { 
-            events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } 
-        });
+        player = new YT.Player('player', { events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } });
         loadQueue();
     }
 
@@ -194,26 +197,21 @@
             snap.forEach(c => {
                 const item = c.val();
                 const div = document.createElement('div'); div.className = "list-item";
-                div.innerHTML = `
-                    <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
-                    <div style="flex-grow:1; font-size:11px; color:#eee;">ID: ${item.videoId}</div>
-                    <div class="item-btns">
-                        <button class="btn-sm" style="color:#0f0; border-color:#050;" onclick="playFromQueue('${c.key}','${item.videoId}')">PLAY</button>
-                        <button class="btn-sm" style="color:#f00; border-color:#500;" onclick="removeFromQueue('${c.key}')">DEL</button>
-                    </div>`;
+                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div style="flex-grow:1; font-size:9px;">${item.videoId}</div><button class="btn-sm" style="color:#0f0;" onclick="playFromQueue('${c.key}','${item.videoId}')">PLAY</button>`;
                 list.appendChild(div);
             });
         });
     }
 
-    function playFromQueue(k, id) { executeLive(id); removeFromQueue(k); }
-    function removeFromQueue(k) { db.ref(`queue/${k}`).remove(); }
+    function playFromQueue(k, id) { executeLive(id); db.ref(`queue/${k}`).remove(); }
 
     function previewFile() {
         const file = document.getElementById('imageFileInput').files[0];
         const preview = document.getElementById('imagePreview');
         const placeholder = document.getElementById('preview-placeholder');
+        const label = document.getElementById('fileLabel');
         if (file) {
+            label.innerText = file.name.toUpperCase();
             const reader = new FileReader();
             reader.onloadend = () => { preview.src = reader.result; preview.style.display = "block"; placeholder.style.display = "none"; }
             reader.readAsDataURL(file);
@@ -222,21 +220,16 @@
 
     function postSS() {
         const fileInput = document.getElementById('imageFileInput');
-        const status = document.getElementById('uploadStatus');
         const file = fileInput.files[0];
-        if (!file) return alert("SELECT IMAGE FILE");
-        if (file.size > 900000) return alert("FILE TOO LARGE");
-
-        status.innerText = ">> INITIALIZING UPLOAD...";
+        if (!file) return;
         const reader = new FileReader();
         reader.onload = function(e) {
-            db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP })
-            .then(() => { 
-                status.innerText = ">> SNAPSHOT DEPLOYED";
-                fileInput.value = ""; 
+            db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => {
+                document.getElementById('uploadStatus').innerText = ">> UPLOAD SUCCESS";
+                fileInput.value = ""; document.getElementById('fileLabel').innerText = "NO FILE SELECTED";
                 document.getElementById('imagePreview').style.display = "none";
                 document.getElementById('preview-placeholder').style.display = "block";
-                setTimeout(() => { status.innerText = ""; }, 3000);
+                setTimeout(()=> document.getElementById('uploadStatus').innerText = "", 2000);
             });
         };
         reader.readAsDataURL(file);
