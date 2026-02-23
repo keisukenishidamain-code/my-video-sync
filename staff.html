@@ -8,62 +8,73 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --red: #ff0033; --border: #333; }
-        body { margin: 0; background: #000; color: #fff; font-family: 'Orbitron', sans-serif; display: flex; height: 100vh; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100vh; background: #000; color: #fff; font-family: 'Orbitron', sans-serif; overflow: hidden; }
         
-        /* 左：操作パネル */
-        .left { width: 380px; padding: 20px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 20px; }
-        .logo { font-size: 20px; font-weight: 900; letter-spacing: 3px; }
+        .container { display: flex; width: 100vw; height: 100vh; }
+
+        /* 左パネル：操作・動画・画像投稿（幅40%） */
+        .left-side { width: 400px; padding: 25px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 20px; background: #0a0a0a; box-sizing: border-box; overflow-y: auto; }
+        .logo { font-size: 22px; font-weight: 900; letter-spacing: 3px; }
         .logo span { color: var(--red); }
-        .panel { background: #111; border: 1px solid var(--border); padding: 15px; border-radius: 4px; }
-        .label { font-size: 10px; color: #888; margin-bottom: 8px; letter-spacing: 1px; }
         
+        #player-wrapper { width: 100%; aspect-ratio: 16/9; background: #000; border: 1px solid var(--border); }
+        #player { width: 100%; height: 100%; }
+
+        .panel { background: #111; border: 1px solid var(--border); padding: 15px; border-radius: 4px; }
+        .label { font-size: 10px; color: #888; margin-bottom: 10px; letter-spacing: 1px; }
         input { width: 100%; padding: 12px; background: #000; border: 1px solid #444; color: #fff; font-family: 'Orbitron'; font-size: 11px; margin-bottom: 10px; box-sizing: border-box; outline: none; }
         input:focus { border-color: var(--red); }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; cursor: pointer; text-transform: uppercase; }
+        
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 11px; }
         .btn-red { background: var(--red); color: #fff; }
-        .btn-gray { background: #333; color: #fff; height: 40px; font-size: 10px; margin-top: 5px; }
+        .btn-gray { background: #333; color: #fff; margin-top: 5px; }
 
-        /* 右：予約リスト */
-        .right { flex-grow: 1; padding: 20px; background: #050505; display: flex; flex-direction: column; }
-        .section-title { font-size: 10px; color: var(--red); margin-bottom: 15px; letter-spacing: 2px; font-weight: 900; }
+        /* 右パネル：予約リスト（残りすべて） */
+        .right-side { flex-grow: 1; padding: 25px; background: #000; display: flex; flex-direction: column; box-sizing: border-box; }
         #reserve-list { flex-grow: 1; overflow-y: auto; }
         
-        .list-item { background: #111; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; align-items: center; gap: 15px; border-left: 4px solid var(--red); }
-        .list-item img { width: 90px; height: 50px; object-fit: cover; border-radius: 2px; }
+        .list-item { background: #111; padding: 15px; margin-bottom: 12px; border-radius: 4px; display: flex; align-items: center; gap: 20px; border-left: 5px solid var(--red); }
+        .list-item img { width: 100px; height: 56px; object-fit: cover; border-radius: 2px; }
         .list-info { flex-grow: 1; }
-        .list-info b { color: #fff; font-size: 13px; display: block; margin-bottom: 2px; }
-        .list-info span { color: #666; font-size: 10px; }
-        .list-actions { display: flex; gap: 5px; }
-        .mini-btn { padding: 8px 12px; font-size: 10px; cursor: pointer; background: #222; border: 1px solid #444; color: #fff; border-radius: 3px; font-family: 'Orbitron'; }
-        .mini-btn:hover { background: #333; }
+        .list-info b { color: #fff; font-size: 14px; display: block; margin-bottom: 5px; }
+        
+        .list-actions { display: flex; gap: 10px; }
+        .play-btn { padding: 10px 20px; font-size: 11px; cursor: pointer; background: #222; border: 1px solid var(--red); color: var(--red); font-family: 'Orbitron'; font-weight: 900; border-radius: 3px; }
+        .del-btn { padding: 10px; font-size: 11px; cursor: pointer; background: #222; border: 1px solid #444; color: #666; border-radius: 3px; }
     </style>
 </head>
 <body>
 
-<div class="left">
-    <div class="logo"><span>27</span> STAFF</div>
-    
-    <div class="panel">
-        <div class="label">ADD REQUEST</div>
-        <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
-        <input type="text" id="nameInput" placeholder="REQUESTER NAME...">
-        <button class="btn btn-red" onclick="addToQueue()">ADD TO QUEUE</button>
+<div class="container">
+    <div class="left-side">
+        <div class="logo"><span>27</span> STAFF</div>
+        
+        <div id="player-wrapper">
+            <div id="player"></div>
+        </div>
+
+        <div class="panel">
+            <div class="label">ADD REQUEST</div>
+            <input type="text" id="urlInput" placeholder="YOUTUBE URL">
+            <input type="text" id="nameInput" placeholder="REQUESTER NAME">
+            <button class="btn btn-red" onclick="addToQueue()">SUBMIT REQUEST</button>
+        </div>
+
+        <div class="panel">
+            <div class="label">GALLERY POST</div>
+            <input type="file" id="fileInput" style="display:none" onchange="uploadImage(this)">
+            <button class="btn btn-gray" onclick="document.getElementById('fileInput').click()">SELECT & UPLOAD IMAGE</button>
+        </div>
     </div>
 
-    <div class="panel">
-        <div class="label">GALLERY MANAGEMENT</div>
-        <input type="file" id="fileInput" style="display:none" onchange="uploadImage(this)">
-        <button class="btn btn-gray" onclick="document.getElementById('fileInput').click()">SELECT IMAGE</button>
-        <div id="upStatus" style="font-size:9px; color:var(--red); text-align:center; margin-top:5px;"></div>
+    <div class="right-side">
+        <div class="label" style="color:var(--red); font-weight:900; margin-bottom:15px;">RESERVATION QUEUE</div>
+        <div id="reserve-list"></div>
     </div>
-</div>
-
-<div class="right">
-    <div class="section-title">RESERVATION QUEUE</div>
-    <div id="reserve-list"></div>
 </div>
 
 <script>
+    // Firebase設定
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -72,71 +83,75 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    let player, currentVid = "";
 
-    // 予約追加
-    function addToQueue() {
-        const urlInput = document.getElementById('urlInput');
-        const nameInput = document.getElementById('nameInput');
-        const url = urlInput.value;
-        const name = nameInput.value || "GUEST";
-        const vid = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
-
-        if (vid.length < 5) return alert("URLが正しくありません");
-
-        db.ref('queue').push({
-            vid: vid,
-            name: name,
-            time: Date.now()
-        }).then(() => {
-            urlInput.value = "";
-            nameInput.value = "";
+    // YouTubeプレイヤーの準備
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            events: { 
+                'onStateChange': (e) => {
+                    if (currentVid) {
+                        db.ref('sync').update({ 
+                            state: e.data, 
+                            time: player.getCurrentTime(), 
+                            last: Date.now() 
+                        });
+                    }
+                }
+            }
         });
     }
 
-    // リスト表示
+    // 予約追加
+    function addToQueue() {
+        const u = document.getElementById('urlInput'), n = document.getElementById('nameInput');
+        const vid = u.value.includes('v=') ? u.value.split('v=')[1].split('&')[0] : u.value.split('/').pop();
+        if (vid.length < 5) return alert("URL Error");
+        db.ref('queue').push({ vid: vid, name: n.value || "GUEST", time: Date.now() });
+        u.value = ""; n.value = "";
+    }
+
+    // 予約リストの同期
     db.ref('queue').on('value', snap => {
         const list = document.getElementById('reserve-list');
         list.innerHTML = "";
         snap.forEach(child => {
-            const data = child.val();
-            const vid = data.vid || data.videoId;
-            const name = data.name || data.requester || "GUEST";
-
+            const d = child.val();
             const div = document.createElement('div');
             div.className = 'list-item';
             div.innerHTML = `
-                <img src="https://img.youtube.com/vi/${vid}/mqdefault.jpg">
+                <img src="https://img.youtube.com/vi/${d.vid}/mqdefault.jpg">
                 <div class="list-info">
-                    <b>${name.toUpperCase()}</b>
-                    <span>${vid}</span>
+                    <b>${d.name.toUpperCase()}</b>
                 </div>
                 <div class="list-actions">
-                    <button class="mini-btn" style="color:var(--red)" onclick="playNow('${child.key}','${vid}','${name}')">PLAY</button>
-                    <button class="mini-btn" onclick="db.ref('queue/${child.key}').remove()">✕</button>
-                </div>
-            `;
+                    <button class="play-btn" onclick="playNow('${child.key}','${d.vid}','${d.name}')">PLAY NOW</button>
+                    <button class="del-btn" onclick="db.ref('queue/${child.key}').remove()">✕</button>
+                </div>`;
             list.appendChild(div);
         });
     });
 
-    // 再生指示
+    // 再生実行
     function playNow(key, vid, name) {
+        currentVid = vid;
+        player.loadVideoById(vid, 0);
         db.ref('sync').set({ vid: vid, name: name, state: 1, time: 0, last: Date.now() });
-        db.ref('backnumbers').push({ vid: vid, name: name, time: Date.now() });
         db.ref('queue').child(key).remove();
     }
 
-    // 画像アップロード
+    // 画像投稿
     function uploadImage(input) {
         const file = input.files[0]; if(!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
             db.ref('gallery').push({ url: e.target.result, time: Date.now() });
-            document.getElementById('upStatus').innerText = "POST SUCCESS";
-            setTimeout(() => { document.getElementById('upStatus').innerText = ""; }, 2000);
+            alert("Image Posted to Gallery");
         };
         reader.readAsDataURL(file);
     }
+
+    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
 </script>
 </body>
 </html>
