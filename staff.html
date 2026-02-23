@@ -22,7 +22,7 @@
         .master-container { 
             display: flex; 
             width: 100%; 
-            max-width: 1300px; /* 三段構成のため少し横幅を広げました */
+            max-width: 1300px;
             height: 95vh; 
             background: #0a0a0a; 
             border: 1px solid var(--border-color); 
@@ -30,18 +30,15 @@
             overflow: hidden;
         }
         
-        /* 左：操作系 */
         .left { 
             width: 380px; 
             padding: 15px; 
             border-right: 1px solid var(--border-color); 
             display: flex; flex-direction: column; 
             overflow-y: auto; 
-            overflow-x: hidden;
             box-sizing: border-box;
         }
         
-        /* 中央・右：共通スタイル */
         .list-section { 
             flex: 1; 
             padding: 15px; 
@@ -55,8 +52,12 @@
         
         .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 10px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        .section-label { font-size: 9px; color: #fff; letter-spacing: 1px; margin: 5px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 3px; text-transform: uppercase; }
         
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; padding-bottom: 3px; }
+        .section-label { font-size: 9px; color: #fff; letter-spacing: 1px; text-transform: uppercase; margin: 0; border: none; }
+        .clear-link { font-size: 8px; color: #666; cursor: pointer; text-decoration: underline; }
+        .clear-link:hover { color: var(--main-red); }
+
         .input-group { background: #111; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
         input[type="text"] { width: 100%; padding: 10px; background: #000; border: 1px solid #555; color: #fff; font-family: 'Orbitron'; font-size: 11px; box-sizing: border-box; outline: none; }
         
@@ -72,19 +73,27 @@
         #imageFileInput { display: none; }
         .file-label { width: 100%; height: 42px; background: #1a1a1a; border: 1px solid #555; color: #fff; font-family: 'Orbitron'; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
         
-        /* リスト表示 */
         .scroll-list { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
         .list-item { 
             background: #0d0d0d; padding: 8px; margin-bottom: 5px; border-radius: 4px; 
             display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red);
             width: 100%; box-sizing: border-box;
         }
-        .history-item { border-left: 3px solid #666; } /* 履歴は色を変える */
+        .history-item { border-left: 3px solid #444; }
         
         .list-item img { width: 60px; height: 35px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
-        .list-info { flex-grow: 1; min-width: 0; }
+        .list-info { flex-grow: 1; min-width: 0; position: relative; }
         .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
+        /* タイトル横の削除ボタン */
+        .mini-del-btn { 
+            position: absolute; right: 0; top: 0; 
+            background: none; border: none; color: #444; 
+            font-size: 12px; cursor: pointer; padding: 0 5px;
+            line-height: 1; transition: 0.2s;
+        }
+        .mini-del-btn:hover { color: var(--main-red); }
+
         .status-msg { font-size: 9px; color: #fff; height: 12px; text-align: center; font-weight: bold; margin-top: 2px; }
     </style>
 </head>
@@ -110,16 +119,20 @@
             <input type="file" id="imageFileInput" accept="image/*" onchange="autoUpload(this)">
             <div id="uploadStatus" class="status-msg"></div>
         </div>
-        <button class="btn-ui btn-gray" style="height:30px; font-size:8px; color:#f03!important;" onclick="clearBackNumbers()">CLEAR ALL BACK NUMBERS</button>
     </div>
 
     <div class="list-section">
-        <div class="section-label">RESERVATION QUEUE</div>
+        <div class="section-header">
+            <div class="section-label">RESERVATION QUEUE</div>
+        </div>
         <div id="reserve-list" class="scroll-list"></div>
     </div>
 
     <div class="list-section">
-        <div class="section-label">EDIT BACK NUMBERS (HISTORY)</div>
+        <div class="section-header">
+            <div class="section-label">BACK NUMBERS HISTORY</div>
+            <div class="clear-link" onclick="clearBackNumbers()">ALL CLEAR</div>
+        </div>
         <div id="history-edit-list" class="scroll-list"></div>
     </div>
 </div>
@@ -141,7 +154,7 @@
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', { height: '100%', width: '100%', events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } });
         loadQueue();
-        loadHistoryEditor(); // 履歴編集の読み込み開始
+        loadHistoryEditor();
     }
 
     function addToQueue() {
@@ -171,10 +184,10 @@
                         <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
                         <div class="list-info">
                             <span style="font-size:8px; color:var(--main-red); font-weight:900;">${item.requester.toUpperCase()}</span>
-                            <span style="font-size:9px; color:#fff;">${item.videoId}</span>
+                            <span style="font-size:10px; color:#fff;">${item.videoId}</span>
+                            <button class="mini-del-btn" onclick="db.ref('queue/${item.key}').remove()">✕</button>
                         </div>
                         <button class="btn-ui btn-gray" style="width:50px; height:32px; font-size:8px; flex-shrink:0;" onclick="playSelected('${item.key}','${item.videoId}','${item.requester}')">PLAY</button>
-                        <button class="btn-ui btn-gray" style="width:35px; height:32px; font-size:8px; color:#f03 !important; margin-left:3px; flex-shrink:0;" onclick="db.ref('queue/${item.key}').remove()">✕</button>
                     `;
                     list.appendChild(div);
                 });
@@ -186,7 +199,6 @@
         Sortable.create(document.getElementById('reserve-list'), { animation: 150 });
     }
 
-    // --- バックナンバー編集用の読み込み関数 ---
     function loadHistoryEditor() {
         db.ref('backnumbers').on('value', snap => {
             const histList = document.getElementById('history-edit-list');
@@ -195,7 +207,7 @@
             snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
             
             if (items.length > 0) {
-                items.reverse().forEach(item => { // 新しい順
+                items.reverse().forEach(item => {
                     const div = document.createElement('div');
                     div.className = "list-item history-item";
                     div.innerHTML = `
@@ -203,8 +215,8 @@
                         <div class="list-info">
                             <span style="font-size:8px; color:#999; font-weight:900;">${item.requester.toUpperCase()}</span>
                             <span style="font-size:9px; color:#fff;">${item.videoId}</span>
+                            <button class="mini-del-btn" onclick="deleteHistoryItem('${item.key}')">✕</button>
                         </div>
-                        <button class="btn-ui btn-gray" style="width:35px; height:32px; font-size:8px; color:#f03 !important; flex-shrink:0;" onclick="deleteHistoryItem('${item.key}')">✕</button>
                     `;
                     histList.appendChild(div);
                 });
@@ -215,7 +227,7 @@
     }
 
     function deleteHistoryItem(key) {
-        if(confirm("この履歴を削除しますか？\n（公開バックナンバーからも消えます）")) {
+        if(confirm("この履歴を削除しますか？")) {
             db.ref(`backnumbers/${key}`).remove();
         }
     }
@@ -226,7 +238,6 @@
         }
     }
 
-    function playNextInQueue() { if (firstQueueId) playSelected(firstQueueKey, firstQueueId, firstQueueName); }
     function playSelected(key, vid, name) {
         currentId = vid; currentRequester = name;
         player.loadVideoById(vid, 0);
@@ -234,12 +245,16 @@
         db.ref('backnumbers').push({ videoId: vid, requester: name, timestamp: firebase.database.ServerValue.TIMESTAMP });
         db.ref(`queue/${key}`).remove();
     }
+    
     function syncDB(state, time) {
         if (!currentId) return;
         db.ref('sync').set({ videoId: currentId, state: state, time: time, requester: currentRequester, lastUpdate: Date.now() });
     }
+    
     function control(cmd) { if (!player || !currentId) return; if (cmd === 'restart') player.seekTo(0); cmd === 'pause' ? player.pauseVideo() : player.playVideo(); setTimeout(() => syncDB(player.getPlayerState(), player.getCurrentTime()), 200); }
+    
     function autoUpload(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => { input.value = ""; }); }; reader.readAsDataURL(file); }
+    
     setInterval(() => { if (player && player.getPlayerState() === 1) syncDB(1, player.getCurrentTime()); }, 3000);
 </script>
 </body>
