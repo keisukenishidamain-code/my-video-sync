@@ -2,68 +2,28 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>27 Club - Staff Cockpit (Fixed)</title>
+    <title>27 Club - Staff Cockpit (Grouped History)</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 10px #ff0033; --border-color: #444; }
+        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background: #000; color: #fff; font-family: 'Orbitron', sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .master-container { display: flex; width: 100%; max-width: 1300px; height: 95vh; background: #0a0a0a; border: 1px solid var(--border-color); box-sizing: border-box; overflow: hidden; }
         
-        body, html { 
-            margin: 0; padding: 0; 
-            width: 100vw; height: 100vh; 
-            background: #000; color: #fff; 
-            font-family: 'Orbitron', sans-serif; 
-            overflow: hidden; 
-            display: flex; justify-content: center; align-items: center; 
-        }
-        
-        .master-container { 
-            display: flex; 
-            width: 100%; 
-            max-width: 1300px;
-            height: 95vh; 
-            background: #0a0a0a; 
-            border: 1px solid var(--border-color); 
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-        
-        /* 左：操作系 */
-        .left { 
-            width: 380px; 
-            padding: 15px; 
-            border-right: 1px solid var(--border-color); 
-            display: flex; flex-direction: column; 
-            overflow-y: auto; 
-            box-sizing: border-box;
-        }
-        
-        /* 中央・右：リストセクション */
-        .list-section { 
-            flex: 1; 
-            padding: 15px; 
-            background: #050505; 
-            display: flex; flex-direction: column; 
-            overflow: hidden;
-            box-sizing: border-box;
-            border-right: 1px solid var(--border-color);
-        }
+        .left { width: 380px; padding: 15px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; overflow-y: auto; box-sizing: border-box; }
+        .list-section { flex: 1; padding: 15px; background: #050505; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; border-right: 1px solid var(--border-color); }
         .list-section:last-child { border-right: none; }
         
         .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 10px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
         
-        /* セクションヘッダー */
         .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; padding-bottom: 3px; }
         .section-label { font-size: 9px; color: #fff; letter-spacing: 1px; text-transform: uppercase; margin: 0; }
         
-        /* ALL CLEAR リンク */
-        .clear-link { 
-            font-size: 8px; color: #ffffff; cursor: pointer; text-decoration: underline; 
-            letter-spacing: 1px; opacity: 0.8; transition: 0.3s; 
-        }
+        /* ALL CLEAR - 白文字に変更 */
+        .clear-link { font-size: 8px; color: #ffffff; cursor: pointer; text-decoration: underline; letter-spacing: 1px; opacity: 0.8; transition: 0.3s; }
         .clear-link:hover { color: var(--main-red); opacity: 1; text-shadow: var(--neon); }
 
         .input-group { background: #111; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
@@ -74,7 +34,6 @@
         .btn-gray { background: #1a1a1a; border: 1px solid #555; }
         
         #player { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border-color); background:#000; margin-bottom: 10px; }
-        
         .playback-ctrl { margin-bottom: 10px; display: flex; gap: 10px; justify-content: center; background: #000; padding: 8px; border-radius: 30px; border: 1px solid var(--border-color); }
         .ctrl-icon { width: 40px; height: 40px; border-radius: 50%; background: #111; color: #fff; border: 1px solid #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         
@@ -82,25 +41,18 @@
         .file-label { width: 100%; height: 42px; background: #1a1a1a; border: 1px solid #555; color: #fff; font-family: 'Orbitron'; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
         
         .scroll-list { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
-        .list-item { 
-            background: #0d0d0d; padding: 8px; margin-bottom: 5px; border-radius: 4px; 
-            display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red);
-            width: 100%; box-sizing: border-box;
-        }
+        .list-item { background: #0d0d0d; padding: 8px; margin-bottom: 5px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red); width: 100%; box-sizing: border-box; }
         .history-item { border-left: 3px solid #444; }
         
+        /* 履歴の日付区切りスタイル */
+        .staff-date-divider { font-size: 8px; color: #666; padding: 8px 5px 3px; border-bottom: 1px solid #222; margin-bottom: 8px; letter-spacing: 1px; }
+
         .list-item img { width: 60px; height: 35px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
         .list-info { flex-grow: 1; min-width: 0; position: relative; }
         .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
-        .mini-del-btn { 
-            position: absolute; right: 0; top: 0; 
-            background: none; border: none; color: #888; 
-            font-size: 12px; cursor: pointer; padding: 0 5px;
-            line-height: 1; transition: 0.2s;
-        }
+        .mini-del-btn { position: absolute; right: 0; top: 0; background: none; border: none; color: #888; font-size: 12px; cursor: pointer; padding: 0 5px; line-height: 1; }
         .mini-del-btn:hover { color: var(--main-red); }
-
         .status-msg { font-size: 9px; color: #fff; height: 12px; text-align: center; font-weight: bold; margin-top: 2px; }
     </style>
 </head>
@@ -129,15 +81,13 @@
     </div>
 
     <div class="list-section">
-        <div class="section-header">
-            <div class="section-label">RESERVATION QUEUE</div>
-        </div>
+        <div class="section-header"><div class="section-label">RESERVATION QUEUE</div></div>
         <div id="reserve-list" class="scroll-list"></div>
     </div>
 
     <div class="list-section">
         <div class="section-header">
-            <div class="section-label">BACK NUMBERS HISTORY</div>
+            <div class="section-label">HISTORY</div>
             <div class="clear-link" onclick="clearBackNumbers()">ALL CLEAR</div>
         </div>
         <div id="history-edit-list" class="scroll-list"></div>
@@ -155,14 +105,13 @@
     const db = firebase.database();
     let player, currentId = "", currentRequester = "27 CLUB", firstQueueKey = "", firstQueueId = "", firstQueueName = "";
 
-    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
-
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', { height: '100%', width: '100%', events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } });
         loadQueue();
         loadHistoryEditor();
     }
+    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
 
     function addToQueue() {
         const url = document.getElementById('urlInput').value;
@@ -179,29 +128,15 @@
             list.innerHTML = "";
             let items = [];
             snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
-
             if (items.length > 0) {
-                firstQueueKey = items[0].key;
-                firstQueueId = items[0].videoId;
-                firstQueueName = items[0].requester;
+                firstQueueKey = items[0].key; firstQueueId = items[0].videoId; firstQueueName = items[0].requester;
                 items.forEach(item => {
                     const div = document.createElement('div');
                     div.className = "list-item";
-                    div.innerHTML = `
-                        <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
-                        <div class="list-info">
-                            <span style="font-size:8px; color:var(--main-red); font-weight:900;">${item.requester.toUpperCase()}</span>
-                            <span style="font-size:10px; color:#fff;">${item.videoId}</span>
-                            <button class="mini-del-btn" onclick="db.ref('queue/${item.key}').remove()">✕</button>
-                        </div>
-                        <button class="btn-ui btn-gray" style="width:50px; height:32px; font-size:8px; flex-shrink:0;" onclick="playSelected('${item.key}','${item.videoId}','${item.requester}')">PLAY</button>
-                    `;
+                    div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span style="font-size:8px; color:var(--main-red); font-weight:900;">${item.requester.toUpperCase()}</span><span style="font-size:9px; color:#fff;">${item.videoId}</span><button class="mini-del-btn" onclick="db.ref('queue/${item.key}').remove()">✕</button></div><button class="btn-ui btn-gray" style="width:50px; height:32px; font-size:8px; flex-shrink:0;" onclick="playSelected('${item.key}','${item.videoId}','${item.requester}')">PLAY</button>`;
                     list.appendChild(div);
                 });
-            } else {
-                firstQueueKey = ""; firstQueueId = ""; firstQueueName = "";
-                list.innerHTML = '<div style="text-align:center; padding:20px; font-size:10px; color:#666;">NO RESERVATIONS</div>';
-            }
+            } else { list.innerHTML = '<div style="text-align:center; padding:20px; font-size:10px; color:#666;">EMPTY</div>'; }
         });
         Sortable.create(document.getElementById('reserve-list'), { animation: 150 });
     }
@@ -212,56 +147,34 @@
             histList.innerHTML = "";
             let items = [];
             snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
-            
-            if (items.length > 0) {
-                items.reverse().forEach(item => {
+            items.reverse();
+            let lastDate = "";
+            items.forEach(item => {
+                const dateObj = new Date(item.timestamp);
+                if (dateObj.getHours() < 5) dateObj.setDate(dateObj.getDate() - 1);
+                const dateStr = `${dateObj.getFullYear()}.${('0' + (dateObj.getMonth() + 1)).slice(-2)}.${('0' + dateObj.getDate()).slice(-2)}`;
+                if (dateStr !== lastDate) {
                     const div = document.createElement('div');
-                    div.className = "list-item history-item";
-                    div.innerHTML = `
-                        <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
-                        <div class="list-info">
-                            <span style="font-size:8px; color:#999; font-weight:900;">${item.requester.toUpperCase()}</span>
-                            <span style="font-size:9px; color:#fff;">${item.videoId}</span>
-                            <button class="mini-del-btn" onclick="deleteHistoryItem('${item.key}')">✕</button>
-                        </div>
-                    `;
+                    div.className = 'staff-date-divider';
+                    div.innerText = dateStr;
                     histList.appendChild(div);
-                });
-            } else {
-                histList.innerHTML = '<div style="text-align:center; padding:20px; font-size:10px; color:#666;">NO HISTORY</div>';
-            }
+                    lastDate = dateStr;
+                }
+                const div = document.createElement('div');
+                div.className = "list-item history-item";
+                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span style="font-size:8px; color:#999; font-weight:900;">${item.requester.toUpperCase()}</span><span style="font-size:9px; color:#fff;">${item.videoId}</span><button class="mini-del-btn" onclick="deleteHistoryItem('${item.key}')">✕</button></div>`;
+                histList.appendChild(div);
+            });
         });
     }
 
-    function deleteHistoryItem(key) {
-        if(confirm("この履歴を削除しますか？")) {
-            db.ref(`backnumbers/${key}`).remove();
-        }
-    }
-
-    function clearBackNumbers() {
-        if (confirm("【警告】すべてのバックナンバー履歴を完全に消去しますか？")) {
-            db.ref('backnumbers').remove();
-        }
-    }
-
-    function playSelected(key, vid, name) {
-        currentId = vid; currentRequester = name;
-        player.loadVideoById(vid, 0);
-        syncDB(1, 0);
-        db.ref('backnumbers').push({ videoId: vid, requester: name, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        db.ref(`queue/${key}`).remove();
-    }
-    
-    function syncDB(state, time) {
-        if (!currentId) return;
-        db.ref('sync').set({ videoId: currentId, state: state, time: time, requester: currentRequester, lastUpdate: Date.now() });
-    }
-    
+    function deleteHistoryItem(k) { if(confirm("DELETE?")) db.ref(`backnumbers/${k}`).remove(); }
+    function clearBackNumbers() { if (confirm("ALL CLEAR HISTORY?")) db.ref('backnumbers').remove(); }
+    function playSelected(k, v, n) { currentId = v; currentRequester = n; player.loadVideoById(v, 0); syncDB(1, 0); db.ref('backnumbers').push({ videoId: v, requester: n, timestamp: firebase.database.ServerValue.TIMESTAMP }); db.ref(`queue/${k}`).remove(); }
+    function syncDB(s, t) { if (!currentId) return; db.ref('sync').set({ videoId: currentId, state: s, time: t, requester: currentRequester, lastUpdate: Date.now() }); }
     function control(cmd) { if (!player || !currentId) return; if (cmd === 'restart') player.seekTo(0); cmd === 'pause' ? player.pauseVideo() : player.playVideo(); setTimeout(() => syncDB(player.getPlayerState(), player.getCurrentTime()), 200); }
-    
     function autoUpload(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => { input.value = ""; }); }; reader.readAsDataURL(file); }
-    
+    function playNextInQueue() { if (firstQueueId) playSelected(firstQueueKey, firstQueueId, firstQueueName); }
     setInterval(() => { if (player && player.getPlayerState() === 1) syncDB(1, player.getCurrentTime()); }, 3000);
 </script>
 </body>
