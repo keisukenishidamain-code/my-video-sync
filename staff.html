@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>27 Club - Staff Cockpit (Fixed)</title>
+    <title>27 Club - Staff Cockpit (History Edit Mode)</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -10,47 +10,48 @@
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 10px #ff0033; --border-color: #444; }
         
-        /* 全体の横揺れを根本から禁止 */
         body, html { 
             margin: 0; padding: 0; 
             width: 100vw; height: 100vh; 
             background: #000; color: #fff; 
             font-family: 'Orbitron', sans-serif; 
-            overflow: hidden; /* ここでブラウザ自体のスクロールを殺す */
+            overflow: hidden; 
             display: flex; justify-content: center; align-items: center; 
         }
         
         .master-container { 
             display: flex; 
             width: 100%; 
-            max-width: 1100px; 
+            max-width: 1300px; /* 三段構成のため少し横幅を広げました */
             height: 95vh; 
             background: #0a0a0a; 
             border: 1px solid var(--border-color); 
             box-sizing: border-box;
-            overflow: hidden; /* コンテナ内でも横溢れを禁止 */
+            overflow: hidden;
         }
         
         /* 左：操作系 */
         .left { 
-            width: 420px; /* 固定幅にして安定させる */
+            width: 380px; 
             padding: 15px; 
             border-right: 1px solid var(--border-color); 
             display: flex; flex-direction: column; 
             overflow-y: auto; 
-            overflow-x: hidden; /* 横スライド禁止 */
+            overflow-x: hidden;
             box-sizing: border-box;
         }
         
-        /* 右：予約リスト */
-        .right { 
-            flex-grow: 1; 
+        /* 中央・右：共通スタイル */
+        .list-section { 
+            flex: 1; 
             padding: 15px; 
             background: #050505; 
             display: flex; flex-direction: column; 
-            overflow: hidden; /* 右側も横は絶対に出さない */
+            overflow: hidden;
             box-sizing: border-box;
+            border-right: 1px solid var(--border-color);
         }
+        .list-section:last-child { border-right: none; }
         
         .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 10px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
@@ -71,15 +72,17 @@
         #imageFileInput { display: none; }
         .file-label { width: 100%; height: 42px; background: #1a1a1a; border: 1px solid #555; color: #fff; font-family: 'Orbitron'; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
         
-        /* リスト表示の最適化 */
-        #reserve-list { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
+        /* リスト表示 */
+        .scroll-list { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
         .list-item { 
             background: #0d0d0d; padding: 8px; margin-bottom: 5px; border-radius: 4px; 
             display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red);
-            width: 100%; box-sizing: border-box; /* アイテムがはみ出ないように固定 */
+            width: 100%; box-sizing: border-box;
         }
-        .list-item img { width: 70px; height: 40px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
-        .list-info { flex-grow: 1; min-width: 0; } /* 文字が長くても潰れない設定 */
+        .history-item { border-left: 3px solid #666; } /* 履歴は色を変える */
+        
+        .list-item img { width: 60px; height: 35px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
+        .list-info { flex-grow: 1; min-width: 0; }
         .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
         .status-msg { font-size: 9px; color: #fff; height: 12px; text-align: center; font-weight: bold; margin-top: 2px; }
@@ -107,15 +110,21 @@
             <input type="file" id="imageFileInput" accept="image/*" onchange="autoUpload(this)">
             <div id="uploadStatus" class="status-msg"></div>
         </div>
+        <button class="btn-ui btn-gray" style="height:30px; font-size:8px; color:#f03!important;" onclick="clearBackNumbers()">CLEAR ALL BACK NUMBERS</button>
     </div>
-    <div class="right">
+
+    <div class="list-section">
         <div class="section-label">RESERVATION QUEUE</div>
-        <div id="reserve-list"></div>
+        <div id="reserve-list" class="scroll-list"></div>
+    </div>
+
+    <div class="list-section">
+        <div class="section-label">EDIT BACK NUMBERS (HISTORY)</div>
+        <div id="history-edit-list" class="scroll-list"></div>
     </div>
 </div>
 
 <script>
-    // --- JavaScript部分は変更なし (FirebaseConfig等は維持) ---
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -132,6 +141,7 @@
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', { height: '100%', width: '100%', events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } });
         loadQueue();
+        loadHistoryEditor(); // 履歴編集の読み込み開始
     }
 
     function addToQueue() {
@@ -161,9 +171,9 @@
                         <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
                         <div class="list-info">
                             <span style="font-size:8px; color:var(--main-red); font-weight:900;">${item.requester.toUpperCase()}</span>
-                            <span style="font-size:10px; color:#fff;">${item.videoId}</span>
+                            <span style="font-size:9px; color:#fff;">${item.videoId}</span>
                         </div>
-                        <button class="btn-ui btn-gray" style="width:60px; height:32px; font-size:8px; flex-shrink:0;" onclick="playSelected('${item.key}','${item.videoId}','${item.requester}')">PLAY</button>
+                        <button class="btn-ui btn-gray" style="width:50px; height:32px; font-size:8px; flex-shrink:0;" onclick="playSelected('${item.key}','${item.videoId}','${item.requester}')">PLAY</button>
                         <button class="btn-ui btn-gray" style="width:35px; height:32px; font-size:8px; color:#f03 !important; margin-left:3px; flex-shrink:0;" onclick="db.ref('queue/${item.key}').remove()">✕</button>
                     `;
                     list.appendChild(div);
@@ -174,6 +184,46 @@
             }
         });
         Sortable.create(document.getElementById('reserve-list'), { animation: 150 });
+    }
+
+    // --- バックナンバー編集用の読み込み関数 ---
+    function loadHistoryEditor() {
+        db.ref('backnumbers').on('value', snap => {
+            const histList = document.getElementById('history-edit-list');
+            histList.innerHTML = "";
+            let items = [];
+            snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
+            
+            if (items.length > 0) {
+                items.reverse().forEach(item => { // 新しい順
+                    const div = document.createElement('div');
+                    div.className = "list-item history-item";
+                    div.innerHTML = `
+                        <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
+                        <div class="list-info">
+                            <span style="font-size:8px; color:#999; font-weight:900;">${item.requester.toUpperCase()}</span>
+                            <span style="font-size:9px; color:#fff;">${item.videoId}</span>
+                        </div>
+                        <button class="btn-ui btn-gray" style="width:35px; height:32px; font-size:8px; color:#f03 !important; flex-shrink:0;" onclick="deleteHistoryItem('${item.key}')">✕</button>
+                    `;
+                    histList.appendChild(div);
+                });
+            } else {
+                histList.innerHTML = '<div style="text-align:center; padding:20px; font-size:10px; color:#666;">NO HISTORY</div>';
+            }
+        });
+    }
+
+    function deleteHistoryItem(key) {
+        if(confirm("この履歴を削除しますか？\n（公開バックナンバーからも消えます）")) {
+            db.ref(`backnumbers/${key}`).remove();
+        }
+    }
+
+    function clearBackNumbers() {
+        if (confirm("【警告】すべてのバックナンバー履歴を完全に消去しますか？")) {
+            db.ref('backnumbers').remove();
+        }
     }
 
     function playNextInQueue() { if (firstQueueId) playSelected(firstQueueKey, firstQueueId, firstQueueName); }
