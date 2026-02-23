@@ -8,30 +8,32 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 10px #ff0033; }
+        
+        /* 画面全体の固定設定：横スクロールを絶対に殺す */
         body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
+            margin: 0; padding: 0; width: 100%; height: 100vh; 
             background: #000; color: #fff; font-family: 'Orbitron', sans-serif; 
-            overflow: hidden; display: flex; justify-content: center; 
+            overflow: hidden; /* 画面全体のスクロールを禁止 */
+            display: flex; justify-content: center; /* 中央寄せ */
         }
         
-        /* 画面全体のコンテナ：幅を1400pxに制限して中央配置 */
         .master-container { 
-            display: flex; width: 100%; max-width: 1400px; height: 100vh; 
+            display: flex; width: 100%; max-width: 1400px; height: 100%; 
             background: #0a0a0a; border-left: 1px solid #222; border-right: 1px solid #222;
-            overflow: hidden; 
+            overflow: hidden; box-sizing: border-box;
         }
         
-        /* 左：操作パネル（幅固定） */
+        /* 左：固定パネル（操作エリア） */
         .left { 
             width: 300px; flex-shrink: 0; padding: 20px; border-right: 1px solid #222; 
             display: flex; flex-direction: column; background: #0d0d0d; box-sizing: border-box;
-            overflow-y: auto;
+            overflow-y: auto; overflow-x: hidden;
         }
         
-        /* 右側のリストエリア */
+        /* 管理カラム */
         .list-section { 
             flex: 1; min-width: 0; background: #050505; display: flex; flex-direction: column; 
-            height: 100%; border-right: 1px solid #222; 
+            height: 100%; border-right: 1px solid #222; overflow: hidden;
         }
         .list-section:last-child { border-right: none; }
         
@@ -39,31 +41,43 @@
             padding: 15px 20px; border-bottom: 1px solid #222; background: #080808; 
             display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
         }
-        .section-label { font-size: 10px; letter-spacing: 2px; font-weight: 900; color: #fff; opacity: 0.8; }
-        .clear-link { font-size: 8px; color: #444; cursor: pointer; text-decoration: underline; }
+        .section-label { font-size: 10px; letter-spacing: 2px; font-weight: 900; color: #fff; }
 
-        /* 各カラムの縦スクロール */
-        .scroll-list { flex: 1; overflow-y: scroll; overflow-x: hidden; padding: 15px; box-sizing: border-box; }
+        /* 各カラムの縦スクロールエリア：横スクロールが出ないよう細心の注意 */
+        .scroll-list { 
+            flex: 1; overflow-y: scroll; overflow-x: hidden; padding: 15px; box-sizing: border-box; 
+        }
         .scroll-list::-webkit-scrollbar { width: 4px; }
         .scroll-list::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
-        /* 入力フォーム・プレイヤー */
+        /* 入力UI */
         .input-group { background: #111; padding: 12px; border: 1px solid #222; margin-bottom: 15px; border-radius: 4px; }
         input[type="text"] { width: 100%; padding: 10px; background: #000; border: 1px solid #333; color: #fff; font-family: 'Orbitron'; font-size: 10px; box-sizing: border-box; margin-bottom: 8px; outline: none; }
-        .event-input { border-color: var(--main-red) !important; color: var(--main-red); font-weight: 900; }
         .btn-ui { width: 100%; height: 40px; border: none; background: var(--main-red); color: #fff; font-family: 'Orbitron'; font-weight: 900; font-size: 10px; cursor: pointer; box-shadow: var(--neon); border-radius: 4px; }
         
-        /* 動画が伸びないように横幅100%・アスペクト比16:9を維持 */
-        .player-wrapper { width: 100%; aspect-ratio: 16/9; margin-bottom: 15px; border: 1px solid #222; background: #000; position: relative; }
+        /* プレイヤー：比率を維持して伸びすぎを防ぐ */
+        .player-wrapper { width: 100%; aspect-ratio: 16/9; margin-bottom: 15px; border: 1px solid #222; background: #000; position: relative; flex-shrink: 0; }
         #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-        /* リストアイテム */
-        .list-item { background: #0d0d0d; padding: 8px; margin-bottom: 8px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red); position: relative; }
-        .history-item { border-left-color: #444; }
-        .gallery-item-staff { border-left-color: #00ffcc; }
-        .list-item img { width: 50px; height: 30px; object-fit: cover; }
-        .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; width: 70%; }
-        .mini-del-btn { position: absolute; right: 5px; color: #444; background: none; border: none; cursor: pointer; }
+        /* リストアイテム：PLAYボタンを復活 */
+        .list-item { 
+            background: #0d0d0d; padding: 10px; margin-bottom: 8px; border-radius: 4px; 
+            display: flex; align-items: center; justify-content: space-between; /* 両端配置 */
+            gap: 10px; border-left: 3px solid var(--main-red); position: relative; 
+        }
+        .item-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+        .list-item img { width: 50px; height: 30px; object-fit: cover; flex-shrink: 0; }
+        .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+        
+        /* 復活したPLAYボタン */
+        .play-now-btn { 
+            padding: 5px 10px; background: #222; color: #fff; border: 1px solid #444; 
+            font-family: 'Orbitron'; font-size: 8px; font-weight: 900; cursor: pointer; border-radius: 2px;
+        }
+        .play-now-btn:hover { background: var(--main-red); border-color: var(--main-red); box-shadow: var(--neon); }
+
+        .mini-del-btn { color: #444; background: none; border: none; cursor: pointer; padding: 0 5px; font-size: 12px; }
+        .mini-del-btn:hover { color: var(--main-red); }
     </style>
 </head>
 <body>
@@ -71,7 +85,7 @@
     <div class="left">
         <div style="font-size:18px; font-weight:900; margin-bottom:20px; text-align:center;"><span>27</span> STAFF</div>
         <div class="input-group">
-            <input type="text" id="eventTitleInput" class="event-input" placeholder="EVENT TITLE...">
+            <input type="text" id="eventTitleInput" placeholder="EVENT TITLE...">
         </div>
         <div class="input-group">
             <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
@@ -90,18 +104,12 @@
     </div>
 
     <div class="list-section">
-        <div class="section-header">
-            <div class="section-label">BACK NUMBERS</div>
-            <div class="clear-link" onclick="clearBackNumbers()">ALL CLEAR</div>
-        </div>
+        <div class="section-header"><div class="section-label">BACK NUMBERS</div></div>
         <div id="history-edit-list" class="scroll-list"></div>
     </div>
 
     <div class="list-section">
-        <div class="section-header">
-            <div class="section-label">GALLERY CONTROL</div>
-            <div class="clear-link" onclick="clearGallery()">ALL CLEAR</div>
-        </div>
+        <div class="section-header"><div class="section-label">GALLERY CONTROL</div></div>
         <div id="gallery-edit-list" class="scroll-list"></div>
     </div>
 </div>
@@ -124,7 +132,14 @@
             snap.forEach(c => {
                 const item = c.val();
                 const div = document.createElement('div'); div.className = "list-item";
-                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester}</span></div><button style="font-size:8px; background:#222; color:#fff; border:1px solid #444; height:24px; cursor:pointer;" onclick="playSelected('${c.key}','${item.videoId}','${item.requester}')">PLAY</button>`;
+                div.innerHTML = `
+                    <div class="item-main">
+                        <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
+                        <div class="list-info"><span>${item.requester.toUpperCase()}</span></div>
+                    </div>
+                    <button class="play-now-btn" onclick="playSelected('${c.key}','${item.videoId}','${item.requester}')">PLAY</button>
+                    <button class="mini-del-btn" onclick="db.ref('queue/${c.key}').remove()">✕</button>
+                `;
                 list.appendChild(div);
             });
         });
@@ -133,7 +148,7 @@
             let items = []; snap.forEach(c => { items.push({key:c.key, ...c.val()}); });
             items.reverse().forEach(item => {
                 const div = document.createElement('div'); div.className = "list-item history-item";
-                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester}</span><button class="mini-del-btn" onclick="deleteHistoryItem('${item.key}')">✕</button></div>`;
+                div.innerHTML = `<div class="item-main"><img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester}</span></div></div><button class="mini-del-btn" onclick="db.ref('backnumbers/${item.key}').remove()">✕</button>`;
                 list.appendChild(div);
             });
         });
@@ -142,7 +157,7 @@
             let items = []; snap.forEach(c => { items.push({key:c.key, ...c.val()}); });
             items.reverse().forEach(item => {
                 const div = document.createElement('div'); div.className = "list-item gallery-item-staff";
-                div.innerHTML = `<img src="${item.url}"><div class="list-info"><span>${item.key.substring(1,8)}</span><button class="mini-del-btn" onclick="deleteGalleryItem('${item.key}')">✕</button></div>`;
+                div.innerHTML = `<div class="item-main"><img src="${item.url}"><div class="list-info"><span>IMAGE</span></div></div><button class="mini-del-btn" onclick="db.ref('gallery/${item.key}').remove()">✕</button>`;
                 list.appendChild(div);
             });
         });
@@ -157,16 +172,11 @@
     }
     function playSelected(k, v, n) { 
         currentId = v; currentRequester = n; 
-        const title = document.getElementById('eventTitleInput').value || "NIGHT SESSION";
         player.loadVideoById(v, 0); syncDB(1, 0); 
-        db.ref('backnumbers').push({ videoId: v, requester: n, eventTitle: title, timestamp: firebase.database.ServerValue.TIMESTAMP }); 
+        db.ref('backnumbers').push({ videoId: v, requester: n, timestamp: firebase.database.ServerValue.TIMESTAMP }); 
         db.ref(`queue/${k}`).remove(); 
     }
     function syncDB(s, t) { if(currentId) db.ref('sync').set({ videoId: currentId, state: s, time: t, requester: currentRequester, lastUpdate: Date.now() }); }
-    function deleteGalleryItem(k) { if(confirm("DELETE?")) db.ref(`gallery/${k}`).remove(); }
-    function deleteHistoryItem(k) { if(confirm("DELETE?")) db.ref(`backnumbers/${k}`).remove(); }
-    function clearGallery() { if(confirm("ALL CLEAR?")) db.ref('gallery').remove(); }
-    function clearBackNumbers() { if(confirm("ALL CLEAR?")) db.ref('backnumbers').remove(); }
     function autoUpload(input) { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload=(e)=>{ db.ref('gallery').push({url:e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP}); input.value=""; }; reader.readAsDataURL(file); }
 </script>
 </body>
