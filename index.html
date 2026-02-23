@@ -8,26 +8,68 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
-        body { margin: 0; background: #050505; color: white; font-family: 'Orbitron', sans-serif; }
-        header { background: #000; padding: 20px 40px; display: flex; justify-content: space-between; border-bottom: 2px solid #1a1a1a; }
+        body { margin: 0; background: #050505; color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; }
+        
+        header { 
+            background: #000; padding: 20px 40px; display: flex; 
+            justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #1a1a1a; 
+        }
         .logo { font-size: 28px; font-weight: 900; letter-spacing: 5px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        .container { display: flex; flex-direction: column; align-items: center; padding-top: 40px; }
-        .player-box { width: 90%; max-width: 950px; aspect-ratio: 16/9; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid #222; }
+
+        .container { 
+            display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; min-height: 85vh; padding: 20px;
+        }
+
+        /* プレイヤー外枠 */
+        .player-outer {
+            width: 90%; max-width: 950px; position: relative;
+            background: #000; border-radius: 12px; overflow: hidden;
+            border: 1px solid #222;
+            box-shadow: 0 0 50px rgba(0,0,0,1), 0 0 20px rgba(255,0,51,0.2);
+        }
+
+        .player-inner { position: relative; width: 100%; padding-top: 56.25%; }
+
+        #player-live { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* ★停止中に表示されるロゴオーバーレイ */
+        #standby-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 10; transition: opacity 0.5s ease;
+            pointer-events: none; /* 下のプレイヤーを邪魔しない */
+            opacity: 0;
+        }
+        #standby-overlay.active { opacity: 1; }
+        .overlay-logo { font-size: 60px; font-weight: 900; letter-spacing: 15px; color: #fff; text-shadow: var(--neon); }
+        .overlay-logo span { color: var(--main-red); }
+        .overlay-text { font-size: 14px; color: #555; margin-top: 10px; letter-spacing: 5px; }
+
+        #live-status { margin-top: 30px; color: var(--main-red); font-size: 14px; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
 <header>
     <div class="logo"><span>27</span> CLUB</div>
-    <nav style="color:#555; font-size:12px;">LIVE SYNCHRONIZED</nav>
+    <div style="color:#555; font-size:10px; letter-spacing:2px;">LIVE SYNCHRONIZED</div>
 </header>
 
 <div class="container">
-    <div class="player-box">
-        <div id="player-live"></div>
+    <div class="player-outer">
+        <div class="player-inner">
+            <div id="player-live"></div>
+            <div id="standby-overlay">
+                <div class="overlay-logo"><span>27</span> CLUB</div>
+                <div class="overlay-text">NOW STANDBY...</div>
+            </div>
+        </div>
     </div>
-    <p id="live-status" style="margin-top:20px; color:var(--main-red); font-size:12px;">OFFLINE</p>
+    <p id="live-status">● LIVE STREAMING</p>
 </div>
 
 <script>
@@ -50,29 +92,28 @@
             playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'disablekb': 1 }
         });
         
-        // スタッフの操作を監視（リンク開始）
         db.ref('sync').on('value', snap => {
             const data = snap.val();
             if (!data || !data.videoId) return;
 
-            // 1. 動画IDが違う場合は読み込み
+            const overlay = document.getElementById('standby-overlay');
+
+            // 1. 動画の切り替え
             if (currentVid !== data.videoId) {
-                livePlayer.loadVideoById({
-                    videoId: data.videoId,
-                    startSeconds: data.time
-                });
+                livePlayer.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
                 currentVid = data.videoId;
-                document.getElementById('live-status').innerText = "● LIVE STREAMING";
             }
 
-            // 2. 状態の同期（再生・停止）
+            // 2. 再生・停止の同期とロゴの表示切り替え
             if (data.state === 1) {
                 livePlayer.playVideo();
+                overlay.classList.remove('active'); // 再生中はロゴを隠す
             } else if (data.state === 2) {
                 livePlayer.pauseVideo();
+                overlay.classList.add('active'); // 停止中はロゴを表示
             }
 
-            // 3. 時間のズレを補正 (2秒以上のズレを許容しない)
+            // 3. 時間のズレ補正
             const myTime = livePlayer.getCurrentTime();
             if (Math.abs(myTime - data.time) > 2) {
                 livePlayer.seekTo(data.time, true);
