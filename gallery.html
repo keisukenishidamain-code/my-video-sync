@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,34 +9,138 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Orbitron', sans-serif; color: #ffffff; }
-        header { padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
-        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
+        
+        body, html { 
+            margin: 0; padding: 0; width: 100%; min-height: 100%; 
+            background: #000; font-family: 'Orbitron', sans-serif; color: #ffffff; 
+        }
+
+        /* ヘッダー：他ページと統一 */
+        header { 
+            padding: 25px 40px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: rgba(0,0,0,0.9); 
+            position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
+            border-bottom: 1px solid #222;
+        }
+        .logo { font-size: 22px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        .nav-links { display: flex; gap: 20px; }
-        .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; }
-        .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
-        .container { padding: 120px 50px 50px; min-height: 100vh; box-sizing: border-box; background: #000; }
-        #gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; max-width: 1200px; margin: 0 auto; }
-        .photo-card { background: #000; border: 1px solid #111; border-radius: 4px; overflow: hidden; aspect-ratio: 16/9; transition: 0.4s; }
-        .photo-card:hover { border-color: var(--main-red); box-shadow: var(--neon); transform: translateY(-5px); }
-        .photo-card img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
-        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
-        #modal img { max-width: 90%; max-height: 90%; border: 1px solid #333; }
+
+        .nav-links { display: flex; gap: 15px; }
+        .nav-btn { 
+            color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; 
+            border: 1px solid #444; padding: 8px 20px; border-radius: 4px; 
+            background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; 
+        }
+        .nav-btn:hover { border-color: var(--main-red); box-shadow: var(--neon); }
+
+        /* メインコンテナ */
+        .container { 
+            padding: 120px 40px 50px; 
+            min-height: 100vh; 
+            box-sizing: border-box; 
+        }
+
+        /* ギャラリーグリッド：しっかりタイル状に並べる */
+        #gallery-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 30px; 
+            max-width: 1400px; 
+            margin: 0 auto; 
+        }
+
+        /* 写真カード */
+        .photo-card { 
+            position: relative;
+            background: #050505; 
+            border: 1px solid #222; 
+            border-radius: 4px; 
+            overflow: hidden; 
+            aspect-ratio: 16/9; 
+            transition: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            cursor: pointer;
+        }
+
+        .photo-card:hover { 
+            border-color: var(--main-red); 
+            box-shadow: var(--neon); 
+            transform: translateY(-8px); 
+        }
+
+        .photo-card img { 
+            width: 100%; height: 100%; 
+            object-fit: cover; 
+            opacity: 0.8;
+            transition: 0.5s;
+        }
+
+        .photo-card:hover img { 
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        /* 日付バッジ：27 CLUB風の赤ネオン */
+        .date-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.8);
+            color: var(--main-red);
+            font-size: 10px;
+            font-weight: 900;
+            padding: 4px 10px;
+            border-radius: 2px;
+            letter-spacing: 1px;
+            border-right: 2px solid var(--main-red);
+            text-shadow: var(--neon);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* モーダル（拡大画面） */
+        #modal { 
+            display: none; position: fixed; top: 0; left: 0; 
+            width: 100%; height: 100%; background: rgba(0,0,0,0.95); 
+            z-index: 1000; justify-content: center; align-items: center; 
+        }
+        #modal img { 
+            max-width: 95%; max-height: 90%; 
+            border: 1px solid #444; 
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+        }
+
+        /* 読み込み待ちのテキスト */
+        .empty-msg {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 100px;
+            color: #333;
+            letter-spacing: 5px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
+
 <header>
     <a href="index.html" class="logo"><span>27</span> CLUB</a>
     <div class="nav-links">
         <a href="index.html" class="nav-btn">LIVE</a>
-        <a href="archive.html" class="nav-btn">BACK NUMBERS</a>
+        <a href="archive.html" class="nav-btn">ARCHIVE</a>
     </div>
 </header>
+
 <div class="container">
-    <div id="gallery-grid"></div>
+    <div id="gallery-grid">
+        <div class="empty-msg">CONNECTING TO GALLERY...</div>
+    </div>
 </div>
-<div id="modal" onclick="this.style.display='none'"><img id="modal-img" src=""></div>
+
+<div id="modal" onclick="this.style.display='none'">
+    <img id="modal-img" src="">
+</div>
+
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
@@ -46,18 +150,39 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    db.ref('gallery').limitToLast(50).on('value', snap => {
+
+    // ギャラリーデータの取得
+    db.ref('gallery').on('value', snap => {
         const grid = document.getElementById('gallery-grid');
         grid.innerHTML = "";
+        
         let items = [];
-        snap.forEach(child => items.push(child.val()));
+        snap.forEach(child => {
+            items.push(child.val());
+        });
+
+        if (items.length === 0) {
+            grid.innerHTML = '<div class="empty-msg">NO DATA FOUND.</div>';
+            return;
+        }
+
+        // 新しい順に並び替え
         items.reverse().forEach(data => {
+            const date = data.timestamp ? new Date(data.timestamp) : new Date();
+            const dateStr = `${date.getFullYear()}.${('0'+(date.getMonth()+1)).slice(-2)}.${('0'+date.getDate()).slice(-2)}`;
+
             const card = document.createElement('div');
             card.className = 'photo-card';
-            const img = document.createElement('img');
-            img.src = data.url;
-            img.onclick = () => { document.getElementById('modal-img').src = data.url; document.getElementById('modal').style.display = 'flex'; };
-            card.appendChild(img);
+            card.onclick = () => { 
+                document.getElementById('modal-img').src = data.url; 
+                document.getElementById('modal').style.display = 'flex'; 
+            };
+
+            card.innerHTML = `
+                <img src="${data.url}" loading="lazy">
+                <div class="date-badge">${dateStr}</div>
+            `;
+            
             grid.appendChild(card);
         });
     });
