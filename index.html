@@ -32,4 +32,41 @@
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "club-d0
+        projectId: "club-d0011",
+        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let player, currentVideoId = "", lastSyncedTime = 0;
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1 },
+            events: { 'onReady': startSync, 'onStateChange': (e) => {
+                const ov = document.getElementById('brand-overlay');
+                if (e.data === 1) { ov.style.opacity = "0"; setTimeout(() => { if(player.getPlayerState()===1) ov.style.display="none"; }, 800); }
+                else { ov.style.display = "flex"; ov.style.opacity = "1"; }
+            }}
+        });
+    }
+    function startSync() {
+        db.ref('sync').on('value', (snap) => {
+            const data = snap.val();
+            if (!data || !player) return;
+            if (currentVideoId !== data.videoId) {
+                currentVideoId = data.videoId;
+                player.loadVideoById(data.videoId, data.time);
+                return;
+            }
+            const latency = (Date.now() - data.lastUpdate) / 1000;
+            const targetTime = data.time + (data.state === 1 ? latency : 0);
+            if (data.state === 1) {
+                const diff = Math.abs(player.getCurrentTime() - targetTime);
+                if (diff > 1.5) player.seekTo(targetTime, true);
+                if (player.getPlayerState() !== 1) player.playVideo();
+            } else { player.pauseVideo(); }
+        });
+    }
+    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
+</script>
+</body>
+</html>
