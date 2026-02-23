@@ -6,153 +6,239 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        :root { --main-red: #ff0033; --neon: 0 0 10px #ff0033; }
+        :root { --main-red: #ff0033; --neon: 0 0 10px #ff0033; --border-color: #444; }
         
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background: #000; color: #fff; font-family: 'Orbitron', sans-serif; 
-            overflow: hidden; /* 画面全体の横揺れを防止 */
+            overflow: hidden; 
+            /* 画面全体の中央寄せ設定 */
+            display: flex; justify-content: center; align-items: center; 
         }
         
+        /* コンテナの幅を固定して中央に寄せる */
         .master-container { 
-            display: flex; width: 100vw; height: 100vh; 
-            background: #0a0a0a; overflow: hidden;
+            display: flex; 
+            width: 98vw;      /* 画面端に少し隙間を作る */
+            max-width: 1400px; /* 広がりすぎ防止 */
+            height: 96vh;     /* 上下に少し隙間を作る */
+            background: #0a0a0a; 
+            box-sizing: border-box; 
+            overflow: hidden; 
+            border: 1px solid #222;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
         
-        /* 左：固定パネル */
         .left { 
-            width: 320px; flex-shrink: 0; padding: 20px; border-right: 1px solid #222; 
-            display: flex; flex-direction: column; background: #0d0d0d; box-sizing: border-box;
+            width: 380px; flex-shrink: 0; padding: 20px; border-right: 1px solid var(--border-color); 
+            display: flex; flex-direction: column; box-sizing: border-box; 
+            background: #0d0d0d;
         }
         
-        /* 管理カラム（独立縦スクロール） */
         .list-section { 
-            flex: 1; min-width: 0; background: #050505; display: flex; flex-direction: column; 
-            height: 100%; border-right: 1px solid #222; 
+            flex: 1; padding: 20px; background: #050505; display: flex; flex-direction: column; 
+            overflow: hidden; box-sizing: border-box; border-right: 1px solid var(--border-color); 
         }
         .list-section:last-child { border-right: none; }
         
-        .section-header { 
-            padding: 20px; border-bottom: 1px solid #222; background: #080808; 
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .section-label { font-size: 10px; letter-spacing: 2px; font-weight: 900; }
+        .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 15px; }
+        .logo span { color: var(--main-red); text-shadow: var(--neon); }
+        
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; padding-bottom: 5px; }
+        .section-label { font-size: 10px; color: #fff; letter-spacing: 1px; text-transform: uppercase; margin: 0; opacity: 0.8; }
+        
+        .clear-link { font-size: 8px; color: #ffffff; cursor: pointer; text-decoration: underline; letter-spacing: 1px; opacity: 0.6; transition: 0.3s; }
+        .clear-link:hover { color: var(--main-red); opacity: 1; text-shadow: var(--neon); }
 
-        .scroll-list { 
-            flex: 1; overflow-y: auto; overflow-x: hidden; padding: 15px; 
-        }
+        .input-group { background: #111; padding: 12px; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
+        input[type="text"] { width: 100%; padding: 10px; background: #000; border: 1px solid #444; color: #fff; font-family: 'Orbitron'; font-size: 11px; box-sizing: border-box; outline: none; border-radius: 2px; }
+        input[type="text"]:focus { border-color: var(--main-red); }
+        
+        .event-input { border-color: var(--main-red) !important; color: var(--main-red) !important; font-weight: 900; }
+
+        .btn-ui { width: 100%; height: 48px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; font-size: 12px; cursor: pointer; text-transform: uppercase; color: #fff !important; transition: 0.3s; }
+        .btn-red { background: var(--main-red); box-shadow: var(--neon); }
+        .btn-red:hover { transform: scale(1.02); filter: brightness(1.2); }
+        .btn-gray { background: #1a1a1a; border: 1px solid #555; }
+        .btn-gray:hover { background: #333; }
+        
+        #player { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border-color); background:#000; margin-bottom: 15px; }
+        .playback-ctrl { margin-bottom: 15px; display: flex; gap: 15px; justify-content: center; background: #000; padding: 10px; border-radius: 40px; border: 1px solid var(--border-color); }
+        .ctrl-icon { width: 45px; height: 45px; border-radius: 50%; background: #111; color: #fff; border: 1px solid #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: 0.2s; }
+        .ctrl-icon:hover { border-color: var(--main-red); color: var(--main-red); }
+        
+        #imageFileInput { display: none; }
+        .file-label { width: 100%; height: 42px; background: #1a1a1a; border: 1px solid #555; color: #fff; font-family: 'Orbitron'; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+        
+        .scroll-list { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
+        /* カスタムスクロールバー */
         .scroll-list::-webkit-scrollbar { width: 4px; }
         .scroll-list::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
-        /* UIパーツ */
-        .input-group { background: #111; padding: 12px; border: 1px solid #222; margin-bottom: 15px; }
-        input[type="text"] { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; font-family: 'Orbitron'; font-size: 10px; box-sizing: border-box; margin-bottom: 5px; outline: none; }
-        .btn-ui { width: 100%; height: 40px; border: none; background: var(--main-red); color: #fff; font-family: 'Orbitron'; font-weight: 900; font-size: 10px; cursor: pointer; box-shadow: var(--neon); }
+        .list-item { background: #0d0d0d; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; align-items: center; gap: 12px; border-left: 3px solid var(--main-red); width: 100%; box-sizing: border-box; position: relative; transition: 0.2s; }
+        .list-item:hover { background: #151515; }
+        .history-item { border-left: 3px solid #444; }
         
-        /* プレイヤー：一番良かった時のサイズ感 */
-        #player { width: 100%; aspect-ratio: 16/9; border: 1px solid #222; background: #000; margin-bottom: 15px; }
-
-        /* リストアイテム */
-        .list-item { background: #0d0d0d; padding: 8px; margin-bottom: 8px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red); position: relative; }
-        .list-item img { width: 50px; height: 30px; object-fit: cover; }
-        .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; width: 70%; }
-        .mini-del-btn { position: absolute; right: 5px; color: #444; background: none; border: none; cursor: pointer; }
+        .staff-date-divider { font-size: 9px; color: var(--main-red); padding: 15px 5px 5px; border-bottom: 1px solid #222; margin-bottom: 10px; letter-spacing: 2px; font-weight: 900; }
+        .list-item img { width: 70px; height: 40px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
+        .list-info { flex-grow: 1; min-width: 0; position: relative; }
+        .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 85%; }
+        
+        .mini-del-btn { position: absolute; right: 5px; top: 10px; background: none; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 0 5px; }
+        .mini-del-btn:hover { color: var(--main-red); }
+        .status-msg { font-size: 9px; color: #fff; height: 12px; text-align: center; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
 <div class="master-container">
     <div class="left">
-        <div style="font-size:18px; font-weight:900; margin-bottom:20px; text-align:center;"><span>27</span> STAFF</div>
+        <div class="logo"><span>27</span> STAFF</div>
+        
         <div class="input-group">
-            <input type="text" id="eventTitleInput" placeholder="EVENT TITLE...">
+            <div class="section-label">EVENT TITLE (ARCHIVE SUBTITLE)</div>
+            <input type="text" id="eventTitleInput" class="event-input" placeholder="NIGHT SESSION (Default)...">
         </div>
+
         <div class="input-group">
+            <div class="section-label">REQUEST QUEUE</div>
             <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
             <input type="text" id="nameInput" placeholder="REQUESTER...">
-            <button class="btn-ui" onclick="addToQueue()">ADD TO QUEUE</button>
+            <button class="btn-ui btn-red" onclick="addToQueue()">ADD TO QUEUE</button>
         </div>
+
+        <div class="playback-ctrl">
+            <button class="ctrl-icon" onclick="control('restart')">⏮</button>
+            <button class="ctrl-icon" onclick="playNextInQueue()" style="color: var(--main-red); border-color: var(--main-red);">▶</button>
+            <button class="ctrl-icon" onclick="control('pause')">⏸</button>
+        </div>
+        
         <div id="player"></div>
-        <label class="btn-ui" style="display:flex; align-items:center; justify-content:center; background:#222; box-shadow:none; cursor:pointer;">
-            UPLOAD IMAGE<input type="file" id="imageFileInput" accept="image/*" onchange="autoUpload(this)" style="display:none">
-        </label>
+        
+        <div class="input-group">
+            <div class="section-label">GALLERY</div>
+            <label for="imageFileInput" class="file-label">SELECT & POST IMAGE</label>
+            <input type="file" id="imageFileInput" accept="image/*" onchange="autoUpload(this)">
+            <div id="uploadStatus" class="status-msg"></div>
+        </div>
     </div>
 
     <div class="list-section">
-        <div class="section-header"><div class="section-label">RESERVATION</div></div>
+        <div class="section-header"><div class="section-label">RESERVATION QUEUE</div></div>
         <div id="reserve-list" class="scroll-list"></div>
     </div>
+
     <div class="list-section">
-        <div class="section-header"><div class="section-label">BACK NUMBERS</div></div>
+        <div class="section-header">
+            <div class="section-label">HISTORY</div>
+            <div class="clear-link" onclick="clearBackNumbers()">ALL CLEAR</div>
+        </div>
         <div id="history-edit-list" class="scroll-list"></div>
-    </div>
-    <div class="list-section">
-        <div class="section-header"><div class="section-label">GALLERY CONTROL</div></div>
-        <div id="gallery-edit-list" class="scroll-list"></div>
     </div>
 </div>
 
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE", databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "club-d0011", appId: "1:51948793811:web:1edecab7c41c1d84ad8926" };
+    const firebaseConfig = {
+        apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
+        databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "club-d0011",
+        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let player, currentId = "", currentRequester = "27 CLUB";
+    let player, currentId = "", currentRequester = "27 CLUB", firstQueueKey = "", firstQueueId = "", firstQueueName = "";
 
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { 
-            height: '100%', width: '100%', 
-            playerVars: { 'controls': 1 }, // YouTubeの再生・停止・シークバーを有効化
-            events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } 
-        });
-        loadData();
+        player = new YT.Player('player', { height: '100%', width: '100%', events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } });
+        loadQueue();
+        loadHistoryEditor();
     }
-    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
-
-    function loadData() {
-        db.ref('queue').on('value', snap => {
-            const list = document.getElementById('reserve-list'); list.innerHTML = "";
-            snap.forEach(c => {
-                const item = c.val();
-                const div = document.createElement('div'); div.className = "list-item";
-                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester.toUpperCase()}</span></div><button style="font-size:8px; background:#222; color:#fff; border:1px solid #444; height:24px; cursor:pointer;" onclick="playSelected('${c.key}','${item.videoId}','${item.requester}')">PLAY</button><button class="mini-del-btn" onclick="db.ref('queue/${c.key}').remove()">✕</button>`;
-                list.appendChild(div);
-            });
-        });
-        db.ref('backnumbers').on('value', snap => {
-            const list = document.getElementById('history-edit-list'); list.innerHTML = "";
-            let items = []; snap.forEach(c => { items.push({key:c.key, ...c.val()}); });
-            items.reverse().forEach(item => {
-                const div = document.createElement('div'); div.className = "list-item";
-                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester}</span></div><button class="mini-del-btn" onclick="db.ref('backnumbers/${item.key}').remove()">✕</button>`;
-                list.appendChild(div);
-            });
-        });
-        db.ref('gallery').on('value', snap => {
-            const list = document.getElementById('gallery-edit-list'); list.innerHTML = "";
-            let items = []; snap.forEach(c => { items.push({key:c.key, ...c.val()}); });
-            items.reverse().forEach(item => {
-                const div = document.createElement('div'); div.className = "list-item";
-                div.innerHTML = `<img src="${item.url}"><div class="list-info"><span>IMAGE</span></div><button class="mini-del-btn" onclick="db.ref('gallery/${item.key}').remove()">✕</button>`;
-                list.appendChild(div);
-            });
-        });
-    }
+    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
 
     function addToQueue() {
         const url = document.getElementById('urlInput').value;
         const name = document.getElementById('nameInput').value || "GUEST";
         const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
-        if (id) db.ref('queue').push({ videoId: id, requester: name, timestamp: firebase.database.ServerValue.TIMESTAMP });
+        if (!id || id.length < 5) return;
+        db.ref('queue').push({ videoId: id, requester: name, timestamp: firebase.database.ServerValue.TIMESTAMP });
         document.getElementById('urlInput').value = ""; document.getElementById('nameInput').value = "";
     }
+
+    function loadQueue() {
+        db.ref('queue').on('value', snap => {
+            const list = document.getElementById('reserve-list');
+            list.innerHTML = "";
+            let items = [];
+            snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
+            if (items.length > 0) {
+                firstQueueKey = items[0].key; firstQueueId = items[0].videoId; firstQueueName = items[0].requester;
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = "list-item";
+                    div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span style="font-size:8px; color:var(--main-red); font-weight:900;">${item.requester.toUpperCase()}</span><span style="font-size:9px; color:#fff;">${item.videoId}</span><button class="mini-del-btn" onclick="db.ref('queue/${item.key}').remove()">✕</button></div><button class="btn-ui btn-gray" style="width:50px; height:32px; font-size:8px; flex-shrink:0;" onclick="playSelected('${item.key}','${item.videoId}','${item.requester}')">PLAY</button>`;
+                    list.appendChild(div);
+                });
+            } else { list.innerHTML = '<div style="text-align:center; padding:20px; font-size:10px; color:#666;">EMPTY</div>'; }
+        });
+        Sortable.create(document.getElementById('reserve-list'), { animation: 150 });
+    }
+
+    function loadHistoryEditor() {
+        db.ref('backnumbers').on('value', snap => {
+            const histList = document.getElementById('history-edit-list');
+            histList.innerHTML = "";
+            let items = [];
+            snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
+            items.reverse();
+            let lastDate = "";
+            items.forEach(item => {
+                if (!item.timestamp) return;
+                const dateObj = new Date(item.timestamp);
+                if (isNaN(dateObj.getTime())) return;
+                if (dateObj.getHours() < 5) dateObj.setDate(dateObj.getDate() - 1);
+                const dateStr = `${dateObj.getFullYear()}.${('0' + (dateObj.getMonth() + 1)).slice(-2)}.${('0' + dateObj.getDate()).slice(-2)}`;
+                
+                if (dateStr !== lastDate) {
+                    const div = document.createElement('div');
+                    div.className = 'staff-date-divider';
+                    div.innerText = dateStr;
+                    histList.appendChild(div);
+                    lastDate = dateStr;
+                }
+                const div = document.createElement('div');
+                div.className = "list-item history-item";
+                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span style="font-size:8px; color:#999; font-weight:900;">${item.requester.toUpperCase()}</span><span style="font-size:9px; color:#fff;">${item.videoId}</span><button class="mini-del-btn" onclick="deleteHistoryItem('${item.key}')">✕</button></div>`;
+                histList.appendChild(div);
+            });
+        });
+    }
+
+    function deleteHistoryItem(k) { if(confirm("DELETE?")) db.ref(`backnumbers/${k}`).remove(); }
+    function clearBackNumbers() { if (confirm("ALL CLEAR HISTORY?")) db.ref('backnumbers').remove(); }
+    
     function playSelected(k, v, n) { 
-        currentId = v; currentRequester = n; 
-        player.loadVideoById(v, 0); syncDB(1, 0); 
-        db.ref('backnumbers').push({ videoId: v, requester: n, timestamp: firebase.database.ServerValue.TIMESTAMP }); 
+        currentId = v; 
+        currentRequester = n; 
+        const eTitle = document.getElementById('eventTitleInput').value || "NIGHT SESSION";
+        player.loadVideoById(v, 0); 
+        syncDB(1, 0); 
+        db.ref('backnumbers').push({ 
+            videoId: v, 
+            requester: n, 
+            eventTitle: eTitle, 
+            timestamp: firebase.database.ServerValue.TIMESTAMP 
+        }); 
         db.ref(`queue/${k}`).remove(); 
     }
-    function syncDB(s, t) { if(currentId) db.ref('sync').set({ videoId: currentId, state: s, time: t, requester: currentRequester, lastUpdate: Date.now() }); }
-    function autoUpload(input) { const file = input.files[0]; if(!file) return; const reader = new FileReader(); reader.onload=(e)=>{ db.ref('gallery').push({url:e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP}); input.value=""; }; reader.readAsDataURL(file); }
+
+    function syncDB(s, t) { if (!currentId) return; db.ref('sync').set({ videoId: currentId, state: s, time: t, requester: currentRequester, lastUpdate: Date.now() }); }
+    function control(cmd) { if (!player || !currentId) return; if (cmd === 'restart') player.seekTo(0); cmd === 'pause' ? player.pauseVideo() : player.playVideo(); setTimeout(() => syncDB(player.getPlayerState(), player.getCurrentTime()), 200); }
+    function autoUpload(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => { input.value = ""; }); }; reader.readAsDataURL(file); }
+    function playNextInQueue() { if (firstQueueId) playSelected(firstQueueKey, firstQueueId, firstQueueName); }
+    setInterval(() => { if (player && player.getPlayerState() === 1) syncDB(1, player.getCurrentTime()); }, 3000);
 </script>
 </body>
 </html>
