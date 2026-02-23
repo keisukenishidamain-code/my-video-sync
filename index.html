@@ -20,58 +20,49 @@
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
         .hero { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
-        #player-wrapper { width: 85%; max-width: 1200px; aspect-ratio: 16/9; position: relative; background: #000; }
-        #player { width: 100%; height: 100%; border: 1px solid #111; pointer-events: none; }
+        #player-wrapper { 
+            width: 85%; 
+            max-width: 1200px; 
+            aspect-ratio: 16/9; 
+            position: relative; 
+            background: #000; 
+            overflow: visible; /* 情報表示のためにvisible */
+        }
+        
+        /* プレイヤー自体の枠線を排除 */
+        #player { width: 100%; height: 100%; border: none; pointer-events: none; display: block; }
 
-        /* トラック情報（左上） */
+        /* トラック情報 */
         #track-info { position: absolute; top: -75px; left: 0; width: 100%; display: flex; flex-direction: column; gap: 5px; z-index: 50; opacity: 0; transition: opacity 1s ease; }
         .info-label { font-size: 10px; color: var(--main-red); letter-spacing: 2px; font-weight: 900; }
         .info-value { font-size: 18px; color: #ffffff; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; }
 
-        /* ボリュームコントロール（右下固定・横並び） */
-        #volume-ctrl { 
+        /* ボリュームコントロール */
+        #volume-ctrl { position: absolute; bottom: -60px; right: 0; display: flex; align-items: center; gap: 15px; z-index: 110; }
+        .vol-slider { -webkit-appearance: none; width: 140px !important; height: 2px; background: #333; outline: none; cursor: pointer; }
+        .vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--main-red); border-radius: 50%; box-shadow: var(--neon); }
+        .unmute-btn { font-family: 'Orbitron'; font-size: 10px; color: var(--main-red); background: #000; border: 1px solid var(--main-red); padding: 6px 12px; cursor: pointer; font-weight: 900; border-radius: 4px; }
+
+        /* --- 修正ポイント：ブランドロゴ・オーバーレイ --- */
+        #brand-overlay { 
             position: absolute; 
-            bottom: -50px; 
-            right: 0; 
+            top: -2px; left: -2px; right: -2px; bottom: -2px; /* プレイヤーより僅かに大きくして隙間を殺す */
+            background: #000; 
             display: flex; 
+            flex-direction: column; 
             align-items: center; 
-            gap: 15px; 
-            z-index: 110; 
-            padding: 10px;
+            justify-content: center; 
+            z-index: 60; /* infoより上に配置 */
+            opacity: 1; 
+            transition: opacity 0.8s ease;
+            pointer-events: none;
         }
-        .vol-slider { 
-            -webkit-appearance: none; 
-            width: 140px !important; /* 横幅を明示的に指定 */
-            height: 2px; 
-            background: #333; 
-            outline: none; 
-            cursor: pointer;
-            margin: 0;
-        }
-        .vol-slider::-webkit-slider-thumb { 
-            -webkit-appearance: none; 
-            width: 14px; 
-            height: 14px; 
-            background: var(--main-red); 
-            border-radius: 50%; 
-            box-shadow: var(--neon); 
-        }
-
-        .unmute-btn { 
-            font-family: 'Orbitron'; font-size: 10px; color: var(--main-red); background: #000; border: 1px solid var(--main-red); 
-            padding: 6px 12px; cursor: pointer; font-weight: 900; transition: 0.3s; border-radius: 4px;
-        }
-        .unmute-btn:hover { background: var(--main-red); color: #fff; box-shadow: var(--neon); }
-
-        /* ブランドロゴ（オーバーレイ） */
-        #brand-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; opacity: 1; transition: opacity 0.8s ease; }
-        .brand-logo-big { font-size: clamp(30px, 5vw, 60px); font-weight: 900; letter-spacing: 15px; color: #ffffff; }
+        .brand-logo-big { font-size: clamp(40px, 8vw, 80px); font-weight: 900; letter-spacing: 20px; color: #ffffff; margin-left: 20px; /* 文字間隔のバランス調整 */ }
         .brand-logo-big span { color: var(--main-red); text-shadow: var(--neon); }
-        .brand-sub { color: #ffffff; font-size: clamp(8px, 1.2vw, 14px); letter-spacing: 8px; margin-top: 15px; text-transform: uppercase; }
+        .brand-sub { color: #ffffff; font-size: clamp(10px, 1.5vw, 16px); letter-spacing: 10px; margin-top: 20px; text-transform: uppercase; opacity: 0.8; }
     </style>
 </head>
 <body>
-
 <header>
     <a href="index.html" class="logo"><span>27</span> CLUB</a>
     <div class="nav-links">
@@ -83,14 +74,8 @@
 <section class="hero">
     <div id="player-wrapper">
         <div id="track-info">
-            <div>
-                <span class="info-label">NOW PLAYING:</span>
-                <span id="video-title" class="info-value">LOADING...</span>
-            </div>
-            <div>
-                <span class="info-label">REQUESTED BY:</span>
-                <span id="requester-name" class="info-value">27 CLUB STAFF</span>
-            </div>
+            <div><span class="info-label">NOW PLAYING:</span><span id="video-title" class="info-value">LOADING...</span></div>
+            <div><span class="info-label">REQUESTED BY:</span><span id="requester-name" class="info-value">27 CLUB STAFF</span></div>
         </div>
 
         <div id="player"></div>
@@ -108,12 +93,7 @@
 </section>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
-        databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "club-d0011",
-        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE", databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "club-d0011", appId: "1:51948793811:web:1edecab7c41c1d84ad8926" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let player, currentVideoId = "";
@@ -131,8 +111,6 @@
                         info.style.opacity = "1";
                         setTimeout(() => { if(player.getPlayerState()===1) ov.style.display="none"; }, 800);
                         updateTitle();
-                    } else if (e.data === YT.PlayerState.BUFFERING) {
-                        // バッファリング中は特に何もしない
                     } else {
                         ov.style.display = "flex"; 
                         ov.style.opacity = "1";
@@ -146,20 +124,12 @@
     function changeVolume(val) {
         if (player && player.setVolume) {
             player.setVolume(val);
-            if (val > 0) {
-                player.unMute();
-                document.getElementById('unmute-btn').style.display = "none";
-            }
+            if (val > 0) { player.unMute(); document.getElementById('unmute-btn').style.display = "none"; }
         }
     }
 
     function unmute() {
-        if (player) {
-            player.unMute();
-            player.setVolume(50);
-            document.getElementById('volRange').value = 50;
-            document.getElementById('unmute-btn').style.display = "none";
-        }
+        if (player) { player.unMute(); player.setVolume(50); document.getElementById('volRange').value = 50; document.getElementById('unmute-btn').style.display = "none"; }
     }
 
     function updateTitle() {
@@ -173,29 +143,21 @@
         db.ref('sync').on('value', (snap) => {
             const data = snap.val();
             if (!data || !player) return;
-
-            if (data.requester) {
-                document.getElementById('requester-name').innerText = data.requester.toUpperCase();
-            }
-
+            if (data.requester) document.getElementById('requester-name').innerText = data.requester.toUpperCase();
             if (currentVideoId !== data.videoId) {
                 currentVideoId = data.videoId;
                 player.loadVideoById(data.videoId, data.time);
                 return;
             }
-
             const latency = (Date.now() - data.lastUpdate) / 1000;
             const targetTime = data.time + (data.state === 1 ? latency : 0);
             if (data.state === 1) {
                 const diff = Math.abs(player.getCurrentTime() - targetTime);
                 if (diff > 2) player.seekTo(targetTime, true);
                 if (player.getPlayerState() !== 1) player.playVideo();
-            } else {
-                player.pauseVideo();
-            }
+            } else { player.pauseVideo(); }
         });
     }
-
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
 </script>
 </body>
