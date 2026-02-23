@@ -8,97 +8,134 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: #ffffff; }
+        :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; --border-color: #222; }
         
-        header { 
-            padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; 
-            background: linear-gradient(to bottom, rgba(0,0,0,1), transparent); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #000; color: #ffffff; 
+            font-family: 'Orbitron', sans-serif; overflow: hidden; 
         }
-        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
+        
+        /* ヘッダーの復元と固定 */
+        header { 
+            padding: 25px 40px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: rgba(0,0,0,0.9); 
+            position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
+            border-bottom: 1px solid var(--border-color);
+        }
+        .logo { font-size: 22px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
 
-        /* カルーセルセクション */
+        .nav-links { display: flex; gap: 15px; }
+        .nav-btn { 
+            color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; 
+            border: 1px solid #444; padding: 8px 20px; border-radius: 4px; 
+            background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; 
+        }
+        .nav-btn:hover { border-color: var(--main-red); box-shadow: var(--neon); }
+
+        /* メインコンテナ */
+        .master-wrapper {
+            margin-top: 90px;
+            height: calc(100vh - 90px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* カルーセルエリア */
         .archive-selector {
-            height: 250px;
+            flex-shrink: 0;
+            height: 180px;
             display: flex;
             align-items: center;
             overflow-x: auto;
-            padding: 0 50px;
+            padding: 0 40px;
             gap: 20px;
             scroll-behavior: smooth;
             scrollbar-width: none;
-            margin-top: 100px;
-            mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
         }
         .archive-selector::-webkit-scrollbar { display: none; }
 
         .date-card {
-            flex: 0 0 280px;
-            height: 160px;
-            background: #111;
+            flex: 0 0 240px;
+            height: 120px;
+            background: #0a0a0a;
             border: 1px solid #333;
-            border-radius: 8px;
+            border-radius: 4px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; transition: 0.4s;
+        }
+        .date-card:hover { border-color: var(--main-red); transform: translateY(-5px); }
+        .date-card.active { border-color: var(--main-red); box-shadow: var(--neon); background: #111; }
+        .date-card .date-text { font-size: 18px; font-weight: 900; letter-spacing: 2px; }
+        .date-card .event-title { font-size: 8px; color: var(--main-red); margin-top: 8px; letter-spacing: 2px; }
+
+        /* コンテンツ表示エリア */
+        .content-area {
+            flex-grow: 1;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: 0.4s;
-            position: relative;
+            padding: 20px 40px 40px;
+            gap: 30px;
+            overflow: hidden;
+            border-top: 1px solid var(--border-color);
+            background: #050505;
+            display: none; /* 初期は非表示 */
+        }
+        .content-area.show { display: flex; }
+
+        /* 左：プレイヤー */
+        .video-section { flex: 2; display: flex; flex-direction: column; gap: 15px; }
+        .player-wrapper { width: 100%; aspect-ratio: 16/9; background: #000; border: 1px solid #222; }
+        #player { width: 100%; height: 100%; }
+        .now-playing { font-size: 12px; color: var(--main-red); font-weight: 900; letter-spacing: 2px; }
+
+        /* 右：トラックリスト */
+        .track-list-section { 
+            flex: 1; 
+            display: flex; flex-direction: column; 
+            border-left: 1px solid var(--border-color); 
+            padding-left: 25px; 
             overflow: hidden;
         }
-        .date-card:hover { border-color: var(--main-red); transform: scale(1.05); background: #1a1a1a; box-shadow: var(--neon); }
-        .date-card.active { border-color: var(--main-red); box-shadow: var(--neon); background: #000; }
-        .date-card .date-text { font-size: 24px; font-weight: 900; letter-spacing: 2px; }
-        .date-card .event-title { font-size: 10px; color: var(--main-red); margin-top: 10px; opacity: 0.8; }
-
-        /* 下部：動画表示エリア */
-        .content-area {
-            display: flex;
-            height: calc(100vh - 350px);
-            padding: 0 50px 30px;
-            gap: 30px;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: 0.5s;
-        }
-        .content-area.show { opacity: 1; transform: translateY(0); }
-
-        .video-main { flex: 2; background: #000; border: 1px solid #222; aspect-ratio: 16/9; }
-        .video-main iframe { width: 100%; height: 100%; border: none; }
-
-        .track-list {
-            flex: 1;
-            overflow-y: auto;
-            border-left: 1px solid #222;
-            padding-left: 20px;
-        }
+        .track-scroll { flex-grow: 1; overflow-y: auto; padding-right: 10px; }
         .track-item {
-            display: flex; gap: 15px; padding: 10px; border: 1px solid transparent;
-            margin-bottom: 10px; cursor: pointer; border-radius: 4px; transition: 0.2s;
+            display: flex; gap: 15px; padding: 10px; border: 1px solid #111;
+            margin-bottom: 8px; cursor: pointer; border-radius: 4px; background: #0a0a0a; transition: 0.2s;
         }
-        .track-item:hover { background: #111; border-color: #333; }
-        .track-item.active { border-color: var(--main-red); background: #0d0d0d; }
-        .track-item img { width: 80px; height: 45px; object-fit: cover; }
-        .track-info { font-size: 9px; }
-        .track-info .req { color: var(--main-red); font-weight: 900; margin-bottom: 3px; display: block; }
+        .track-item:hover { border-color: #444; background: #111; }
+        .track-item.active { border-color: var(--main-red); box-shadow: var(--neon); background: #0d0d0d; }
+        .track-item img { width: 70px; aspect-ratio: 16/9; object-fit: cover; border-radius: 2px; }
+        .track-info { display: flex; flex-direction: column; justify-content: center; font-size: 9px; }
+        .track-info .req { color: var(--main-red); font-weight: 900; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
 <header>
     <a href="index.html" class="logo"><span>27</span> CLUB</a>
-    <div style="font-size: 10px; letter-spacing: 4px; color: #666;">BACK NUMBERS</div>
+    <div class="nav-links">
+        <a href="index.html" class="nav-btn">LIVE</a>
+        <a href="gallery.html" class="nav-btn">GALLERY</a>
+    </div>
 </header>
 
-<div class="archive-selector" id="dateSelector"></div>
+<div class="master-wrapper">
+    <div class="archive-selector" id="dateSelector"></div>
 
-<div class="content-area" id="contentArea">
-    <div class="video-main">
-        <div id="player"></div>
+    <div class="content-area" id="contentArea">
+        <div class="video-section">
+            <div class="player-wrapper">
+                <div id="player"></div>
+            </div>
+            <div id="nowPlayingText" class="now-playing">SELECT A TRACK</div>
+        </div>
+        
+        <div class="track-list-section">
+            <div style="font-size: 10px; color: #666; margin-bottom: 15px; letter-spacing: 2px;">SETLIST</div>
+            <div class="track-scroll" id="trackList"></div>
+        </div>
     </div>
-    <div class="track-list" id="trackList"></div>
 </div>
 
 <script>
@@ -114,7 +151,7 @@
     let player, groupedData = {};
 
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'autoplay': 0, 'controls': 1 } });
+        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'autoplay': 0, 'controls': 1, 'rel': 0, 'modestbranding': 1 } });
         loadArchive();
     }
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
@@ -127,6 +164,7 @@
                 const item = child.val();
                 if (!item.timestamp) return;
                 const d = new Date(item.timestamp);
+                if (isNaN(d.getTime())) return;
                 if (d.getHours() < 5) d.setDate(d.getDate() - 1);
                 const dateStr = `${d.getFullYear()}.${('0' + (d.getMonth() + 1)).slice(-2)}.${('0' + d.getDate()).slice(-2)}`;
                 
@@ -155,7 +193,6 @@
     }
 
     function showTracks(date, element) {
-        // UI操作
         document.querySelectorAll('.date-card').forEach(c => c.classList.remove('active'));
         element.classList.add('active');
         document.getElementById('contentArea').classList.add('show');
@@ -163,26 +200,25 @@
         const trackList = document.getElementById('trackList');
         trackList.innerHTML = "";
         
-        // その日のリストを表示（新しい順）
         const dayTracks = [...groupedData[date]].reverse();
         dayTracks.forEach((track, index) => {
             const item = document.createElement('div');
             item.className = 'track-item';
+            item.id = `track-${track.key}`;
             item.onclick = () => {
                 player.loadVideoById(track.videoId);
                 document.querySelectorAll('.track-item').forEach(t => t.classList.remove('active'));
                 item.classList.add('active');
+                document.getElementById('nowPlayingText').innerText = `NOW PLAYING: ${track.requester.toUpperCase()}`;
             };
             item.innerHTML = `
                 <img src="https://img.youtube.com/vi/${track.videoId}/mqdefault.jpg">
                 <div class="track-info">
                     <span class="req">${track.requester.toUpperCase()}</span>
-                    <span>${track.videoId}</span>
+                    <span style="color:#666;">ID: ${track.videoId}</span>
                 </div>
             `;
             trackList.appendChild(item);
-            
-            // 最初の1曲目を自動ロード
             if(index === 0) item.click();
         });
     }
