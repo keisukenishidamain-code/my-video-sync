@@ -9,60 +9,119 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
+        
         body, html { 
             margin: 0; padding: 0; width: 100%; min-height: 100vh; 
             background: #000; font-family: 'Orbitron', sans-serif; color: #fff;
-            overflow-x: hidden; /* 横スクロール禁止 */
-            overflow-y: auto;   /* 縦スクロールのみ */
+            overflow-x: hidden; overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center; /* 中央寄せ */
         }
+
+        /* スクロールバー */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--main-red); }
+
         header { 
-            padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; 
-            background: rgba(0,0,0,0.9); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
-            border-bottom: 1px solid #222; backdrop-filter: blur(5px);
+            padding: 20px 40px; display: flex; justify-content: center; align-items: center; 
+            background: rgba(0,0,0,0.95); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
+            border-bottom: 1px solid #222; backdrop-filter: blur(10px);
         }
+        
+        /* ヘッダーの中身も中央配置を維持 */
+        .header-inner { 
+            width: 100%; max-width: 1800px; 
+            display: flex; justify-content: space-between; align-items: center; 
+        }
+
         .logo { font-size: 20px; font-weight: 900; letter-spacing: 4px; text-decoration: none; color: #fff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        .nav-btn { color: #fff; text-decoration: none; font-size: 9px; border: 1px solid #333; padding: 6px 15px; border-radius: 4px; margin-left: 10px; }
-        
-        .container { padding: 100px 10px 40px; max-width: 100%; margin: 0 auto; box-sizing: border-box; }
+
+        .nav-links { display: flex; gap: 10px; }
+        .nav-btn { 
+            color: #fff; text-decoration: none; font-size: 9px; border: 1px solid #333; 
+            padding: 8px 18px; border-radius: 4px; transition: 0.3s; 
+            background: rgba(0,0,0,0.5); letter-spacing: 1px;
+        }
+        .nav-btn:hover { border-color: var(--main-red); box-shadow: var(--neon); }
+
+        /* メインコンテナ：中央寄せの要 */
+        .container { 
+            padding: 120px 20px 80px; 
+            width: 100%; max-width: 1800px; 
+            margin: 0 auto; box-sizing: border-box; 
+        }
         
         #gallery-grid { 
-            column-count: 7; column-gap: 10px; width: 100%; 
+            column-count: 7; 
+            column-gap: 12px; 
+            width: 100%; 
+            margin: 0 auto;
         }
-        @media (max-width: 1200px) { #gallery-grid { column-count: 4; } }
+
+        /* レスポンシブ */
+        @media (max-width: 1600px) { #gallery-grid { column-count: 6; } }
+        @media (max-width: 1300px) { #gallery-grid { column-count: 5; } }
+        @media (max-width: 1000px) { #gallery-grid { column-count: 3; } }
         @media (max-width: 600px)  { #gallery-grid { column-count: 2; } }
 
         .photo-card { 
-            break-inside: avoid; margin-bottom: 10px; border: 1px solid #111; 
-            transition: 0.3s; cursor: pointer; position: relative; overflow: hidden;
+            break-inside: avoid; margin-bottom: 12px; border: 1px solid #1a1a1a; 
+            background: #050505; border-radius: 4px; overflow: hidden;
+            transition: 0.3s ease-in-out; cursor: pointer; position: relative;
         }
-        .photo-card:hover { border-color: var(--main-red); transform: translateY(-3px); box-shadow: var(--neon); }
-        .photo-card img { width: 100%; height: auto; display: block; }
+        .photo-card:hover { border-color: var(--main-red); box-shadow: var(--neon); transform: translateY(-5px); z-index: 10; }
+        .photo-card img { width: 100%; height: auto; display: block; transition: 0.5s; }
 
+        /* モーダル */
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
-        #modal img { max-width: 90%; max-height: 90%; object-fit: contain; }
+        #modal img { max-width: 95%; max-height: 95%; object-fit: contain; }
     </style>
 </head>
 <body>
+
 <header>
-    <a href="index.html" class="logo"><span>27</span> CLUB</a>
-    <div>
-        <a href="index.html" class="nav-btn">LIVE</a>
-        <a href="archive.html" class="nav-btn">BACK NUMBERS</a>
+    <div class="header-inner">
+        <a href="index.html" class="logo"><span>27</span> CLUB</a>
+        <div class="nav-links">
+            <a href="index.html" class="nav-btn">LIVE</a>
+            <a href="archive.html" class="nav-btn">BACK NUMBERS</a>
+        </div>
     </div>
 </header>
-<div class="container"><div id="gallery-grid"></div></div>
-<div id="modal" onclick="this.style.display='none'"><img id="modal-img" src=""></div>
+
+<div class="container">
+    <div id="gallery-grid"></div>
+</div>
+
+<div id="modal" onclick="this.style.display='none'">
+    <img id="modal-img" src="">
+</div>
+
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE", databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "club-d0011", appId: "1:51948793811:web:1edecab7c41c1d84ad8926" };
+    const firebaseConfig = {
+        apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
+        databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "club-d0011",
+        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
+    };
     firebase.initializeApp(firebaseConfig);
-    db = firebase.database();
+    const db = firebase.database();
+
     db.ref('gallery').on('value', snap => {
-        const grid = document.getElementById('gallery-grid'); grid.innerHTML = "";
-        let items = []; snap.forEach(c => items.push(c.val()));
+        const grid = document.getElementById('gallery-grid');
+        grid.innerHTML = "";
+        let items = [];
+        snap.forEach(child => { items.push(child.val()); });
+
         items.reverse().forEach(data => {
-            const card = document.createElement('div'); card.className = 'photo-card';
-            card.onclick = () => { document.getElementById('modal-img').src = data.url; document.getElementById('modal').style.display = 'flex'; };
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            card.onclick = () => { 
+                document.getElementById('modal-img').src = data.url; 
+                document.getElementById('modal').style.display = 'flex'; 
+            };
             card.innerHTML = `<img src="${data.url}" loading="lazy">`;
             grid.appendChild(card);
         });
