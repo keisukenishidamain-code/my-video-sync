@@ -9,73 +9,53 @@
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
         body { font-family: 'Orbitron', sans-serif; background: #000; color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* 左側：メインコントロール */
-        .left { width: 40%; padding: 30px; border-right: 1px solid #222; background: linear-gradient(145deg, #111, #000); display: flex; flex-direction: column; }
+        .left { width: 40%; padding: 30px; border-right: 1px solid #222; background: linear-gradient(145deg, #111, #000); overflow-y: auto; }
         .logo { font-size: 24px; font-weight: 900; margin-bottom: 20px; letter-spacing: 5px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-
-        .input-area { background: #1a1a1a; padding: 20px; border-radius: 10px; border: 1px solid #333; }
-        input { width: 100%; padding: 12px; background: #000; border: 1px solid #444; color: #0f0; font-family: monospace; margin-bottom: 15px; box-sizing: border-box; border-radius: 5px; outline: none; }
-        
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-main { padding: 15px; border: none; border-radius: 5px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 12px; }
-        .btn-live { background: var(--main-red); color: white; grid-column: span 2; }
+        .section-label { font-size: 10px; color: #555; letter-spacing: 2px; margin: 20px 0 10px; border-bottom: 1px solid #222; padding-bottom: 5px; }
+        .input-area { background: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 15px; }
+        input { width: 100%; padding: 10px; background: #000; border: 1px solid #444; color: #0f0; font-family: monospace; margin-bottom: 10px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 12px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 11px; }
+        .btn-live { background: var(--main-red); color: white; margin-bottom: 5px; }
         .btn-queue { background: #333; color: #ccc; }
-        .btn-live:hover { box-shadow: var(--neon); background: #ff2255; }
-
-        /* 同期ボタンパネル */
-        .playback-ctrl { margin-top: 30px; display: flex; gap: 15px; justify-content: center; background: #000; padding: 20px; border-radius: 50px; border: 1px solid #222; }
-        .ctrl-icon { width: 60px; height: 60px; border-radius: 50%; background: #222; color: white; border: none; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-ss { background: #444; color: #fff; }
+        .playback-ctrl { margin-top: 20px; display: flex; gap: 10px; justify-content: center; background: #000; padding: 15px; border-radius: 50px; border: 1px solid #222; }
+        .ctrl-icon { width: 50px; height: 50px; border-radius: 50%; background: #222; color: white; border: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .ctrl-icon:hover { background: var(--main-red); box-shadow: var(--neon); }
-
-        #player { width: 100%; aspect-ratio: 16/9; margin-top: 25px; border-radius: 8px; border: 1px solid #333; background: #000; }
-
-        /* 右側：予約リスト */
+        #player { width: 100%; aspect-ratio: 16/9; margin-top: 20px; border-radius: 8px; border: 1px solid #333; }
         .right { width: 60%; padding: 30px; background: #050505; display: flex; flex-direction: column; }
-        h2 { font-size: 14px; color: #555; letter-spacing: 3px; border-bottom: 1px solid #222; padding-bottom: 10px; margin-top: 0; }
-        #reserve-list { flex-grow: 1; overflow-y: auto; margin-top: 15px; }
-
-        .list-item { background: #111; padding: 15px; margin-bottom: 10px; border-radius: 10px; display: flex; align-items: center; gap: 20px; border-left: 4px solid #333; }
-        .list-item:hover { border-left-color: var(--main-red); background: #1a1a1a; }
-        .list-item img { width: 100px; border-radius: 4px; }
-        .item-info { flex-grow: 1; font-size: 11px; color: #888; letter-spacing: 1px; }
-        .item-btns { display: flex; gap: 10px; }
-        .btn-sm { padding: 8px 15px; font-size: 10px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff; cursor: pointer; font-family: 'Orbitron'; font-weight: bold; }
-        .btn-play { border-color: #0f0; color: #0f0; }
-        .btn-play:hover { background: #040; color: #fff; }
-        .btn-del { border-color: #f00; color: #f00; }
-        .btn-del:hover { background: #500; color: #fff; }
+        #reserve-list { flex-grow: 1; overflow-y: auto; }
+        .list-item { background: #111; padding: 12px; margin-bottom: 8px; border-radius: 8px; display: flex; align-items: center; gap: 15px; border-left: 4px solid #333; }
+        .list-item img { width: 80px; border-radius: 4px; }
+        .item-btns { display: flex; gap: 8px; }
+        .btn-sm { padding: 6px 10px; font-size: 9px; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff; cursor: pointer; font-family: 'Orbitron'; }
     </style>
 </head>
 <body>
-
 <div class="left">
-    <div class="logo"><span>27</span> CLUB</div>
-    
+    <div class="logo"><span>27</span> CLUB STAFF</div>
+    <div class="section-label">LIVE BROADCAST</div>
     <div class="input-area">
-        <input type="text" id="urlInput" placeholder="YOUTUBE URL (PASTE HERE)...">
-        <div class="btn-group">
-            <button class="btn-main btn-live" onclick="handleAction('live')">IMMEDIATE LIVE (即時配信・最初から)</button>
-            <button class="btn-main btn-queue" onclick="handleAction('queue')">ADD TO QUEUE (次に流す曲を予約)</button>
-        </div>
+        <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
+        <button class="btn-main btn-live" onclick="handleAction('live')">IMMEDIATE LIVE</button>
+        <button class="btn-main btn-queue" onclick="handleAction('queue')">ADD TO QUEUE</button>
     </div>
-
     <div class="playback-ctrl">
-        <button class="ctrl-icon" title="最初から" onclick="control('restart')">⏮</button>
-        <button class="ctrl-icon" title="再生" onclick="control('play')">▶</button>
-        <button class="ctrl-icon" title="一時停止" onclick="control('pause')">⏸</button>
+        <button class="ctrl-icon" onclick="control('restart')">⏮</button>
+        <button class="ctrl-icon" onclick="control('play')">▶</button>
+        <button class="ctrl-icon" onclick="control('pause')">⏸</button>
     </div>
-
     <div id="player"></div>
-    <div id="status-msg" style="text-align:center; font-size:10px; margin-top:10px; color:#555;">SYNC STATUS: READY</div>
+    <div class="section-label">GALLERY MANAGEMENT</div>
+    <div class="input-area">
+        <input type="text" id="ssUrlInput" placeholder="IMAGE URL...">
+        <button class="btn-main btn-ss" onclick="postSS()">POST SNAPSHOT</button>
+    </div>
 </div>
-
 <div class="right">
-    <h2>NEXT SETLIST / RESERVATION</h2>
+    <div class="section-label">RESERVATION QUEUE</div>
     <div id="reserve-list"></div>
 </div>
-
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
@@ -86,111 +66,54 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let player, currentVideoId = "";
-
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
-
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            events: { 'onStateChange': (e) => handleStateChange(e.data) }
-        });
+        player = new YT.Player('player', { events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } });
         loadQueue();
     }
-
-    // URLからIDを抽出して実行
     function handleAction(type) {
         const url = document.getElementById('urlInput').value;
         const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
-        if (!id) return alert("Invalid URL");
-
-        if (type === 'live') {
-            executeLive(id);
-        } else {
-            db.ref('queue').push({ videoId: id, timestamp: Date.now() });
-        }
+        if (!id) return;
+        if (type === 'live') { executeLive(id); } else { db.ref('queue').push({ videoId: id, timestamp: Date.now() }); }
         document.getElementById('urlInput').value = "";
     }
-
-    async function executeLive(id) {
-        currentVideoId = id;
-        player.loadVideoById(id, 0);
-        updateSyncDB(1, 0); // 再生状態でDB更新
-        
-        // バックナンバーDBへ追加（重複削除付き）
-        const snap = await db.ref('backnumbers').once('value');
-        snap.forEach(c => { if(c.val().videoId === id) db.ref(`backnumbers/${c.key}`).remove(); });
+    function executeLive(id) {
+        currentVideoId = id; player.loadVideoById(id, 0); syncDB(1, 0);
         db.ref('backnumbers').push({ videoId: id, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        
-        document.getElementById('status-msg').innerText = "STATUS: BROADCASTING LIVE";
     }
-
-    // 物理ボタンのクリック時
     function control(cmd) {
         if (!player || !currentVideoId) return;
-        let state = 1;
-        let time = player.getCurrentTime();
-
-        if (cmd === 'restart') { player.seekTo(0); time = 0; state = 1; }
+        let state = 1; let time = player.getCurrentTime();
+        if (cmd === 'restart') { player.seekTo(0); time = 0; }
         else if (cmd === 'play') { player.playVideo(); state = 1; }
         else if (cmd === 'pause') { player.pauseVideo(); state = 2; }
-
-        updateSyncDB(state, time);
+        syncDB(state, time);
     }
-
-    function handleStateChange(s) {
-        // プレイヤーそのものの操作（再生・停止）をDBに反映
-        if (currentVideoId) {
-            updateSyncDB(s, player.getCurrentTime());
-        }
+    function syncDB(state, time) {
+        if (!currentVideoId) return;
+        db.ref('sync').set({ videoId: currentVideoId, state: state, time: time, lastUpdate: Date.now() });
     }
-
-    function updateSyncDB(state, time) {
-        db.ref('sync').set({
-            videoId: currentVideoId,
-            state: state,
-            time: time,
-            lastUpdate: Date.now()
-        });
-    }
-
-    // 再生中、1秒ごとに時間をDBに上書き（リスナーへの強制同期用）
-    setInterval(() => {
-        if (player && player.getPlayerState() === 1 && currentVideoId) {
-            updateSyncDB(1, player.getCurrentTime());
-        }
-    }, 1000);
-
-    // 予約リスト
     function loadQueue() {
-        db.ref('queue').orderByChild('timestamp').on('value', snap => {
-            const list = document.getElementById('reserve-list');
-            list.innerHTML = "";
+        db.ref('queue').on('value', snap => {
+            const list = document.getElementById('reserve-list'); list.innerHTML = "";
             snap.forEach(c => {
                 const item = c.val();
-                const div = document.createElement('div');
-                div.className = "list-item";
-                div.innerHTML = `
-                    <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
-                    <div class="item-info">VIDEO ID: ${item.videoId}</div>
-                    <div class="item-btns">
-                        <button class="btn-sm btn-play" onclick="playFromQueue('${c.key}', '${item.videoId}')">PUSH TO LIVE</button>
-                        <button class="btn-sm btn-del" onclick="removeFromQueue('${c.key}')">REMOVE</button>
-                    </div>
-                `;
+                const div = document.createElement('div'); div.className = "list-item";
+                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div style="flex-grow:1; font-size:10px;">${item.videoId}</div><div class="item-btns"><button class="btn-sm" style="color:#0f0;" onclick="playFromQueue('${c.key}','${item.videoId}')">PLAY</button><button class="btn-sm" style="color:#f00;" onclick="removeFromQueue('${c.key}')">DEL</button></div>`;
                 list.appendChild(div);
             });
         });
     }
-
-    function playFromQueue(key, id) {
-        executeLive(id);
-        removeFromQueue(key);
+    function playFromQueue(k, id) { executeLive(id); removeFromQueue(k); }
+    function removeFromQueue(k) { db.ref(`queue/${k}`).remove(); }
+    function postSS() {
+        const url = document.getElementById('ssUrlInput').value;
+        if (url) db.ref('gallery').push({ url: url, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => { alert("SS POSTED"); document.getElementById('ssUrlInput').value = ""; });
     }
-
-    function removeFromQueue(key) {
-        db.ref(`queue/${key}`).remove();
-    }
+    setInterval(() => { if (player && player.getPlayerState() === 1 && currentVideoId) syncDB(1, player.getCurrentTime()); }, 1000);
 </script>
 </body>
 </html>
