@@ -14,16 +14,14 @@
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background: #000; color: #fff; font-family: 'Orbitron', sans-serif; 
             overflow: hidden; 
-            /* 画面全体の中央寄せ設定 */
             display: flex; justify-content: center; align-items: center; 
         }
         
-        /* コンテナの幅を固定して中央に寄せる */
         .master-container { 
             display: flex; 
-            width: 98vw;      /* 画面端に少し隙間を作る */
-            max-width: 1400px; /* 広がりすぎ防止 */
-            height: 96vh;     /* 上下に少し隙間を作る */
+            width: 98vw;
+            max-width: 1400px; /* 絶対幅固定 */
+            height: 96vh;
             background: #0a0a0a; 
             box-sizing: border-box; 
             overflow: hidden; 
@@ -38,16 +36,22 @@
             background: #0d0d0d;
         }
         
+        /* 中央・右カラムの共通設定 */
         .list-section { 
-            flex: 1; padding: 20px; background: #050505; display: flex; flex-direction: column; 
+            flex: 1; min-width: 0; background: #050505; display: flex; flex-direction: column; 
             overflow: hidden; box-sizing: border-box; border-right: 1px solid var(--border-color); 
         }
         .list-section:last-child { border-right: none; }
         
+        /* 履歴とギャラリーを縦に分割するコンテナ */
+        .right-column-split {
+            flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden;
+        }
+
         .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 15px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
         
-        .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; padding-bottom: 5px; }
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; padding-bottom: 5px; flex-shrink: 0; }
         .section-label { font-size: 10px; color: #fff; letter-spacing: 1px; text-transform: uppercase; margin: 0; opacity: 0.8; }
         
         .clear-link { font-size: 8px; color: #ffffff; cursor: pointer; text-decoration: underline; letter-spacing: 1px; opacity: 0.6; transition: 0.3s; }
@@ -61,9 +65,7 @@
 
         .btn-ui { width: 100%; height: 48px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; font-size: 12px; cursor: pointer; text-transform: uppercase; color: #fff !important; transition: 0.3s; }
         .btn-red { background: var(--main-red); box-shadow: var(--neon); }
-        .btn-red:hover { transform: scale(1.02); filter: brightness(1.2); }
         .btn-gray { background: #1a1a1a; border: 1px solid #555; }
-        .btn-gray:hover { background: #333; }
         
         #player { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border-color); background:#000; margin-bottom: 15px; }
         .playback-ctrl { margin-bottom: 15px; display: flex; gap: 15px; justify-content: center; background: #000; padding: 10px; border-radius: 40px; border: 1px solid var(--border-color); }
@@ -74,17 +76,16 @@
         .file-label { width: 100%; height: 42px; background: #1a1a1a; border: 1px solid #555; color: #fff; font-family: 'Orbitron'; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
         
         .scroll-list { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
-        /* カスタムスクロールバー */
         .scroll-list::-webkit-scrollbar { width: 4px; }
         .scroll-list::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
-        .list-item { background: #0d0d0d; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; align-items: center; gap: 12px; border-left: 3px solid var(--main-red); width: 100%; box-sizing: border-box; position: relative; transition: 0.2s; }
-        .list-item:hover { background: #151515; }
+        .list-item { background: #0d0d0d; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; align-items: center; gap: 12px; border-left: 3px solid var(--main-red); width: 100%; box-sizing: border-box; position: relative; }
         .history-item { border-left: 3px solid #444; }
+        .gallery-item { border-left: 3px solid #00ffcc; } /* ギャラリー用アクセント */
         
         .staff-date-divider { font-size: 9px; color: var(--main-red); padding: 15px 5px 5px; border-bottom: 1px solid #222; margin-bottom: 10px; letter-spacing: 2px; font-weight: 900; }
         .list-item img { width: 70px; height: 40px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
-        .list-info { flex-grow: 1; min-width: 0; position: relative; }
+        .list-info { flex-grow: 1; min-width: 0; }
         .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 85%; }
         
         .mini-del-btn { position: absolute; right: 5px; top: 10px; background: none; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 0 5px; }
@@ -96,27 +97,22 @@
 <div class="master-container">
     <div class="left">
         <div class="logo"><span>27</span> STAFF</div>
-        
         <div class="input-group">
-            <div class="section-label">EVENT TITLE (ARCHIVE SUBTITLE)</div>
-            <input type="text" id="eventTitleInput" class="event-input" placeholder="NIGHT SESSION (Default)...">
+            <div class="section-label">EVENT TITLE</div>
+            <input type="text" id="eventTitleInput" class="event-input" placeholder="NIGHT SESSION...">
         </div>
-
         <div class="input-group">
             <div class="section-label">REQUEST QUEUE</div>
             <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
             <input type="text" id="nameInput" placeholder="REQUESTER...">
             <button class="btn-ui btn-red" onclick="addToQueue()">ADD TO QUEUE</button>
         </div>
-
         <div class="playback-ctrl">
             <button class="ctrl-icon" onclick="control('restart')">⏮</button>
             <button class="ctrl-icon" onclick="playNextInQueue()" style="color: var(--main-red); border-color: var(--main-red);">▶</button>
             <button class="ctrl-icon" onclick="control('pause')">⏸</button>
         </div>
-        
         <div id="player"></div>
-        
         <div class="input-group">
             <div class="section-label">GALLERY</div>
             <label for="imageFileInput" class="file-label">SELECT & POST IMAGE</label>
@@ -130,30 +126,35 @@
         <div id="reserve-list" class="scroll-list"></div>
     </div>
 
-    <div class="list-section">
-        <div class="section-header">
-            <div class="section-label">HISTORY</div>
-            <div class="clear-link" onclick="clearBackNumbers()">ALL CLEAR</div>
+    <div class="right-column-split">
+        <div class="list-section" style="height: 55%; border-right:none;">
+            <div class="section-header">
+                <div class="section-label">HISTORY</div>
+                <div class="clear-link" onclick="clearBackNumbers()">ALL CLEAR</div>
+            </div>
+            <div id="history-edit-list" class="scroll-list"></div>
         </div>
-        <div id="history-edit-list" class="scroll-list"></div>
+        <div class="list-section" style="height: 45%; border-top: 1px solid var(--border-color); border-right:none;">
+            <div class="section-header">
+                <div class="section-label">GALLERY CONTROL</div>
+                <div class="clear-link" onclick="clearGallery()">ALL CLEAR</div>
+            </div>
+            <div id="gallery-edit-list" class="scroll-list"></div>
+        </div>
     </div>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
-        databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "club-d0011",
-        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE", databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "club-d0011", appId: "1:51948793811:web:1edecab7c41c1d84ad8926" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let player, currentId = "", currentRequester = "27 CLUB", firstQueueKey = "", firstQueueId = "", firstQueueName = "";
 
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { height: '100%', width: '100%', events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } });
+        player = new YT.Player('player', { height: '100%', width: '100%', playerVars:{'controls':1}, events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } });
         loadQueue();
         loadHistoryEditor();
+        loadGalleryEditor();
     }
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
@@ -169,15 +170,12 @@
 
     function loadQueue() {
         db.ref('queue').on('value', snap => {
-            const list = document.getElementById('reserve-list');
-            list.innerHTML = "";
-            let items = [];
-            snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
+            const list = document.getElementById('reserve-list'); list.innerHTML = "";
+            let items = []; snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
             if (items.length > 0) {
                 firstQueueKey = items[0].key; firstQueueId = items[0].videoId; firstQueueName = items[0].requester;
                 items.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = "list-item";
+                    const div = document.createElement('div'); div.className = "list-item";
                     div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span style="font-size:8px; color:var(--main-red); font-weight:900;">${item.requester.toUpperCase()}</span><span style="font-size:9px; color:#fff;">${item.videoId}</span><button class="mini-del-btn" onclick="db.ref('queue/${item.key}').remove()">✕</button></div><button class="btn-ui btn-gray" style="width:50px; height:32px; font-size:8px; flex-shrink:0;" onclick="playSelected('${item.key}','${item.videoId}','${item.requester}')">PLAY</button>`;
                     list.appendChild(div);
                 });
@@ -188,54 +186,50 @@
 
     function loadHistoryEditor() {
         db.ref('backnumbers').on('value', snap => {
-            const histList = document.getElementById('history-edit-list');
-            histList.innerHTML = "";
-            let items = [];
-            snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
-            items.reverse();
-            let lastDate = "";
+            const histList = document.getElementById('history-edit-list'); histList.innerHTML = "";
+            let items = []; snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
+            items.reverse(); let lastDate = "";
             items.forEach(item => {
-                if (!item.timestamp) return;
                 const dateObj = new Date(item.timestamp);
-                if (isNaN(dateObj.getTime())) return;
                 if (dateObj.getHours() < 5) dateObj.setDate(dateObj.getDate() - 1);
                 const dateStr = `${dateObj.getFullYear()}.${('0' + (dateObj.getMonth() + 1)).slice(-2)}.${('0' + dateObj.getDate()).slice(-2)}`;
-                
                 if (dateStr !== lastDate) {
-                    const div = document.createElement('div');
-                    div.className = 'staff-date-divider';
-                    div.innerText = dateStr;
-                    histList.appendChild(div);
-                    lastDate = dateStr;
+                    const div = document.createElement('div'); div.className = 'staff-date-divider'; div.innerText = dateStr;
+                    histList.appendChild(div); lastDate = dateStr;
                 }
-                const div = document.createElement('div');
-                div.className = "list-item history-item";
-                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span style="font-size:8px; color:#999; font-weight:900;">${item.requester.toUpperCase()}</span><span style="font-size:9px; color:#fff;">${item.videoId}</span><button class="mini-del-btn" onclick="deleteHistoryItem('${item.key}')">✕</button></div>`;
+                const div = document.createElement('div'); div.className = "list-item history-item";
+                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span style="font-size:8px; color:#999; font-weight:900;">${item.requester.toUpperCase()}</span><span style="font-size:9px; color:#fff;">${item.videoId}</span><button class="mini-del-btn" onclick="deleteItem('backnumbers','${item.key}')">✕</button></div>`;
                 histList.appendChild(div);
             });
         });
     }
 
-    function deleteHistoryItem(k) { if(confirm("DELETE?")) db.ref(`backnumbers/${k}`).remove(); }
+    function loadGalleryEditor() {
+        db.ref('gallery').on('value', snap => {
+            const gallList = document.getElementById('gallery-edit-list'); gallList.innerHTML = "";
+            let items = []; snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
+            items.reverse().forEach(item => {
+                const div = document.createElement('div'); div.className = "list-item gallery-item";
+                div.innerHTML = `<img src="${item.url}"><div class="list-info"><span style="font-size:8px; color:#00ffcc; font-weight:900;">IMAGE POST</span><span style="font-size:9px; color:#fff;">UPLOADED</span><button class="mini-del-btn" onclick="deleteItem('gallery','${item.key}')">✕</button></div>`;
+                gallList.appendChild(div);
+            });
+        });
+    }
+
+    function deleteItem(path, k) { if(confirm("DELETE FROM " + path.toUpperCase() + "?")) db.ref(`${path}/${k}`).remove(); }
     function clearBackNumbers() { if (confirm("ALL CLEAR HISTORY?")) db.ref('backnumbers').remove(); }
+    function clearGallery() { if (confirm("ALL CLEAR GALLERY?")) db.ref('gallery').remove(); }
     
     function playSelected(k, v, n) { 
-        currentId = v; 
-        currentRequester = n; 
+        currentId = v; currentRequester = n; 
         const eTitle = document.getElementById('eventTitleInput').value || "NIGHT SESSION";
-        player.loadVideoById(v, 0); 
-        syncDB(1, 0); 
-        db.ref('backnumbers').push({ 
-            videoId: v, 
-            requester: n, 
-            eventTitle: eTitle, 
-            timestamp: firebase.database.ServerValue.TIMESTAMP 
-        }); 
+        player.loadVideoById(v, 0); syncDB(1, 0); 
+        db.ref('backnumbers').push({ videoId: v, requester: n, eventTitle: eTitle, timestamp: firebase.database.ServerValue.TIMESTAMP }); 
         db.ref(`queue/${k}`).remove(); 
     }
 
     function syncDB(s, t) { if (!currentId) return; db.ref('sync').set({ videoId: currentId, state: s, time: t, requester: currentRequester, lastUpdate: Date.now() }); }
-    function control(cmd) { if (!player || !currentId) return; if (cmd === 'restart') player.seekTo(0); cmd === 'pause' ? player.pauseVideo() : player.playVideo(); setTimeout(() => syncDB(player.getPlayerState(), player.getCurrentTime()), 200); }
+    function control(cmd) { if (!player || !currentId) return; if (cmd === 'restart') player.seekTo(0); cmd === 'pause' ? player.pauseVideo() : player.playVideo(); }
     function autoUpload(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => { input.value = ""; }); }; reader.readAsDataURL(file); }
     function playNextInQueue() { if (firstQueueId) playSelected(firstQueueKey, firstQueueId, firstQueueName); }
     setInterval(() => { if (player && player.getPlayerState() === 1) syncDB(1, player.getCurrentTime()); }, 3000);
