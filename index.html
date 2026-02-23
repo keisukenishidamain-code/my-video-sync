@@ -56,11 +56,20 @@
             background: #000; display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 10;
             opacity: 1; transition: opacity 0.8s ease;
-            pointer-events: none; /* 下のプレーヤー操作を邪魔しない */
+            pointer-events: none;
         }
         .brand-logo-big { font-size: clamp(30px, 5vw, 60px); font-weight: 900; letter-spacing: 15px; }
         .brand-logo-big span { color: var(--main-red); text-shadow: var(--neon); }
-        .brand-sub { color: #333; font-size: clamp(8px, 1vw, 12px); letter-spacing: 10px; margin-top: 10px; }
+        
+        /* サブテキストの設定: 白に変更 */
+        .brand-sub { 
+            color: #ffffff; /* 白色に変更 */
+            font-size: clamp(8px, 1.2vw, 14px); 
+            letter-spacing: 8px; 
+            margin-top: 15px;
+            font-weight: 400;
+            text-shadow: 0 0 5px rgba(255,255,255,0.3);
+        }
     </style>
 </head>
 <body>
@@ -78,7 +87,7 @@
         <div id="player"></div>
         <div id="brand-overlay">
             <div class="brand-logo-big"><span>27</span> CLUB</div>
-            <div class="brand-sub">TOKYO UNDERGROUND</div>
+            <div class="brand-sub">FF14 LIVE HOUSE</div>
         </div>
     </div>
 </section>
@@ -112,14 +121,11 @@
         });
     }
 
-    // プレーヤー自体の状態変化を監視
     function onPlayerStateChange(event) {
         const overlay = document.getElementById('brand-overlay');
-        
-        // 0:終了, -1:未開始, 2:一時停止 の時にロゴを出す
         if (event.data === 0 || event.data === -1 || event.data === 2) {
             showOverlay();
-        } else if (event.data === 1) { // 再生中
+        } else if (event.data === 1) {
             hideOverlay();
         }
     }
@@ -143,21 +149,18 @@
             const data = snap.val();
             if (!data) return;
 
-            // 動画切り替え
             if (currentVideoId !== data.videoId) {
                 currentVideoId = data.videoId;
                 player.loadVideoById(data.videoId, data.time);
             }
 
-            // スタッフ画面の状態を反映
-            if (data.state === 1) { // Play
+            if (data.state === 1) {
                 const diff = (Date.now() - data.lastUpdate) / 1000;
                 player.seekTo(data.time + diff, true);
                 player.playVideo();
-                // hideOverlayはonPlayerStateChange(1)で実行される
-            } else if (data.state === 2) { // Pause
+            } else if (data.state === 2) {
                 player.pauseVideo();
-                showOverlay(); // 一時停止信号を受け取った瞬間にロゴを表示
+                showOverlay();
             }
         });
     }
