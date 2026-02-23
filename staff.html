@@ -2,60 +2,69 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>マスター・コントロールパネル（再生窓なし）</title>
+    <title>マスター・プロ管理パネル</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main-red: #ff4444; --bg-dark: #121212; --panel-bg: #1e1e1e; }
-        body { font-family: sans-serif; background: var(--bg-dark); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .panel { width: 100%; max-width: 600px; background: var(--panel-bg); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h2 { border-left: 4px solid var(--main-red); padding-left: 15px; margin-bottom: 25px; }
+        :root { --main-red: #ff4444; --bg: #0f0f0f; --panel: #1e1e1e; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; overflow: hidden; }
         
-        .status-box { background: #000; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
-        .status-label { font-size: 12px; color: #888; margin-bottom: 5px; }
-        #current-title { font-weight: bold; color: var(--main-red); }
+        /* 左右レイアウト */
+        .wrapper { display: flex; gap: 20px; height: 90vh; max-width: 1200px; margin: 0 auto; }
+        
+        /* 左側：コントロール */
+        .left-panel { flex: 1; background: var(--panel); padding: 25px; border-radius: 15px; border: 1px solid #333; }
+        
+        /* 右側：予約リスト */
+        .right-panel { width: 350px; background: var(--panel); padding: 25px; border-radius: 15px; border: 1px solid #333; display: flex; flex-direction: column; }
+        
+        h3 { border-left: 4px solid var(--main-red); padding-left: 10px; margin-top: 0; margin-bottom: 20px; font-size: 16px; }
 
-        .input-group { margin-bottom: 20px; }
+        .status-box { background: #000; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        #current-time { font-family: monospace; font-size: 32px; color: var(--main-red); }
+
         input { width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #444; background: #2a2a2a; color: white; box-sizing: border-box; margin-bottom: 10px; }
         
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-ready { background: #444; color: white; }
-        .btn-start { background: var(--main-red); color: white; grid-column: span 2; font-size: 18px; }
-        .btn-stop { background: #555; color: white; }
-        button:hover { opacity: 0.8; transform: scale(0.98); }
-        
-        #log { margin-top: 20px; font-size: 12px; color: #666; text-align: center; }
+        .btn-main { background: var(--main-red); color: white; border: none; padding: 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; margin-bottom: 10px; }
+        .btn-sub { background: #444; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 48%; }
+        .btn-row { display: flex; justify-content: space-between; }
+
+        /* リスト表示 */
+        #queue-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+        .queue-item { background: #2a2a2a; padding: 10px; border-radius: 5px; margin-bottom: 8px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #666; }
+        .queue-item:hover { border-left-color: var(--main-red); }
+        .remove-btn { color: #888; cursor: pointer; border: none; background: none; font-size: 18px; }
     </style>
 </head>
 <body>
 
-<div class="panel">
-    <h2>配信コントロール</h2>
+<div class="wrapper">
+    <div class="left-panel">
+        <h3>CONTROLS</h3>
+        <div class="status-box">
+            <div style="font-size: 12px; color: #888; margin-bottom: 5px;">CURRENT PLAYBACK</div>
+            <div id="current-title" style="font-size: 14px; margin-bottom: 5px;">停止中</div>
+            <div id="current-time">00:00</div>
+        </div>
 
-    <div class="status-box">
-        <div class="status-label">現在放送中（顧客側の画面）</div>
-        <div id="current-title">停止中</div>
-        <div id="current-time" style="font-family: monospace; font-size: 20px; margin-top:10px;">00:00</div>
+        <input type="text" id="nextUrl" placeholder="YouTube URLを貼り付け">
+        <button class="btn-main" onclick="addToQueue()">予約リストに追加</button>
+        
+        <div class="btn-row">
+            <button class="btn-sub" onclick="togglePause()">一時停止/再開</button>
+            <button class="btn-sub" onclick="stopVideo()">完全停止</button>
+        </div>
+        <p id="log" style="font-size: 12px; color: #666; margin-top: 15px;"></p>
     </div>
 
-    <div class="input-group">
-        <div class="status-label">次の曲を準備（YouTube URL）</div>
-        <input type="text" id="nextUrl" placeholder="https://www.youtube.com/watch?v=...">
-        <div id="next-preview" style="font-size: 12px; color: #0f0; margin-top: -5px; margin-bottom: 10px; display: none;">✓ 次の曲をセットしました</div>
+    <div class="right-panel">
+        <h3>RESERVE LIST (QUEUE)</h3>
+        <ul id="queue-list"></ul>
+        <button class="btn-main" style="margin-top: 15px; background: #28a745;" onclick="playNextFromQueue()">リストの曲を開始 🚀</button>
     </div>
-
-    <div class="btn-grid">
-        <button class="btn-start" onclick="startNextTrack()">🚀 次の曲を開始（＆保存）</button>
-        <button class="btn-stop" onclick="togglePause()">一時停止 / 再開</button>
-        <button class="btn-stop" onclick="stopVideo()">完全停止（ロゴへ）</button>
-    </div>
-
-    <div id="log">システム待機中</div>
 </div>
 
 <script>
-    // Firebase初期化（あなたの設定）
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -65,42 +74,48 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    let queue = [];
     let playStartTime = 0;
     let timerInterval = null;
     let isPaused = false;
-    let currentVideoId = "";
 
-    // YouTube IDを抽出する関数
     function getID(url) {
-        if (!url) return null;
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
         const match = url.match(regExp);
         return (match && match[2].length === 11) ? match[2] : url;
     }
 
-    // 次の曲を開始
-    function startNextTrack() {
+    // 1. 予約リストに追加
+    function addToQueue() {
         const url = document.getElementById('nextUrl').value;
         const id = getID(url);
-        
-        if (!id) {
-            alert("有効なYouTube URLを入力してください");
+        if (id) {
+            queue.push(id);
+            renderQueue();
+            document.getElementById('nextUrl').value = "";
+            document.getElementById('log').innerText = "リストに追加しました";
+        }
+    }
+
+    // 2. リストから再生（必ず0秒から）
+    function playNextFromQueue() {
+        if (queue.length === 0) {
+            alert("予約リストが空です");
             return;
         }
-
-        currentVideoId = id;
+        const id = queue.shift(); // 先頭の曲を取り出す
+        renderQueue();
+        
+        // 【重要】0秒から再生するための設定
         playStartTime = Date.now();
-        isPaused = false;
-
-        // Firebase更新（現在の再生）
         db.ref('sync').set({
             videoId: id,
             state: 1,
-            serverStartTime: firebase.database.ServerValue.TIMESTAMP,
-            baseTime: 0
+            serverStartTime: firebase.database.ServerValue.TIMESTAMP, // これが0秒の基準
+            baseTime: 0 // 強制的に0秒スタート
         });
 
-        // 自動保存（バックナンバー）
+        // 履歴保存
         const now = new Date();
         db.ref('backnumbers').push({
             title: `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} 配信開始`,
@@ -108,30 +123,37 @@
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        // UI更新
-        document.getElementById('current-title').innerText = "動画ID: " + id;
-        document.getElementById('nextUrl').value = "";
-        document.getElementById('log').innerText = "新しい曲を開始しました";
-        
+        document.getElementById('current-title').innerText = id;
         startTimer();
     }
 
-    // 停止（ロゴ画面に戻す）
+    function renderQueue() {
+        const list = document.getElementById('queue-list');
+        list.innerHTML = queue.map((id, index) => `
+            <li class="queue-item">
+                <span>${index + 1}. ID: ${id}</span>
+                <button class="remove-btn" onclick="removeAt(${index})">×</button>
+            </li>
+        `).join('');
+    }
+
+    function removeAt(index) {
+        queue.splice(index, 1);
+        renderQueue();
+    }
+
     function stopVideo() {
-        db.ref('sync').update({ state: 0 });
+        db.ref('sync').update({ state: 0, videoId: "" });
         clearInterval(timerInterval);
         document.getElementById('current-title').innerText = "停止中";
         document.getElementById('current-time').innerText = "00:00";
     }
 
-    // 一時停止・再開（簡易的なもの）
     function togglePause() {
         isPaused = !isPaused;
         db.ref('sync').update({ state: isPaused ? 2 : 1 });
-        document.getElementById('log').innerText = isPaused ? "一時停止中" : "再開しました";
     }
 
-    // 手元の経過時間タイマー
     function startTimer() {
         if (timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
