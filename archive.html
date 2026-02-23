@@ -16,7 +16,6 @@
             font-family: 'Orbitron', sans-serif; overflow: hidden; 
         }
         
-        /* ヘッダーの復元と固定 */
         header { 
             padding: 25px 40px; 
             display: flex; justify-content: space-between; align-items: center; 
@@ -35,13 +34,25 @@
         }
         .nav-btn:hover { border-color: var(--main-red); box-shadow: var(--neon); }
 
-        /* メインコンテナ */
         .master-wrapper {
             margin-top: 90px;
             height: calc(100vh - 90px);
             display: flex;
             flex-direction: column;
         }
+
+        /* 月別ナビゲーション */
+        .month-nav {
+            padding: 15px 40px 0;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .month-btn {
+            font-size: 9px; color: #666; cursor: pointer; border-bottom: 1px solid transparent;
+            transition: 0.3s; letter-spacing: 1px;
+        }
+        .month-btn:hover { color: var(--main-red); border-color: var(--main-red); }
 
         /* カルーセルエリア */
         .archive-selector {
@@ -53,9 +64,10 @@
             padding: 0 40px;
             gap: 20px;
             scroll-behavior: smooth;
-            scrollbar-width: none;
+            scrollbar-width: none; /* Firefox用 */
+            scroll-snap-type: x proximity;
         }
-        .archive-selector::-webkit-scrollbar { display: none; }
+        .archive-selector::-webkit-scrollbar { display: none; } /* Chrome, Safari用 */
 
         .date-card {
             flex: 0 0 240px;
@@ -65,32 +77,29 @@
             border-radius: 4px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             cursor: pointer; transition: 0.4s;
+            scroll-snap-align: center;
         }
         .date-card:hover { border-color: var(--main-red); transform: translateY(-5px); }
         .date-card.active { border-color: var(--main-red); box-shadow: var(--neon); background: #111; }
         .date-card .date-text { font-size: 18px; font-weight: 900; letter-spacing: 2px; }
         .date-card .event-title { font-size: 8px; color: var(--main-red); margin-top: 8px; letter-spacing: 2px; }
 
-        /* コンテンツ表示エリア */
         .content-area {
             flex-grow: 1;
-            display: flex;
+            display: none;
             padding: 20px 40px 40px;
             gap: 30px;
             overflow: hidden;
             border-top: 1px solid var(--border-color);
             background: #050505;
-            display: none; /* 初期は非表示 */
         }
         .content-area.show { display: flex; }
 
-        /* 左：プレイヤー */
         .video-section { flex: 2; display: flex; flex-direction: column; gap: 15px; }
         .player-wrapper { width: 100%; aspect-ratio: 16/9; background: #000; border: 1px solid #222; }
         #player { width: 100%; height: 100%; }
         .now-playing { font-size: 12px; color: var(--main-red); font-weight: 900; letter-spacing: 2px; }
 
-        /* 右：トラックリスト */
         .track-list-section { 
             flex: 1; 
             display: flex; flex-direction: column; 
@@ -121,6 +130,8 @@
 </header>
 
 <div class="master-wrapper">
+    <div class="month-nav" id="monthNav"></div>
+    
     <div class="archive-selector" id="dateSelector"></div>
 
     <div class="content-area" id="contentArea">
@@ -177,20 +188,55 @@
 
     function renderSelector() {
         const selector = document.getElementById('dateSelector');
+        const monthNav = document.getElementById('monthNav');
         selector.innerHTML = "";
+        monthNav.innerHTML = "";
+
         const dates = Object.keys(groupedData).sort().reverse();
+        const months = new Set();
 
         dates.forEach(date => {
+            // カセット作成
             const card = document.createElement('div');
             card.className = 'date-card';
+            card.setAttribute('data-date', date);
             card.onclick = () => showTracks(date, card);
             card.innerHTML = `
                 <div class="date-text">${date}</div>
                 <div class="event-title">NIGHT SESSION</div>
             `;
             selector.appendChild(card);
+
+            // 月別メニュー用の月文字列 (YYYY.MM)
+            months.add(date.substring(0, 7));
+        });
+
+        // 月別ジャンプボタン作成
+        Array.from(months).sort().reverse().forEach(m => {
+            const btn = document.createElement('div');
+            btn.className = 'month-btn';
+            btn.innerText = m;
+            btn.onclick = () => jumpToMonth(m);
+            monthNav.appendChild(btn);
         });
     }
+
+    // 月別ジャンプ機能
+    function jumpToMonth(monthStr) {
+        const firstCard = document.querySelector(`.date-card[data-date^="${monthStr}"]`);
+        if (firstCard) {
+            firstCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+    }
+
+    // ホイールで横スクロール
+    const selectorEl = document.getElementById('dateSelector');
+    selectorEl.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+            e.preventDefault();
+            selectorEl.scrollLeft += e.deltaY;
+        }
+    });
 
     function showTracks(date, element) {
         document.querySelectorAll('.date-card').forEach(c => c.classList.remove('active'));
