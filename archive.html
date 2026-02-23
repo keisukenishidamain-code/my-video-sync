@@ -39,7 +39,6 @@
         #bn-list::-webkit-scrollbar { width: 4px; }
         #bn-list::-webkit-scrollbar-thumb { background: var(--main-red); }
 
-        /* 日付の見出し */
         .date-divider { 
             font-size: 10px; color: #fff; background: #111; padding: 10px; margin: 20px 0 10px 0;
             border-left: 3px solid var(--main-red); letter-spacing: 3px; font-weight: 900; position: sticky; top: 0; z-index: 10;
@@ -115,8 +114,15 @@
         let lastDate = "";
 
         historyData.forEach((item) => {
+            // タイムスタンプが存在しない場合はスキップ
+            if (!item.timestamp) return;
+
             const dateObj = new Date(item.timestamp);
-            // 午前5時までは前日扱い
+            
+            // 無効な日付オブジェクト（NaNになるもの）はスキップ
+            if (isNaN(dateObj.getTime())) return;
+
+            // 午前5時切り替えロジック
             if (dateObj.getHours() < 5) dateObj.setDate(dateObj.getDate() - 1);
             
             const dateStr = `${dateObj.getFullYear()}.${('0' + (dateObj.getMonth() + 1)).slice(-2)}.${('0' + dateObj.getDate()).slice(-2)}`;
