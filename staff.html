@@ -20,7 +20,7 @@
         .master-container { 
             display: flex; 
             width: 98vw;
-            max-width: 1400px;
+            max-width: 1600px;
             height: 96vh;
             background: #0a0a0a; 
             box-sizing: border-box; 
@@ -30,98 +30,94 @@
         }
         
         /* カラム共通設定 */
-        .left { 
-            width: 380px; flex-shrink: 0; padding: 25px; border-right: 1px solid var(--border-color); 
+        .left-panel { 
+            width: 320px; flex-shrink: 0; padding: 20px; border-right: 1px solid var(--border-color); 
             display: flex; flex-direction: column; box-sizing: border-box; 
             background: #0d0d0d;
         }
         
-        .list-section { 
+        /* 3分割のリストセクション */
+        .list-column { 
             flex: 1; min-width: 0; background: #050505; display: flex; flex-direction: column; 
             overflow: hidden; box-sizing: border-box; border-right: 1px solid var(--border-color); 
         }
-        
-        .right-column-split {
-            flex: 1.2; display: flex; flex-direction: column; height: 100%; overflow: hidden;
-        }
+        .list-column:last-child { border-right: none; }
 
-        .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 25px; border-left: 4px solid var(--main-red); padding-left: 15px; }
+        .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 20px; border-left: 4px solid var(--main-red); padding-left: 15px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
         
-        /* ヘッダーデザイン統一 */
         .section-header { 
             display: flex; justify-content: space-between; align-items: center; 
-            background: #0d0d0d; padding: 15px 20px; border-bottom: 1px solid var(--border-color);
+            background: #111; padding: 12px 15px; border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
         }
-        .section-label { font-size: 11px; color: #fff; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
+        .section-label { font-size: 10px; color: #fff; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; margin: 0; }
         
-        .clear-link { font-size: 9px; color: #666; cursor: pointer; letter-spacing: 1px; transition: 0.3s; }
-        .clear-link:hover { color: var(--main-red); text-shadow: var(--neon); }
+        /* グレーを白に変更 */
+        .clear-link { font-size: 9px; color: #fff; cursor: pointer; letter-spacing: 1px; transition: 0.3s; opacity: 0.7; }
+        .clear-link:hover { color: var(--main-red); opacity: 1; text-shadow: var(--neon); }
 
-        /* 入力UI */
-        .input-group { background: var(--bg-card); padding: 15px; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
-        input[type="text"] { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; font-family: 'Orbitron'; font-size: 11px; box-sizing: border-box; outline: none; border-radius: 2px; transition: 0.3s; }
-        input[type="text"]:focus { border-color: var(--main-red); box-shadow: inset 0 0 5px rgba(255,0,51,0.2); }
+        .input-group { background: var(--bg-card); padding: 12px; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
+        
+        /* 入力エリアのグレーを排除 */
+        input[type="text"] { 
+            width: 100%; padding: 10px; background: #000; border: 1px solid #444; color: #fff; 
+            font-family: 'Orbitron'; font-size: 10px; box-sizing: border-box; outline: none; border-radius: 2px; 
+        }
+        input[type="text"]::placeholder { color: #fff; opacity: 0.5; }
+        input[type="text"]:focus { border-color: var(--main-red); }
+
         .event-input { border-color: var(--main-red) !important; color: var(--main-red) !important; font-weight: 900; }
 
-        .btn-ui { width: 100%; height: 45px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; font-size: 11px; cursor: pointer; text-transform: uppercase; color: #fff; transition: 0.3s; }
+        .btn-ui { width: 100%; height: 40px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; font-size: 10px; cursor: pointer; text-transform: uppercase; color: #fff; transition: 0.3s; }
         .btn-red { background: var(--main-red); box-shadow: var(--neon); }
-        .btn-red:hover { opacity: 0.8; transform: translateY(-1px); }
-        .btn-gray { background: #1a1a1a; border: 1px solid #444; }
-        .btn-gray:hover { border-color: #666; background: #222; }
+        .btn-gray { background: #1a1a1a; border: 1px solid #666; } /* 枠線を明るく */
         
-        #player { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border-color); background:#000; margin-bottom: 20px; border-radius: 4px; }
+        #player { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border-color); background:#000; margin-bottom: 15px; border-radius: 4px; }
         
-        .playback-ctrl { margin-bottom: 20px; display: flex; gap: 15px; justify-content: center; }
-        .ctrl-icon { width: 50px; height: 50px; border-radius: 50%; background: #111; color: #fff; border: 1px solid #333; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; }
-        .ctrl-icon:hover { border-color: var(--main-red); color: var(--main-red); box-shadow: var(--neon); }
+        .playback-ctrl { margin-bottom: 15px; display: flex; gap: 10px; justify-content: center; }
+        .ctrl-icon { width: 45px; height: 45px; border-radius: 50%; background: #111; color: #fff; border: 1px solid #444; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .ctrl-icon:hover { border-color: var(--main-red); color: var(--main-red); }
         
         #imageFileInput { display: none; }
-        .file-label { width: 100%; height: 45px; background: #1a1a1a; border: 1px solid #444; color: #999; font-family: 'Orbitron'; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: 0.3s; }
-        .file-label:hover { border-color: #00ffcc; color: #00ffcc; }
+        .file-label { width: 100%; height: 40px; background: #1a1a1a; border: 1px solid #666; color: #fff; font-family: 'Orbitron'; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
 
-        /* リストアイテムのデザイン統一 */
-        .scroll-list { flex-grow: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .scroll-list { flex-grow: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         .scroll-list::-webkit-scrollbar { width: 4px; }
-        .scroll-list::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        .scroll-list::-webkit-scrollbar-thumb { background: #333; }
 
         .list-item { 
-            background: var(--bg-card); padding: 15px; border-radius: 4px; 
-            display: flex; align-items: center; gap: 15px; 
+            background: var(--bg-card); padding: 12px; border-radius: 4px; 
+            display: flex; align-items: center; gap: 12px; 
             border: 1px solid var(--border-color); position: relative;
-            transition: 0.3s;
         }
-        .list-item:hover { border-color: #444; }
-
-        .list-item img { width: 80px; height: 45px; object-fit: cover; border-radius: 2px; flex-shrink: 0; background: #000; }
-        .list-info { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+        .list-item img { width: 70px; height: 40px; object-fit: cover; border-radius: 2px; flex-shrink: 0; background: #000; }
+        .list-info { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
         
-        /* リスト内のラベル（左パネルのラベルと統一） */
         .item-label { font-size: 8px; color: var(--main-red); letter-spacing: 1px; font-weight: 900; text-transform: uppercase; }
-        .item-value { font-size: 10px; color: #eee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .item-value { font-size: 9px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
+        /* ✕ボタンの色を明るく */
         .mini-del-btn { 
-            position: absolute; right: 10px; top: 10px; background: none; border: none; color: #444; 
+            position: absolute; right: 8px; top: 8px; background: none; border: none; color: #fff; opacity: 0.5;
             font-size: 12px; cursor: pointer; transition: 0.3s; 
         }
-        .mini-del-btn:hover { color: var(--main-red); }
+        .mini-del-btn:hover { color: var(--main-red); opacity: 1; }
 
+        /* 日付区切りを白に */
         .staff-date-divider { 
-            font-size: 10px; color: #555; padding: 20px 0 10px; border-bottom: 1px solid #222; 
+            font-size: 9px; color: #fff; padding: 15px 0 8px; border-bottom: 1px solid #333; 
             margin-bottom: 5px; letter-spacing: 3px; font-weight: 900; text-align: center;
         }
 
-        /* ギャラリー用特殊色 */
         .gallery-item { border-left: 3px solid #00ffcc; }
         .gallery-label { color: #00ffcc !important; }
-
-        .status-msg { font-size: 9px; color: var(--main-red); height: 12px; text-align: center; margin-top: 10px; letter-spacing: 1px; }
+        .status-msg { font-size: 9px; color: var(--main-red); height: 12px; text-align: center; margin-top: 8px; }
     </style>
 </head>
 <body>
 <div class="master-container">
-    <div class="left">
+    <div class="left-panel">
         <div class="logo"><span>27</span> STAFF</div>
         <div class="input-group">
             <div class="item-label">EVENT TITLE</div>
@@ -147,28 +143,27 @@
         </div>
     </div>
 
-    <div class="list-section">
+    <div class="list-column">
         <div class="section-header">
             <div class="section-label">RESERVATION QUEUE</div>
         </div>
         <div id="reserve-list" class="scroll-list"></div>
     </div>
 
-    <div class="right-column-split">
-        <div class="list-section" style="height: 55%; border-right:none;">
-            <div class="section-header">
-                <div class="section-label">HISTORY</div>
-                <div class="clear-link" onclick="clearBackNumbers()">ALL CLEAR</div>
-            </div>
-            <div id="history-edit-list" class="scroll-list"></div>
+    <div class="list-column">
+        <div class="section-header">
+            <div class="section-label">HISTORY</div>
+            <div class="clear-link" onclick="clearBackNumbers()">ALL CLEAR</div>
         </div>
-        <div class="list-section" style="height: 45%; border-top: 1px solid var(--border-color); border-right:none;">
-            <div class="section-header">
-                <div class="section-label">GALLERY CONTROL</div>
-                <div class="clear-link" onclick="clearGallery()">ALL CLEAR</div>
-            </div>
-            <div id="gallery-edit-list" class="scroll-list"></div>
+        <div id="history-edit-list" class="scroll-list"></div>
+    </div>
+
+    <div class="list-column">
+        <div class="section-header">
+            <div class="section-label">GALLERY CONTROL</div>
+            <div class="clear-link" onclick="clearGallery()">ALL CLEAR</div>
         </div>
+        <div id="gallery-edit-list" class="scroll-list"></div>
     </div>
 </div>
 
@@ -211,11 +206,11 @@
                             <span class="item-value">${item.videoId}</span>
                             <button class="mini-del-btn" onclick="db.ref('queue/${item.key}').remove()">✕</button>
                         </div>
-                        <button class="btn-ui btn-gray" style="width:60px; height:32px; font-size:9px; flex-shrink:0;" onclick="playSelected('${item.key}','${item.videoId}','${item.requester}')">PLAY</button>
+                        <button class="btn-ui btn-gray" style="width:60px; height:28px; font-size:8px; flex-shrink:0;" onclick="playSelected('${item.key}','${item.videoId}','${item.requester}')">PLAY</button>
                     `;
                     list.appendChild(div);
                 });
-            } else { list.innerHTML = '<div style="text-align:center; padding:20px; font-size:10px; color:#333;">NO DATA</div>'; }
+            } else { list.innerHTML = '<div style="text-align:center; padding:20px; font-size:9px; color:#fff; opacity:0.3;">NO DATA</div>'; }
         });
         Sortable.create(document.getElementById('reserve-list'), { animation: 150 });
     }
@@ -236,7 +231,7 @@
                 div.innerHTML = `
                     <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
                     <div class="list-info">
-                        <span class="item-label" style="color:#666;">${item.requester.toUpperCase()}</span>
+                        <span class="item-label" style="color:#fff; opacity:0.6;">${item.requester.toUpperCase()}</span>
                         <span class="item-value">${item.videoId}</span>
                         <button class="mini-del-btn" onclick="deleteItem('backnumbers','${item.key}')">✕</button>
                     </div>
