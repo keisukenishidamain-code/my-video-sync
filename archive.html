@@ -30,7 +30,6 @@
         #archive-player { width: 100%; height: 100%; border: none; }
         .req-info { font-size: 11px; color: var(--main-red); letter-spacing: 2px; font-weight: 900; }
 
-        /* 右側：リストエリア */
         .list-section { 
             flex: 1; min-width: 320px; display: flex; flex-direction: column; 
             border-left: 1px solid #222; padding-left: 30px;
@@ -42,8 +41,8 @@
 
         /* 日付の見出し */
         .date-divider { 
-            font-size: 12px; color: #fff; background: #111; padding: 10px; margin: 20px 0 10px 0;
-            border-left: 3px solid var(--main-red); letter-spacing: 3px; font-weight: 900;
+            font-size: 10px; color: #fff; background: #111; padding: 10px; margin: 20px 0 10px 0;
+            border-left: 3px solid var(--main-red); letter-spacing: 3px; font-weight: 900; position: sticky; top: 0; z-index: 10;
         }
 
         .bn-item { 
@@ -75,8 +74,7 @@
         <div class="archive-player-box"><div id="archive-player"></div></div>
         <div id="now-playing-info" class="req-info">SELECT A TRACK</div>
     </div>
-    <div class="list-section" id="bn-list">
-        </div>
+    <div class="list-section" id="bn-list"></div>
 </div>
 
 <script>
@@ -114,15 +112,15 @@
     function renderGrouped() {
         const listContainer = document.getElementById('bn-list');
         listContainer.innerHTML = "";
-        
         let lastDate = "";
 
         historyData.forEach((item) => {
-            // タイムスタンプから日付文字列を作成 (YYYY.MM.DD)
             const dateObj = new Date(item.timestamp);
+            // 午前5時までは前日扱い
+            if (dateObj.getHours() < 5) dateObj.setDate(dateObj.getDate() - 1);
+            
             const dateStr = `${dateObj.getFullYear()}.${('0' + (dateObj.getMonth() + 1)).slice(-2)}.${('0' + dateObj.getDate()).slice(-2)}`;
 
-            // 日付が変わったら見出しを挿入
             if (dateStr !== lastDate) {
                 const divider = document.createElement('div');
                 divider.className = 'date-divider';
@@ -135,7 +133,6 @@
             div.className = `bn-item ${item.key === currentKey ? 'active' : ''}`;
             div.id = `item-${item.key}`;
             div.onclick = () => { playVideo(item.key, item.videoId, item.requester); };
-            
             div.innerHTML = `
                 <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
                 <div class="bn-item-info">
@@ -150,8 +147,8 @@
     function playVideo(key, vid, requester) {
         currentKey = key;
         document.querySelectorAll('.bn-item').forEach(el => el.classList.remove('active'));
-        document.getElementById(`item-${key}`).classList.add('active');
-        
+        const target = document.getElementById(`item-${key}`);
+        if(target) target.classList.add('active');
         document.getElementById('now-playing-info').innerText = `NOW PLAYING: ${requester.toUpperCase()}`;
         arcPlayer.loadVideoById(vid);
     }
