@@ -1,62 +1,47 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>27 Club - GALLERY</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; --bg-black: #050505; }
-        body { margin: 0; background: var(--bg-black); color: white; font-family: 'Orbitron', sans-serif; }
+        :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Orbitron', sans-serif; color: #ffffff; }
         
-        header { 
-            background: #000; padding: 20px 40px; display: flex; 
-            justify-content: space-between; align-items: center;
-            border-bottom: 2px solid #1a1a1a; position: sticky; top: 0; z-index: 100;
-        }
-        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: white; }
+        /* トップページと完全一致のヘッダー */
+        header { padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; }
+        .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
-        nav a { color: #666; text-decoration: none; font-size: 13px; font-weight: 900; margin-left: 30px; letter-spacing: 2px; }
-        nav a:hover { color: white; text-shadow: 0 0 8px white; }
-
-        .container { padding: 40px; max-width: 1400px; margin: 0 auto; }
-        h1 { font-size: 14px; letter-spacing: 10px; color: #444; text-align: center; margin-bottom: 40px; border-bottom: 1px solid #111; padding-bottom: 20px; }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 25px;
-        }
-
-        .gallery-item {
-            background: #000; border-radius: 10px; overflow: hidden;
-            border: 1px solid #222; transition: 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            position: relative; aspect-ratio: 16/9;
-        }
-        .gallery-item:hover { border-color: var(--main-red); transform: scale(1.02); box-shadow: 0 10px 30px rgba(255,0,51,0.2); z-index: 10; }
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        .container { padding: 120px 50px 50px; min-height: 100vh; box-sizing: border-box; background: #000; }
         
-        /* 投稿日を薄く表示 */
-        .img-date { position: absolute; bottom: 10px; right: 10px; font-size: 9px; color: rgba(255,255,255,0.4); background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 3px; }
+        #gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; max-width: 1200px; margin: 0 auto; }
+        .photo-card { background: #000; border: 1px solid #111; border-radius: 4px; overflow: hidden; aspect-ratio: 16/9; transition: 0.4s; }
+        .photo-card:hover { border-color: var(--main-red); box-shadow: var(--neon); transform: translateY(-5px); }
+        .photo-card img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
+        #modal img { max-width: 90%; max-height: 90%; border: 1px solid #333; }
     </style>
 </head>
 <body>
-
 <header>
     <a href="index.html" class="logo"><span>27</span> CLUB</a>
-    <nav>
-        <a href="index.html">LIVE</a>
-        <a href="archive.html">ARCHIVE</a>
-    </nav>
+    <div class="nav-links">
+        <a href="index.html" class="nav-btn">LIVE</a>
+        <a href="archive.html" class="nav-btn">BACK NUMBERS</a>
+    </div>
 </header>
-
 <div class="container">
-    <h1>OPERATING SNAPSHOTS</h1>
-    <div id="gallery-list" class="gallery-grid"></div>
+    <div id="gallery-grid"></div>
 </div>
-
+<div id="modal" onclick="this.style.display='none'"><img id="modal-img" src=""></div>
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
@@ -66,18 +51,19 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-
-    db.ref('gallery').orderByChild('timestamp').on('value', snap => {
-        const list = document.getElementById('gallery-list');
-        list.innerHTML = "";
+    db.ref('gallery').limitToLast(50).on('value', snap => {
+        const grid = document.getElementById('gallery-grid');
+        grid.innerHTML = "";
         let items = [];
-        snap.forEach(c => { items.push(c.val()); });
-        items.reverse().forEach(item => {
-            const date = item.timestamp ? new Date(item.timestamp).toLocaleDateString() : "";
-            const div = document.createElement('div');
-            div.className = "gallery-item";
-            div.innerHTML = `<img src="${item.url}" loading="lazy"><div class="img-date">${date}</div>`;
-            list.appendChild(div);
+        snap.forEach(child => items.push(child.val()));
+        items.reverse().forEach(data => {
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            const img = document.createElement('img');
+            img.src = data.url;
+            img.onclick = () => { document.getElementById('modal-img').src = data.url; document.getElementById('modal').style.display = 'flex'; };
+            card.appendChild(img);
+            grid.appendChild(card);
         });
     });
 </script>
