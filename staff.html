@@ -9,75 +9,55 @@
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 10px #ff0033; }
         
-        /* 画面全体の固定設定：横スクロールを絶対に殺す */
         body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100vh; 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
             background: #000; color: #fff; font-family: 'Orbitron', sans-serif; 
-            overflow: hidden; /* 画面全体のスクロールを禁止 */
-            display: flex; justify-content: center; /* 中央寄せ */
+            overflow: hidden; /* 画面全体の横揺れを防止 */
         }
         
         .master-container { 
-            display: flex; width: 100%; max-width: 1400px; height: 100%; 
-            background: #0a0a0a; border-left: 1px solid #222; border-right: 1px solid #222;
-            overflow: hidden; box-sizing: border-box;
+            display: flex; width: 100vw; height: 100vh; 
+            background: #0a0a0a; overflow: hidden;
         }
         
-        /* 左：固定パネル（操作エリア） */
+        /* 左：固定パネル */
         .left { 
-            width: 300px; flex-shrink: 0; padding: 20px; border-right: 1px solid #222; 
+            width: 320px; flex-shrink: 0; padding: 20px; border-right: 1px solid #222; 
             display: flex; flex-direction: column; background: #0d0d0d; box-sizing: border-box;
-            overflow-y: auto; overflow-x: hidden;
         }
         
-        /* 管理カラム */
+        /* 管理カラム（独立縦スクロール） */
         .list-section { 
             flex: 1; min-width: 0; background: #050505; display: flex; flex-direction: column; 
-            height: 100%; border-right: 1px solid #222; overflow: hidden;
+            height: 100%; border-right: 1px solid #222; 
         }
         .list-section:last-child { border-right: none; }
         
         .section-header { 
-            padding: 15px 20px; border-bottom: 1px solid #222; background: #080808; 
-            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+            padding: 20px; border-bottom: 1px solid #222; background: #080808; 
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .section-label { font-size: 10px; letter-spacing: 2px; font-weight: 900; color: #fff; }
+        .section-label { font-size: 10px; letter-spacing: 2px; font-weight: 900; }
 
-        /* 各カラムの縦スクロールエリア：横スクロールが出ないよう細心の注意 */
         .scroll-list { 
-            flex: 1; overflow-y: scroll; overflow-x: hidden; padding: 15px; box-sizing: border-box; 
+            flex: 1; overflow-y: auto; overflow-x: hidden; padding: 15px; 
         }
         .scroll-list::-webkit-scrollbar { width: 4px; }
         .scroll-list::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
-        /* 入力UI */
-        .input-group { background: #111; padding: 12px; border: 1px solid #222; margin-bottom: 15px; border-radius: 4px; }
-        input[type="text"] { width: 100%; padding: 10px; background: #000; border: 1px solid #333; color: #fff; font-family: 'Orbitron'; font-size: 10px; box-sizing: border-box; margin-bottom: 8px; outline: none; }
-        .btn-ui { width: 100%; height: 40px; border: none; background: var(--main-red); color: #fff; font-family: 'Orbitron'; font-weight: 900; font-size: 10px; cursor: pointer; box-shadow: var(--neon); border-radius: 4px; }
+        /* UIパーツ */
+        .input-group { background: #111; padding: 12px; border: 1px solid #222; margin-bottom: 15px; }
+        input[type="text"] { width: 100%; padding: 8px; background: #000; border: 1px solid #333; color: #fff; font-family: 'Orbitron'; font-size: 10px; box-sizing: border-box; margin-bottom: 5px; outline: none; }
+        .btn-ui { width: 100%; height: 40px; border: none; background: var(--main-red); color: #fff; font-family: 'Orbitron'; font-weight: 900; font-size: 10px; cursor: pointer; box-shadow: var(--neon); }
         
-        /* プレイヤー：比率を維持して伸びすぎを防ぐ */
-        .player-wrapper { width: 100%; aspect-ratio: 16/9; margin-bottom: 15px; border: 1px solid #222; background: #000; position: relative; flex-shrink: 0; }
-        #player { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        /* プレイヤー：一番良かった時のサイズ感 */
+        #player { width: 100%; aspect-ratio: 16/9; border: 1px solid #222; background: #000; margin-bottom: 15px; }
 
-        /* リストアイテム：PLAYボタンを復活 */
-        .list-item { 
-            background: #0d0d0d; padding: 10px; margin-bottom: 8px; border-radius: 4px; 
-            display: flex; align-items: center; justify-content: space-between; /* 両端配置 */
-            gap: 10px; border-left: 3px solid var(--main-red); position: relative; 
-        }
-        .item-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-        .list-item img { width: 50px; height: 30px; object-fit: cover; flex-shrink: 0; }
-        .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
-        
-        /* 復活したPLAYボタン */
-        .play-now-btn { 
-            padding: 5px 10px; background: #222; color: #fff; border: 1px solid #444; 
-            font-family: 'Orbitron'; font-size: 8px; font-weight: 900; cursor: pointer; border-radius: 2px;
-        }
-        .play-now-btn:hover { background: var(--main-red); border-color: var(--main-red); box-shadow: var(--neon); }
-
-        .mini-del-btn { color: #444; background: none; border: none; cursor: pointer; padding: 0 5px; font-size: 12px; }
-        .mini-del-btn:hover { color: var(--main-red); }
+        /* リストアイテム */
+        .list-item { background: #0d0d0d; padding: 8px; margin-bottom: 8px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red); position: relative; }
+        .list-item img { width: 50px; height: 30px; object-fit: cover; }
+        .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; width: 70%; }
+        .mini-del-btn { position: absolute; right: 5px; color: #444; background: none; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -92,7 +72,7 @@
             <input type="text" id="nameInput" placeholder="REQUESTER...">
             <button class="btn-ui" onclick="addToQueue()">ADD TO QUEUE</button>
         </div>
-        <div class="player-wrapper"><div id="player"></div></div>
+        <div id="player"></div>
         <label class="btn-ui" style="display:flex; align-items:center; justify-content:center; background:#222; box-shadow:none; cursor:pointer;">
             UPLOAD IMAGE<input type="file" id="imageFileInput" accept="image/*" onchange="autoUpload(this)" style="display:none">
         </label>
@@ -102,12 +82,10 @@
         <div class="section-header"><div class="section-label">RESERVATION</div></div>
         <div id="reserve-list" class="scroll-list"></div>
     </div>
-
     <div class="list-section">
         <div class="section-header"><div class="section-label">BACK NUMBERS</div></div>
         <div id="history-edit-list" class="scroll-list"></div>
     </div>
-
     <div class="list-section">
         <div class="section-header"><div class="section-label">GALLERY CONTROL</div></div>
         <div id="gallery-edit-list" class="scroll-list"></div>
@@ -121,7 +99,11 @@
     let player, currentId = "", currentRequester = "27 CLUB";
 
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { height: '100%', width: '100%', events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } });
+        player = new YT.Player('player', { 
+            height: '100%', width: '100%', 
+            playerVars: { 'controls': 1 }, // YouTubeの再生・停止・シークバーを有効化
+            events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } 
+        });
         loadData();
     }
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
@@ -132,14 +114,7 @@
             snap.forEach(c => {
                 const item = c.val();
                 const div = document.createElement('div'); div.className = "list-item";
-                div.innerHTML = `
-                    <div class="item-main">
-                        <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
-                        <div class="list-info"><span>${item.requester.toUpperCase()}</span></div>
-                    </div>
-                    <button class="play-now-btn" onclick="playSelected('${c.key}','${item.videoId}','${item.requester}')">PLAY</button>
-                    <button class="mini-del-btn" onclick="db.ref('queue/${c.key}').remove()">✕</button>
-                `;
+                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester.toUpperCase()}</span></div><button style="font-size:8px; background:#222; color:#fff; border:1px solid #444; height:24px; cursor:pointer;" onclick="playSelected('${c.key}','${item.videoId}','${item.requester}')">PLAY</button><button class="mini-del-btn" onclick="db.ref('queue/${c.key}').remove()">✕</button>`;
                 list.appendChild(div);
             });
         });
@@ -147,8 +122,8 @@
             const list = document.getElementById('history-edit-list'); list.innerHTML = "";
             let items = []; snap.forEach(c => { items.push({key:c.key, ...c.val()}); });
             items.reverse().forEach(item => {
-                const div = document.createElement('div'); div.className = "list-item history-item";
-                div.innerHTML = `<div class="item-main"><img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester}</span></div></div><button class="mini-del-btn" onclick="db.ref('backnumbers/${item.key}').remove()">✕</button>`;
+                const div = document.createElement('div'); div.className = "list-item";
+                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div class="list-info"><span>${item.requester}</span></div><button class="mini-del-btn" onclick="db.ref('backnumbers/${item.key}').remove()">✕</button>`;
                 list.appendChild(div);
             });
         });
@@ -156,8 +131,8 @@
             const list = document.getElementById('gallery-edit-list'); list.innerHTML = "";
             let items = []; snap.forEach(c => { items.push({key:c.key, ...c.val()}); });
             items.reverse().forEach(item => {
-                const div = document.createElement('div'); div.className = "list-item gallery-item-staff";
-                div.innerHTML = `<div class="item-main"><img src="${item.url}"><div class="list-info"><span>IMAGE</span></div></div><button class="mini-del-btn" onclick="db.ref('gallery/${item.key}').remove()">✕</button>`;
+                const div = document.createElement('div'); div.className = "list-item";
+                div.innerHTML = `<img src="${item.url}"><div class="list-info"><span>IMAGE</span></div><button class="mini-del-btn" onclick="db.ref('gallery/${item.key}').remove()">✕</button>`;
                 list.appendChild(div);
             });
         });
