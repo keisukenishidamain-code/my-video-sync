@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +11,6 @@
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: #ffffff; }
         
-        /* ヘッダー */
         header { 
             padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; 
             background: rgba(0,0,0,0.9); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
@@ -22,46 +21,40 @@
         .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; }
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
-        /* メインレイアウト：横並び */
         .main-content { 
             display: flex; width: 100%; height: 100vh; padding: 110px 40px 40px; box-sizing: border-box; gap: 30px;
         }
 
-        /* 左側：プレイヤーエリア */
-        .player-section { 
-            flex: 2; display: flex; flex-direction: column; gap: 15px; 
-        }
-        .archive-player-box { 
-            width: 100%; aspect-ratio: 16/9; background: #000; border: 1px solid #222; 
-            box-shadow: 0 0 30px rgba(0,0,0,1);
-        }
+        .player-section { flex: 2; display: flex; flex-direction: column; gap: 15px; }
+        .archive-player-box { width: 100%; aspect-ratio: 16/9; background: #000; border: 1px solid #222; }
         #archive-player { width: 100%; height: 100%; border: none; }
-        .req-info { font-size: 11px; color: var(--main-red); letter-spacing: 2px; font-weight: 900; text-transform: uppercase; }
+        .req-info { font-size: 11px; color: var(--main-red); letter-spacing: 2px; font-weight: 900; }
 
         /* 右側：リストエリア */
         .list-section { 
-            flex: 1; min-width: 300px; display: flex; flex-direction: column; 
+            flex: 1; min-width: 320px; display: flex; flex-direction: column; 
             border-left: 1px solid #222; padding-left: 30px;
         }
-        .section-label { font-size: 10px; color: #666; letter-spacing: 3px; margin-bottom: 20px; }
         
-        #bn-list { 
-            flex-grow: 1; overflow-y: auto; padding-right: 10px;
-            /* スクロールバーのデザイン */
-            scrollbar-width: thin; scrollbar-color: var(--main-red) #000;
-        }
+        #bn-list { flex-grow: 1; overflow-y: auto; padding-right: 10px; scrollbar-width: thin; scrollbar-color: var(--main-red) #000; }
         #bn-list::-webkit-scrollbar { width: 4px; }
         #bn-list::-webkit-scrollbar-thumb { background: var(--main-red); }
 
+        /* 日付の見出し */
+        .date-divider { 
+            font-size: 12px; color: #fff; background: #111; padding: 10px; margin: 20px 0 10px 0;
+            border-left: 3px solid var(--main-red); letter-spacing: 3px; font-weight: 900;
+        }
+
         .bn-item { 
-            display: flex; align-items: center; gap: 15px; padding: 12px; 
-            border: 1px solid #111; margin-bottom: 10px; cursor: pointer; 
+            display: flex; align-items: center; gap: 15px; padding: 10px; 
+            border: 1px solid #111; margin-bottom: 8px; cursor: pointer; 
             transition: 0.3s; border-radius: 4px; background: #050505;
         }
         .bn-item:hover { border-color: #444; background: #0a0a0a; }
         .bn-item.active { border-color: var(--main-red); box-shadow: var(--neon); background: #0d0d0d; }
         
-        .bn-item img { width: 100px; aspect-ratio: 16/9; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
+        .bn-item img { width: 80px; aspect-ratio: 16/9; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
         .bn-item-info { min-width: 0; }
         .bn-item-info .title { display: block; font-size: 9px; color: #fff; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .bn-item-info .requester { display: block; font-size: 8px; color: var(--main-red); font-weight: 900; }
@@ -79,17 +72,11 @@
 
 <div class="main-content">
     <div class="player-section">
-        <div class="archive-player-box">
-            <div id="archive-player"></div>
-        </div>
+        <div class="archive-player-box"><div id="archive-player"></div></div>
         <div id="now-playing-info" class="req-info">SELECT A TRACK</div>
     </div>
-
-    <div class="list-section">
-        <div class="section-label">BACK NUMBERS</div>
-        <div id="bn-list">
-            </div>
-    </div>
+    <div class="list-section" id="bn-list">
+        </div>
 </div>
 
 <script>
@@ -102,11 +89,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let arcPlayer, historyData = [], currentIndex = 0;
-
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.body.appendChild(tag);
+    let arcPlayer, historyData = [], currentKey = "";
 
     function onYouTubeIframeAPIReady() {
         arcPlayer = new YT.Player('archive-player', {
@@ -115,25 +98,43 @@
         loadHistory();
     }
 
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+
     function loadHistory() {
-        db.ref('backnumbers').limitToLast(50).on('value', snap => {
+        db.ref('backnumbers').on('value', snap => {
             historyData = [];
-            snap.forEach(c => {
-                historyData.push({ key: c.key, ...c.val() });
-            });
+            snap.forEach(c => { historyData.push({ key: c.key, ...c.val() }); });
             historyData.reverse(); 
-            if (historyData.length > 0) render();
+            renderGrouped();
         });
     }
 
-    function render() {
+    function renderGrouped() {
         const listContainer = document.getElementById('bn-list');
         listContainer.innerHTML = "";
         
-        historyData.forEach((item, i) => {
+        let lastDate = "";
+
+        historyData.forEach((item) => {
+            // タイムスタンプから日付文字列を作成 (YYYY.MM.DD)
+            const dateObj = new Date(item.timestamp);
+            const dateStr = `${dateObj.getFullYear()}.${('0' + (dateObj.getMonth() + 1)).slice(-2)}.${('0' + dateObj.getDate()).slice(-2)}`;
+
+            // 日付が変わったら見出しを挿入
+            if (dateStr !== lastDate) {
+                const divider = document.createElement('div');
+                divider.className = 'date-divider';
+                divider.innerText = dateStr;
+                listContainer.appendChild(divider);
+                lastDate = dateStr;
+            }
+
             const div = document.createElement('div');
-            div.className = `bn-item ${i === currentIndex ? 'active' : ''}`;
-            div.onclick = () => { currentIndex = i; update(true); };
+            div.className = `bn-item ${item.key === currentKey ? 'active' : ''}`;
+            div.id = `item-${item.key}`;
+            div.onclick = () => { playVideo(item.key, item.videoId, item.requester); };
             
             div.innerHTML = `
                 <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
@@ -144,24 +145,15 @@
             `;
             listContainer.appendChild(div);
         });
-        update(false);
     }
 
-    function update(shouldPlay) {
-        const items = document.querySelectorAll('.bn-item');
-        items.forEach((item, i) => {
-            item.classList.toggle('active', i === currentIndex);
-        });
-
-        const target = historyData[currentIndex];
-        if (target && arcPlayer) {
-            document.getElementById('now-playing-info').innerText = `NOW PLAYING: ${target.requester.toUpperCase()}`;
-            if (shouldPlay) {
-                arcPlayer.loadVideoById(target.videoId);
-            } else {
-                arcPlayer.cueVideoById(target.videoId);
-            }
-        }
+    function playVideo(key, vid, requester) {
+        currentKey = key;
+        document.querySelectorAll('.bn-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(`item-${key}`).classList.add('active');
+        
+        document.getElementById('now-playing-info').innerText = `NOW PLAYING: ${requester.toUpperCase()}`;
+        arcPlayer.loadVideoById(vid);
     }
 </script>
 </body>
