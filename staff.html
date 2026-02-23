@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>27 Club - Staff Cockpit (Fit-Screen)</title>
+    <title>27 Club - Staff Cockpit (Ultra-Compact)</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -16,7 +16,6 @@
             --border-color: #333;
         }
 
-        /* 全体：スクロールを禁止し、100%の高さで固定 */
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100vh; 
             background: var(--bg-dark); color: white; 
@@ -28,10 +27,9 @@
             background: var(--panel-bg); box-sizing: border-box; 
         }
         
-        /* 左右パネル：余白を最小化 (padding: 15px) */
         .left { 
             width: 40%; padding: 15px; border-right: 1px solid var(--border-color); 
-            display: flex; flex-direction: column; justify-content: space-between; 
+            display: flex; flex-direction: column; justify-content: flex-start; 
         }
         .right { 
             width: 60%; padding: 15px; background: #050505; 
@@ -47,7 +45,6 @@
             padding-bottom: 3px; text-transform: uppercase; 
         }
 
-        /* 入力エリアのコンパクト化 */
         .input-group { 
             background: #111; padding: 10px; border-radius: 4px; 
             border: 1px solid var(--border-color); margin-bottom: 10px;
@@ -58,7 +55,6 @@
             color: #fff; font-family: 'Orbitron'; font-size: 10px; box-sizing: border-box; 
         }
 
-        /* ボタンサイズを調整 (高さ: 40px) */
         .btn-ui { 
             width: 100%; height: 40px; border: 1px solid #444; 
             border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; 
@@ -68,11 +64,10 @@
         .btn-red { background: var(--main-red); border: none; box-shadow: var(--neon); }
         .btn-gray { background: #1a1a1a; }
 
-        /* プレイヤー：高さを自動調整 */
-        #player { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border-color); background:#000; }
+        #player { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border-color); background:#000; margin-bottom: 10px; }
         
         .playback-ctrl { 
-            margin: 10px 0; display: flex; gap: 10px; justify-content: center; 
+            margin-bottom: 15px; display: flex; gap: 10px; justify-content: center; 
             background: #000; padding: 8px; border-radius: 30px; border: 1px solid var(--border-color); 
         }
         .ctrl-icon { 
@@ -81,12 +76,16 @@
             align-items: center; justify-content: center; font-size: 14px;
         }
 
-        /* ギャラリー：高さを抑える */
-        #preview-container { width: 100%; height: 100px; border: 1px solid var(--border-color); background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 5px; }
-        #imagePreview { max-width: 100%; max-height: 100%; display: none; }
-        .file-label { width: 100%; height: 35px; background: #000; border: 1px solid #444; color: #fff; font-size: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; margin-bottom: 5px; }
+        /* ギャラリー投稿：ボタン1つのみに集約 */
+        #imageFileInput { display: none; }
+        .file-label { 
+            width: 100%; height: 45px; background: #1a1a1a; border: 1px solid #444; 
+            color: #fff; font-family: 'Orbitron'; font-weight: 900; font-size: 11px; 
+            cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            border-radius: 4px; transition: 0.3s; letter-spacing: 1px;
+        }
+        .file-label:hover { background: #333; border-color: #666; }
 
-        /* 右側リスト：ここだけ溢れた場合にスクロールさせる */
         #reserve-list { 
             flex-grow: 1; overflow-y: auto; padding-right: 5px; 
             scrollbar-width: thin; scrollbar-color: var(--main-red) #000;
@@ -97,7 +96,7 @@
         }
         .list-item img { width: 60px; border-radius: 2px; }
         
-        .status-msg { font-size: 9px; color: #0f0; height: 12px; text-align: center; }
+        .status-msg { font-size: 9px; color: #0f0; height: 12px; text-align: center; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -122,12 +121,10 @@
         
         <div id="player"></div>
 
-        <div class="input-group" style="margin-bottom: 0;">
-            <div class="section-label">GALLERY</div>
-            <div id="preview-container"><img id="imagePreview"><span id="preview-placeholder" style="font-size:8px; color:#333;">PREVIEW</span></div>
-            <label for="imageFileInput" class="file-label" id="fileLabel">SELECT IMAGE</label>
-            <input type="file" id="imageFileInput" accept="image/*" onchange="previewFile()">
-            <button class="btn-ui btn-gray" style="height:32px;" onclick="postSS()">POST SNAPSHOT</button>
+        <div class="input-group">
+            <div class="section-label">GALLERY UPLOAD</div>
+            <label for="imageFileInput" class="file-label" id="fileLabel">SELECT & POST IMAGE</label>
+            <input type="file" id="imageFileInput" accept="image/*" onchange="autoUpload(this)">
             <div id="uploadStatus" class="status-msg"></div>
         </div>
     </div>
@@ -159,36 +156,7 @@
         loadQueue();
     }
 
-    function smartSubmit() {
-        const id = getYTId(document.getElementById('urlInput').value);
-        if (!id) return;
-        executeLive(id);
-        document.getElementById('submitStatus').innerText = "LIVE START";
-        clearInputs();
-    }
-
-    function addToQueue() {
-        const id = getYTId(document.getElementById('urlInput').value);
-        const name = document.getElementById('nameInput').value || "GUEST";
-        if (!id) return;
-        db.ref('queue').push({ videoId: id, requester: name, order: Date.now() });
-        document.getElementById('submitStatus').innerText = "ADDED";
-        clearInputs();
-    }
-
-    function getYTId(url) { return url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop(); }
-    function clearInputs() { document.getElementById('urlInput').value = ""; document.getElementById('nameInput').value = ""; setTimeout(() => document.getElementById('submitStatus').innerText = "", 2000); }
-
-    function executeLive(id) { currentId = id; player.loadVideoById(id, 0); syncDB(1, 0); db.ref('backnumbers').push({ videoId: id, timestamp: firebase.database.ServerValue.TIMESTAMP }); }
-    function syncDB(state, time) { if (!currentId) return; db.ref('sync').set({ videoId: currentId, state: state, time: time, lastUpdate: Date.now() }); }
-
-    function control(cmd) {
-        if (!player || !currentId) return;
-        if (cmd === 'restart') player.seekTo(0); 
-        cmd === 'pause' ? player.pauseVideo() : player.playVideo();
-        setTimeout(() => syncDB(player.getPlayerState(), player.getCurrentTime()), 200);
-    }
-
+    // 予約リスト読み込み
     function loadQueue() {
         db.ref('queue').on('value', snap => {
             const list = document.getElementById('reserve-list');
@@ -204,28 +172,59 @@
         });
     }
 
-    function playFromQueue(k, id) { executeLive(id); db.ref(`queue/${k}`).remove(); }
-    function previewFile() {
-        const file = document.getElementById('imageFileInput').files[0];
-        if (file) {
-            document.getElementById('fileLabel').innerText = file.name.toUpperCase();
-            const reader = new FileReader();
-            reader.onloadend = () => { document.getElementById('imagePreview').src = reader.result; document.getElementById('imagePreview').style.display = "block"; document.getElementById('preview-placeholder').style.display = "none"; }
-            reader.readAsDataURL(file);
-        }
+    // リクエスト処理
+    function smartSubmit() {
+        const id = getYTId(document.getElementById('urlInput').value);
+        if (!id) return;
+        executeLive(id);
+        document.getElementById('submitStatus').innerText = "LIVE START";
+        clearInputs();
     }
-    function postSS() {
-        const file = document.getElementById('imageFileInput').files[0];
+
+    function addToQueue() {
+        const id = getYTId(document.getElementById('urlInput').value);
+        const name = document.getElementById('nameInput').value || "GUEST";
+        if (!id) return;
+        db.ref('queue').push({ videoId: id, requester: name, order: Date.now() });
+        document.getElementById('submitStatus').innerText = "ADDED TO QUEUE";
+        clearInputs();
+    }
+
+    function getYTId(url) { return url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop(); }
+    function clearInputs() { document.getElementById('urlInput').value = ""; document.getElementById('nameInput').value = ""; setTimeout(() => document.getElementById('submitStatus').innerText = "", 2000); }
+
+    // ギャラリー即時投稿
+    function autoUpload(input) {
+        const file = input.files[0];
         if (!file) return;
+
+        const status = document.getElementById('uploadStatus');
+        status.innerText = "UPLOADING...";
+        status.style.color = "#ff0";
+
         const reader = new FileReader();
         reader.onload = (e) => {
-            db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => {
-                document.getElementById('uploadStatus').innerText = "SUCCESS";
-                setTimeout(()=> document.getElementById('uploadStatus').innerText = "", 2000);
+            db.ref('gallery').push({ 
+                url: e.target.result, 
+                timestamp: firebase.database.ServerValue.TIMESTAMP 
+            }).then(() => {
+                status.innerText = "UPLOAD SUCCESS!";
+                status.style.color = "#0f0";
+                input.value = ""; // 連続投稿を可能にする
+                setTimeout(() => { status.innerText = ""; }, 3000);
+            }).catch(() => {
+                status.innerText = "UPLOAD FAILED";
+                status.style.color = "#f00";
             });
         };
         reader.readAsDataURL(file);
     }
+
+    // YouTube操作系
+    function executeLive(id) { currentId = id; player.loadVideoById(id, 0); syncDB(1, 0); db.ref('backnumbers').push({ videoId: id, timestamp: firebase.database.ServerValue.TIMESTAMP }); }
+    function syncDB(state, time) { if (!currentId) return; db.ref('sync').set({ videoId: currentId, state: state, time: time, lastUpdate: Date.now() }); }
+    function control(cmd) { if (!player || !currentId) return; if (cmd === 'restart') player.seekTo(0); cmd === 'pause' ? player.pauseVideo() : player.playVideo(); setTimeout(() => syncDB(player.getPlayerState(), player.getCurrentTime()), 200); }
+    function playFromQueue(k, id) { executeLive(id); db.ref(`queue/${k}`).remove(); }
     setInterval(() => { if (player && player.getPlayerState() === 1) syncDB(1, player.getCurrentTime()); }, 3000);
 </script>
 </body>
