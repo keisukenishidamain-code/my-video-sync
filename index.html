@@ -16,7 +16,7 @@
             color: white;
         }
 
-        /* ヘッダー：ナビゲーションのみを表示 */
+        /* ヘッダー：ナビゲーション */
         header {
             padding: 30px 50px;
             display: flex;
@@ -37,7 +37,7 @@
         }
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
-        /* メインプレーヤーエリア（全画面） */
+        /* メインプレーヤーエリア */
         .hero-section {
             width: 100%; height: 100vh;
             display: flex; justify-content: center; align-items: center;
@@ -50,12 +50,13 @@
         }
         #player { width: 100%; height: 100%; border: 1px solid #111; }
 
-        /* 再生終了・停止時のブランドロゴ表示 */
+        /* 一時停止・終了・未開始時に表示されるロゴオーバーレイ */
         #brand-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; display: flex; flex-direction: column;
             align-items: center; justify-content: center; z-index: 10;
             opacity: 1; transition: opacity 0.8s ease;
+            pointer-events: none; /* 下のプレーヤー操作を邪魔しない */
         }
         .brand-logo-big { font-size: clamp(30px, 5vw, 60px); font-weight: 900; letter-spacing: 15px; }
         .brand-logo-big span { color: var(--main-red); text-shadow: var(--neon); }
@@ -101,12 +102,8 @@
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
             playerVars: { 
-                'autoplay': 1, 
-                'controls': 0, 
-                'rel': 0, 
-                'modestbranding': 1, 
-                'iv_load_policy': 3,
-                'disablekb': 1
+                'autoplay': 1, 'controls': 0, 'rel': 0, 
+                'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1
             },
             events: { 
                 'onReady': startSync, 
@@ -115,19 +112,30 @@
         });
     }
 
-    // YouTubeの状態変化を監視してロゴを出す
+    // プレーヤー自体の状態変化を監視
     function onPlayerStateChange(event) {
         const overlay = document.getElementById('brand-overlay');
-        // 0:終了, -1:未開始, 2:一時停止(必要なら)
-        if (event.data === 0 || event.data === -1) {
-            overlay.style.display = "flex";
-            overlay.style.opacity = "1";
+        
+        // 0:終了, -1:未開始, 2:一時停止 の時にロゴを出す
+        if (event.data === 0 || event.data === -1 || event.data === 2) {
+            showOverlay();
         } else if (event.data === 1) { // 再生中
-            overlay.style.opacity = "0";
-            setTimeout(() => { 
-                if(player.getPlayerState() === 1) overlay.style.display = "none"; 
-            }, 800);
+            hideOverlay();
         }
+    }
+
+    function showOverlay() {
+        const overlay = document.getElementById('brand-overlay');
+        overlay.style.display = "flex";
+        setTimeout(() => { overlay.style.opacity = "1"; }, 10);
+    }
+
+    function hideOverlay() {
+        const overlay = document.getElementById('brand-overlay');
+        overlay.style.opacity = "0";
+        setTimeout(() => { 
+            if(player.getPlayerState() === 1) overlay.style.display = "none"; 
+        }, 800);
     }
 
     function startSync() {
@@ -135,17 +143,21 @@
             const data = snap.val();
             if (!data) return;
 
+            // 動画切り替え
             if (currentVideoId !== data.videoId) {
                 currentVideoId = data.videoId;
                 player.loadVideoById(data.videoId, data.time);
             }
 
+            // スタッフ画面の状態を反映
             if (data.state === 1) { // Play
                 const diff = (Date.now() - data.lastUpdate) / 1000;
                 player.seekTo(data.time + diff, true);
                 player.playVideo();
+                // hideOverlayはonPlayerStateChange(1)で実行される
             } else if (data.state === 2) { // Pause
                 player.pauseVideo();
+                showOverlay(); // 一時停止信号を受け取った瞬間にロゴを表示
             }
         });
     }
