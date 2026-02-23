@@ -2,77 +2,96 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>27 Club - Official Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
-        body { margin: 0; background: #050505; color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; }
+        :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; --bg-black: #050505; }
         
+        body { 
+            margin: 0; background: var(--bg-black); color: white; 
+            font-family: 'Orbitron', sans-serif; overflow: hidden; 
+        }
+
+        /* ヘッダーレイアウト */
         header { 
             background: #000; padding: 20px 40px; display: flex; 
             justify-content: space-between; align-items: center;
-            border-bottom: 2px solid #1a1a1a; 
+            border-bottom: 2px solid #1a1a1a; position: fixed; top: 0; width: 100%; z-index: 100;
+            box-sizing: border-box;
         }
-        .logo { font-size: 28px; font-weight: 900; letter-spacing: 5px; }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: white; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
 
-        .container { 
+        nav { display: flex; gap: 30px; }
+        nav a { 
+            color: #666; text-decoration: none; font-size: 13px; 
+            font-weight: 900; letter-spacing: 2px; transition: 0.3s; 
+        }
+        nav a:hover { color: white; text-shadow: 0 0 8px white; }
+
+        /* プレイヤー中央配置 */
+        .main-content { 
             display: flex; flex-direction: column; align-items: center; 
-            justify-content: center; min-height: 85vh; padding: 20px;
+            justify-content: center; height: 100vh; padding-top: 60px;
         }
 
-        /* プレイヤー外枠 */
         .player-outer {
-            width: 90%; max-width: 950px; position: relative;
+            width: 85%; max-width: 1000px; position: relative;
             background: #000; border-radius: 12px; overflow: hidden;
             border: 1px solid #222;
-            box-shadow: 0 0 50px rgba(0,0,0,1), 0 0 20px rgba(255,0,51,0.2);
+            box-shadow: 0 0 50px rgba(0,0,0,1), 0 0 30px rgba(255,0,51,0.15);
         }
 
         .player-inner { position: relative; width: 100%; padding-top: 56.25%; }
 
         #player-live { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-        /* ★停止中に表示されるロゴオーバーレイ */
+        /* 停止中ロゴオーバーレイ */
         #standby-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            z-index: 10; transition: opacity 0.5s ease;
-            pointer-events: none; /* 下のプレイヤーを邪魔しない */
-            opacity: 0;
+            z-index: 10; transition: opacity 0.6s ease;
+            pointer-events: none; opacity: 0;
         }
         #standby-overlay.active { opacity: 1; }
-        .overlay-logo { font-size: 60px; font-weight: 900; letter-spacing: 15px; color: #fff; text-shadow: var(--neon); }
+        .overlay-logo { font-size: clamp(30px, 6vw, 60px); font-weight: 900; letter-spacing: 15px; color: #fff; text-shadow: var(--neon); }
         .overlay-logo span { color: var(--main-red); }
-        .overlay-text { font-size: 14px; color: #555; margin-top: 10px; letter-spacing: 5px; }
+        .overlay-text { font-size: 12px; color: #444; margin-top: 15px; letter-spacing: 8px; }
 
-        #live-status { margin-top: 30px; color: var(--main-red); font-size: 14px; letter-spacing: 2px; }
+        .status-lamp { margin-top: 30px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--main-red); letter-spacing: 3px; font-weight: bold; }
+        .dot { width: 8px; height: 8px; background: var(--main-red); border-radius: 50%; box-shadow: var(--neon); animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo"><span>27</span> CLUB</div>
-    <div style="color:#555; font-size:10px; letter-spacing:2px;">LIVE SYNCHRONIZED</div>
+    <a href="index.html" class="logo"><span>27</span> CLUB</a>
+    <nav>
+        <a href="archive.html">ARCHIVE</a>
+        <a href="gallery.html">GALLERY</a>
+    </nav>
 </header>
 
-<div class="container">
+<div class="main-content">
     <div class="player-outer">
         <div class="player-inner">
             <div id="player-live"></div>
             <div id="standby-overlay">
                 <div class="overlay-logo"><span>27</span> CLUB</div>
-                <div class="overlay-text">NOW STANDBY...</div>
+                <div class="overlay-text">NOW STANDBY</div>
             </div>
         </div>
     </div>
-    <p id="live-status">● LIVE STREAMING</p>
+    <div class="status-lamp"><div class="dot"></div> LIVE STREAMING</div>
 </div>
 
 <script>
+    // Firebase設定 (以前のものを使用)
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -81,39 +100,52 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
     let livePlayer, currentVid = "";
 
+    // YouTube API
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
     function onYouTubeIframeAPIReady() {
         livePlayer = new YT.Player('player-live', {
-            playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'disablekb': 1 }
+            playerVars: { 
+                'autoplay': 1, 'controls': 0, 'rel': 0, 
+                'modestbranding': 1, 'disablekb': 1, 'iv_load_policy': 3 
+            },
+            events: {
+                'onReady': () => { startSync(); }
+            }
         });
-        
+    }
+
+    function startSync() {
         db.ref('sync').on('value', snap => {
             const data = snap.val();
             if (!data || !data.videoId) return;
 
             const overlay = document.getElementById('standby-overlay');
 
-            // 1. 動画の切り替え
+            // 1. 動画IDのチェックと読み込み
             if (currentVid !== data.videoId) {
-                livePlayer.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
+                livePlayer.loadVideoById({
+                    videoId: data.videoId,
+                    startSeconds: data.time
+                });
                 currentVid = data.videoId;
             }
 
-            // 2. 再生・停止の同期とロゴの表示切り替え
+            // 2. 状態の同期 (1:再生中, 2:一時停止)
             if (data.state === 1) {
                 livePlayer.playVideo();
-                overlay.classList.remove('active'); // 再生中はロゴを隠す
+                overlay.classList.remove('active');
             } else if (data.state === 2) {
                 livePlayer.pauseVideo();
-                overlay.classList.add('active'); // 停止中はロゴを表示
+                overlay.classList.add('active');
             }
 
-            // 3. 時間のズレ補正
+            // 3. 強制同期 (スタッフの現在時刻と2秒以上ズレていたら補正)
             const myTime = livePlayer.getCurrentTime();
             if (Math.abs(myTime - data.time) > 2) {
                 livePlayer.seekTo(data.time, true);
