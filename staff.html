@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>27 Club - Staff Cockpit (Fixed Layout)</title>
+    <title>27 Club - Staff Cockpit</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -10,43 +10,22 @@
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 10px #ff0033; --border-color: #444; }
         
-        /* 全体のスクロールを禁止し、100%に収める */
         body, html { 
-            margin: 0; padding: 0; 
-            width: 100%; height: 100%; 
-            background: #000; color: #fff; 
-            font-family: 'Orbitron', sans-serif; 
-            overflow: hidden; 
-            display: flex; justify-content: center; align-items: center; 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #000; color: #fff; font-family: 'Orbitron', sans-serif; 
+            overflow: hidden; display: flex; justify-content: center; align-items: center; 
         }
         
-        .master-container { 
-            display: flex; 
-            width: 100vw; 
-            height: 100vh; 
-            background: #0a0a0a; 
-            box-sizing: border-box;
-            overflow: hidden; /* ここで外側のハミ出しをカット */
-        }
+        .master-container { display: flex; width: 100vw; height: 100vh; background: #0a0a0a; box-sizing: border-box; overflow: hidden; }
         
-        /* 幅の合計を100%にするための設定 */
         .left { 
-            width: 380px; 
-            flex-shrink: 0;
-            padding: 15px; 
-            border-right: 1px solid var(--border-color); 
-            display: flex; flex-direction: column; 
-            box-sizing: border-box;
+            width: 380px; flex-shrink: 0; padding: 15px; border-right: 1px solid var(--border-color); 
+            display: flex; flex-direction: column; box-sizing: border-box; 
         }
         
         .list-section { 
-            flex: 1; /* 残りの幅を等分に分ける */
-            padding: 15px; 
-            background: #050505; 
-            display: flex; flex-direction: column; 
-            overflow: hidden;
-            box-sizing: border-box;
-            border-right: 1px solid var(--border-color);
+            flex: 1; padding: 15px; background: #050505; display: flex; flex-direction: column; 
+            overflow: hidden; box-sizing: border-box; border-right: 1px solid var(--border-color); 
         }
         .list-section:last-child { border-right: none; }
         
@@ -62,6 +41,9 @@
         .input-group { background: #111; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
         input[type="text"] { width: 100%; padding: 10px; background: #000; border: 1px solid #555; color: #fff; font-family: 'Orbitron'; font-size: 11px; box-sizing: border-box; outline: none; }
         
+        /* イベント名入力用の強調スタイル */
+        .event-input { border-color: var(--main-red) !important; color: var(--main-red) !important; }
+
         .btn-ui { width: 100%; height: 48px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; font-size: 12px; cursor: pointer; text-transform: uppercase; color: #fff !important; }
         .btn-red { background: var(--main-red); box-shadow: var(--neon); }
         .btn-gray { background: #1a1a1a; border: 1px solid #555; }
@@ -78,7 +60,6 @@
         .history-item { border-left: 3px solid #444; }
         
         .staff-date-divider { font-size: 8px; color: #666; padding: 8px 5px 3px; border-bottom: 1px solid #222; margin-bottom: 8px; letter-spacing: 1px; }
-
         .list-item img { width: 60px; height: 35px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
         .list-info { flex-grow: 1; min-width: 0; position: relative; }
         .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 85%; }
@@ -92,18 +73,27 @@
 <div class="master-container">
     <div class="left">
         <div class="logo"><span>27</span> STAFF</div>
+        
+        <div class="input-group">
+            <div class="section-label">EVENT TITLE (ARCHIVE SUBTITLE)</div>
+            <input type="text" id="eventTitleInput" class="event-input" placeholder="NIGHT SESSION (Default)...">
+        </div>
+
         <div class="input-group">
             <div class="section-label">REQUEST QUEUE</div>
             <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
             <input type="text" id="nameInput" placeholder="REQUESTER...">
             <button class="btn-ui btn-red" onclick="addToQueue()">ADD TO QUEUE</button>
         </div>
+
         <div class="playback-ctrl">
             <button class="ctrl-icon" onclick="control('restart')">⏮</button>
             <button class="ctrl-icon" onclick="playNextInQueue()" style="color: var(--main-red);">▶</button>
             <button class="ctrl-icon" onclick="control('pause')">⏸</button>
         </div>
+        
         <div id="player"></div>
+        
         <div class="input-group">
             <div class="section-label">GALLERY</div>
             <label for="imageFileInput" class="file-label">SELECT & POST IMAGE</label>
@@ -182,12 +172,9 @@
             items.reverse();
             let lastDate = "";
             items.forEach(item => {
-                // NaN対策のガード
                 if (!item.timestamp) return;
                 const dateObj = new Date(item.timestamp);
                 if (isNaN(dateObj.getTime())) return;
-
-                // 5時切り替え
                 if (dateObj.getHours() < 5) dateObj.setDate(dateObj.getDate() - 1);
                 const dateStr = `${dateObj.getFullYear()}.${('0' + (dateObj.getMonth() + 1)).slice(-2)}.${('0' + dateObj.getDate()).slice(-2)}`;
                 
@@ -208,7 +195,27 @@
 
     function deleteHistoryItem(k) { if(confirm("DELETE?")) db.ref(`backnumbers/${k}`).remove(); }
     function clearBackNumbers() { if (confirm("ALL CLEAR HISTORY?")) db.ref('backnumbers').remove(); }
-    function playSelected(k, v, n) { currentId = v; currentRequester = n; player.loadVideoById(v, 0); syncDB(1, 0); db.ref('backnumbers').push({ videoId: v, requester: n, timestamp: firebase.database.ServerValue.TIMESTAMP }); db.ref(`queue/${k}`).remove(); }
+    
+    // 再生時にイベントタイトルも一緒に保存するように修正
+    function playSelected(k, v, n) { 
+        currentId = v; 
+        currentRequester = n; 
+        const eTitle = document.getElementById('eventTitleInput').value || "NIGHT SESSION";
+        
+        player.loadVideoById(v, 0); 
+        syncDB(1, 0); 
+        
+        // backnumbersにeventTitleを含めて保存
+        db.ref('backnumbers').push({ 
+            videoId: v, 
+            requester: n, 
+            eventTitle: eTitle, 
+            timestamp: firebase.database.ServerValue.TIMESTAMP 
+        }); 
+        
+        db.ref(`queue/${k}`).remove(); 
+    }
+
     function syncDB(s, t) { if (!currentId) return; db.ref('sync').set({ videoId: currentId, state: s, time: t, requester: currentRequester, lastUpdate: Date.now() }); }
     function control(cmd) { if (!player || !currentId) return; if (cmd === 'restart') player.seekTo(0); cmd === 'pause' ? player.pauseVideo() : player.playVideo(); setTimeout(() => syncDB(player.getPlayerState(), player.getCurrentTime()), 200); }
     function autoUpload(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => { input.value = ""; }); }; reader.readAsDataURL(file); }
