@@ -2,18 +2,52 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>27 Club - Staff Cockpit (Grouped History)</title>
+    <title>27 Club - Staff Cockpit (Fixed Layout)</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 10px #ff0033; --border-color: #444; }
-        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background: #000; color: #fff; font-family: 'Orbitron', sans-serif; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        .master-container { display: flex; width: 100%; max-width: 1300px; height: 95vh; background: #0a0a0a; border: 1px solid var(--border-color); box-sizing: border-box; overflow: hidden; }
         
-        .left { width: 380px; padding: 15px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; overflow-y: auto; box-sizing: border-box; }
-        .list-section { flex: 1; padding: 15px; background: #050505; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; border-right: 1px solid var(--border-color); }
+        /* 全体のスクロールを禁止し、100%に収める */
+        body, html { 
+            margin: 0; padding: 0; 
+            width: 100%; height: 100%; 
+            background: #000; color: #fff; 
+            font-family: 'Orbitron', sans-serif; 
+            overflow: hidden; 
+            display: flex; justify-content: center; align-items: center; 
+        }
+        
+        .master-container { 
+            display: flex; 
+            width: 100vw; 
+            height: 100vh; 
+            background: #0a0a0a; 
+            box-sizing: border-box;
+            overflow: hidden; /* ここで外側のハミ出しをカット */
+        }
+        
+        /* 幅の合計を100%にするための設定 */
+        .left { 
+            width: 380px; 
+            flex-shrink: 0;
+            padding: 15px; 
+            border-right: 1px solid var(--border-color); 
+            display: flex; flex-direction: column; 
+            box-sizing: border-box;
+        }
+        
+        .list-section { 
+            flex: 1; /* 残りの幅を等分に分ける */
+            padding: 15px; 
+            background: #050505; 
+            display: flex; flex-direction: column; 
+            overflow: hidden;
+            box-sizing: border-box;
+            border-right: 1px solid var(--border-color);
+        }
         .list-section:last-child { border-right: none; }
         
         .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 10px; }
@@ -22,7 +56,6 @@
         .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; padding-bottom: 3px; }
         .section-label { font-size: 9px; color: #fff; letter-spacing: 1px; text-transform: uppercase; margin: 0; }
         
-        /* ALL CLEAR - 白文字に変更 */
         .clear-link { font-size: 8px; color: #ffffff; cursor: pointer; text-decoration: underline; letter-spacing: 1px; opacity: 0.8; transition: 0.3s; }
         .clear-link:hover { color: var(--main-red); opacity: 1; text-shadow: var(--neon); }
 
@@ -41,17 +74,16 @@
         .file-label { width: 100%; height: 42px; background: #1a1a1a; border: 1px solid #555; color: #fff; font-family: 'Orbitron'; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
         
         .scroll-list { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
-        .list-item { background: #0d0d0d; padding: 8px; margin-bottom: 5px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red); width: 100%; box-sizing: border-box; }
+        .list-item { background: #0d0d0d; padding: 8px; margin-bottom: 5px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red); width: 100%; box-sizing: border-box; position: relative; }
         .history-item { border-left: 3px solid #444; }
         
-        /* 履歴の日付区切りスタイル */
         .staff-date-divider { font-size: 8px; color: #666; padding: 8px 5px 3px; border-bottom: 1px solid #222; margin-bottom: 8px; letter-spacing: 1px; }
 
         .list-item img { width: 60px; height: 35px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
         .list-info { flex-grow: 1; min-width: 0; position: relative; }
-        .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 85%; }
         
-        .mini-del-btn { position: absolute; right: 0; top: 0; background: none; border: none; color: #888; font-size: 12px; cursor: pointer; padding: 0 5px; line-height: 1; }
+        .mini-del-btn { position: absolute; right: 5px; top: 8px; background: none; border: none; color: #888; font-size: 12px; cursor: pointer; padding: 0 5px; line-height: 1; }
         .mini-del-btn:hover { color: var(--main-red); }
         .status-msg { font-size: 9px; color: #fff; height: 12px; text-align: center; font-weight: bold; margin-top: 2px; }
     </style>
@@ -150,9 +182,15 @@
             items.reverse();
             let lastDate = "";
             items.forEach(item => {
+                // NaN対策のガード
+                if (!item.timestamp) return;
                 const dateObj = new Date(item.timestamp);
+                if (isNaN(dateObj.getTime())) return;
+
+                // 5時切り替え
                 if (dateObj.getHours() < 5) dateObj.setDate(dateObj.getDate() - 1);
                 const dateStr = `${dateObj.getFullYear()}.${('0' + (dateObj.getMonth() + 1)).slice(-2)}.${('0' + dateObj.getDate()).slice(-2)}`;
+                
                 if (dateStr !== lastDate) {
                     const div = document.createElement('div');
                     div.className = 'staff-date-divider';
