@@ -15,6 +15,7 @@
             background: #000; font-family: 'Orbitron', sans-serif; color: #ffffff; 
         }
 
+        /* ヘッダー設定：表記を BACK NUMBERS に統一 */
         header { 
             padding: 25px 40px; 
             display: flex; justify-content: space-between; align-items: center; 
@@ -33,33 +34,35 @@
         }
         .nav-btn:hover { border-color: var(--main-red); box-shadow: var(--neon); }
 
-        /* Pinterestスタイルのコンテナ */
+        /* メインコンテナ：7列に最適化 */
         .container { 
-            padding: 120px 20px 50px; 
-            max-width: 1600px;
+            padding: 120px 15px 50px; 
+            max-width: 1800px;
             margin: 0 auto;
         }
 
         #gallery-grid { 
-            /* 段組みの指定（Pinterestレイアウトの核） */
-            column-count: 4; /* PCでは4列 */
-            column-gap: 20px; /* 横の隙間 */
+            /* 7列設定 */
+            column-count: 7; 
+            column-gap: 12px;
         }
 
-        /* 画面サイズに応じて列数を変える */
-        @media (max-width: 1400px) { #gallery-grid { column-count: 3; } }
-        @media (max-width: 900px) { #gallery-grid { column-count: 2; } }
-        @media (max-width: 600px) { #gallery-grid { column-count: 1; } }
+        /* 画面サイズに応じたレスポンシブ設定 */
+        @media (max-width: 1600px) { #gallery-grid { column-count: 6; } }
+        @media (max-width: 1300px) { #gallery-grid { column-count: 5; } }
+        @media (max-width: 1000px) { #gallery-grid { column-count: 4; } }
+        @media (max-width: 800px)  { #gallery-grid { column-count: 3; } }
+        @media (max-width: 500px)  { #gallery-grid { column-count: 2; } }
 
         .photo-card { 
             display: block;
             width: 100%;
-            margin-bottom: 20px; /* 縦の隙間 */
-            break-inside: avoid; /* カードが途中で泣き別れないようにする */
+            margin-bottom: 12px;
+            break-inside: avoid;
             position: relative;
             background: #050505; 
             border: 1px solid #222; 
-            border-radius: 8px; 
+            border-radius: 4px; 
             overflow: hidden; 
             transition: 0.3s ease-in-out;
             cursor: pointer;
@@ -73,12 +76,11 @@
 
         .photo-card img { 
             width: 100%; 
-            height: auto; /* ここが重要：オリジナル比率を維持 */
+            height: auto; 
             display: block;
             transition: 0.5s;
         }
 
-        /* 日付ラベル：Pinterestっぽく右下に小さく */
         .date-badge {
             position: absolute;
             bottom: 0;
@@ -86,8 +88,8 @@
             right: 0;
             background: linear-gradient(transparent, rgba(0,0,0,0.8));
             color: #aaa;
-            font-size: 10px;
-            padding: 20px 12px 8px;
+            font-size: 9px;
+            padding: 20px 10px 5px;
             text-align: right;
             opacity: 0;
             transition: 0.3s;
@@ -112,7 +114,7 @@
     <a href="index.html" class="logo"><span>27</span> CLUB</a>
     <div class="nav-links">
         <a href="index.html" class="nav-btn">LIVE</a>
-        <a href="archive.html" class="nav-btn">ARCHIVE</a>
+        <a href="archive.html" class="nav-btn">BACK NUMBERS</a>
     </div>
 </header>
 
@@ -140,7 +142,6 @@
         let items = [];
         snap.forEach(child => { items.push(child.val()); });
 
-        // 新しい順に表示
         items.reverse().forEach(data => {
             const date = data.timestamp ? new Date(data.timestamp) : new Date();
             const dateStr = `${date.getFullYear()}.${('0'+(date.getMonth()+1)).slice(-2)}.${('0'+date.getDate()).slice(-2)}`;
