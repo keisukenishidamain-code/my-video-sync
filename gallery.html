@@ -11,17 +11,27 @@
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
         
         body, html { 
-            margin: 0; padding: 0; width: 100%; min-height: 100%; 
+            margin: 0; padding: 0; width: 100%; 
+            /* height: 100% 固定を解除してスクロールを許可 */
+            min-height: 100vh; 
             background: #000; font-family: 'Orbitron', sans-serif; color: #ffffff; 
+            overflow-y: auto; /* 縦スクロールを有効に */
+            overflow-x: hidden;
         }
 
-        /* ヘッダー設定：表記を BACK NUMBERS に統一 */
+        /* スクロールバーのデザインを27 CLUB風に */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--main-red); box-shadow: var(--neon); }
+
         header { 
             padding: 25px 40px; 
             display: flex; justify-content: space-between; align-items: center; 
-            background: rgba(0,0,0,0.9); 
+            background: rgba(0,0,0,0.95); /* スクロール時に透けないよう少し濃く */
             position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
             border-bottom: 1px solid #222;
+            backdrop-filter: blur(10px); /* 背景をボカすと高級感が出ます */
         }
         .logo { font-size: 22px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
@@ -34,20 +44,17 @@
         }
         .nav-btn:hover { border-color: var(--main-red); box-shadow: var(--neon); }
 
-        /* メインコンテナ：7列に最適化 */
         .container { 
-            padding: 120px 15px 50px; 
+            padding: 140px 15px 80px; /* 上下の余白を広めに */
             max-width: 1800px;
             margin: 0 auto;
         }
 
         #gallery-grid { 
-            /* 7列設定 */
             column-count: 7; 
             column-gap: 12px;
         }
 
-        /* 画面サイズに応じたレスポンシブ設定 */
         @media (max-width: 1600px) { #gallery-grid { column-count: 6; } }
         @media (max-width: 1300px) { #gallery-grid { column-count: 5; } }
         @media (max-width: 1000px) { #gallery-grid { column-count: 4; } }
@@ -72,34 +79,21 @@
             border-color: var(--main-red); 
             box-shadow: var(--neon); 
             transform: translateY(-5px);
+            z-index: 10;
         }
 
         .photo-card img { 
-            width: 100%; 
-            height: auto; 
-            display: block;
-            transition: 0.5s;
+            width: 100%; height: auto; display: block; transition: 0.5s;
         }
 
         .date-badge {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            position: absolute; bottom: 0; left: 0; right: 0;
             background: linear-gradient(transparent, rgba(0,0,0,0.8));
-            color: #aaa;
-            font-size: 9px;
-            padding: 20px 10px 5px;
-            text-align: right;
-            opacity: 0;
-            transition: 0.3s;
+            color: #aaa; font-size: 9px; padding: 20px 10px 5px;
+            text-align: right; opacity: 0; transition: 0.3s;
         }
+        .photo-card:hover .date-badge { opacity: 1; }
 
-        .photo-card:hover .date-badge {
-            opacity: 1;
-        }
-
-        /* モーダル */
         #modal { 
             display: none; position: fixed; top: 0; left: 0; 
             width: 100%; height: 100%; background: rgba(0,0,0,0.95); 
