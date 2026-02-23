@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>27 Club - BACK NUMBERS</title>
+    <title>27 Club - BACK NUMBERS ARCHIVE</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -13,67 +13,92 @@
         
         header { 
             padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; 
-            background: rgba(0,0,0,0.9); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
+            background: linear-gradient(to bottom, rgba(0,0,0,1), transparent); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
         }
         .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-        .nav-links { display: flex; gap: 20px; }
-        .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; }
-        .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
-        .main-content { 
-            display: flex; width: 100%; height: 100vh; padding: 110px 40px 40px; box-sizing: border-box; gap: 30px;
+        /* カルーセルセクション */
+        .archive-selector {
+            height: 250px;
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            padding: 0 50px;
+            gap: 20px;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            margin-top: 100px;
+            mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
         }
+        .archive-selector::-webkit-scrollbar { display: none; }
 
-        .player-section { flex: 2; display: flex; flex-direction: column; gap: 15px; }
-        .archive-player-box { width: 100%; aspect-ratio: 16/9; background: #000; border: 1px solid #222; }
-        #archive-player { width: 100%; height: 100%; border: none; }
-        .req-info { font-size: 11px; color: var(--main-red); letter-spacing: 2px; font-weight: 900; }
-
-        .list-section { 
-            flex: 1; min-width: 320px; display: flex; flex-direction: column; 
-            border-left: 1px solid #222; padding-left: 30px;
+        .date-card {
+            flex: 0 0 280px;
+            height: 160px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.4s;
+            position: relative;
+            overflow: hidden;
         }
-        
-        #bn-list { flex-grow: 1; overflow-y: auto; padding-right: 10px; scrollbar-width: thin; scrollbar-color: var(--main-red) #000; }
-        #bn-list::-webkit-scrollbar { width: 4px; }
-        #bn-list::-webkit-scrollbar-thumb { background: var(--main-red); }
+        .date-card:hover { border-color: var(--main-red); transform: scale(1.05); background: #1a1a1a; box-shadow: var(--neon); }
+        .date-card.active { border-color: var(--main-red); box-shadow: var(--neon); background: #000; }
+        .date-card .date-text { font-size: 24px; font-weight: 900; letter-spacing: 2px; }
+        .date-card .event-title { font-size: 10px; color: var(--main-red); margin-top: 10px; opacity: 0.8; }
 
-        .date-divider { 
-            font-size: 10px; color: #fff; background: #111; padding: 10px; margin: 20px 0 10px 0;
-            border-left: 3px solid var(--main-red); letter-spacing: 3px; font-weight: 900; position: sticky; top: 0; z-index: 10;
+        /* 下部：動画表示エリア */
+        .content-area {
+            display: flex;
+            height: calc(100vh - 350px);
+            padding: 0 50px 30px;
+            gap: 30px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: 0.5s;
         }
+        .content-area.show { opacity: 1; transform: translateY(0); }
 
-        .bn-item { 
-            display: flex; align-items: center; gap: 15px; padding: 10px; 
-            border: 1px solid #111; margin-bottom: 8px; cursor: pointer; 
-            transition: 0.3s; border-radius: 4px; background: #050505;
+        .video-main { flex: 2; background: #000; border: 1px solid #222; aspect-ratio: 16/9; }
+        .video-main iframe { width: 100%; height: 100%; border: none; }
+
+        .track-list {
+            flex: 1;
+            overflow-y: auto;
+            border-left: 1px solid #222;
+            padding-left: 20px;
         }
-        .bn-item:hover { border-color: #444; background: #0a0a0a; }
-        .bn-item.active { border-color: var(--main-red); box-shadow: var(--neon); background: #0d0d0d; }
-        
-        .bn-item img { width: 80px; aspect-ratio: 16/9; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
-        .bn-item-info { min-width: 0; }
-        .bn-item-info .title { display: block; font-size: 9px; color: #fff; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .bn-item-info .requester { display: block; font-size: 8px; color: var(--main-red); font-weight: 900; }
+        .track-item {
+            display: flex; gap: 15px; padding: 10px; border: 1px solid transparent;
+            margin-bottom: 10px; cursor: pointer; border-radius: 4px; transition: 0.2s;
+        }
+        .track-item:hover { background: #111; border-color: #333; }
+        .track-item.active { border-color: var(--main-red); background: #0d0d0d; }
+        .track-item img { width: 80px; height: 45px; object-fit: cover; }
+        .track-info { font-size: 9px; }
+        .track-info .req { color: var(--main-red); font-weight: 900; margin-bottom: 3px; display: block; }
     </style>
 </head>
 <body>
 
 <header>
     <a href="index.html" class="logo"><span>27</span> CLUB</a>
-    <div class="nav-links">
-        <a href="index.html" class="nav-btn">LIVE</a>
-        <a href="gallery.html" class="nav-btn">GALLERY</a>
-    </div>
+    <div style="font-size: 10px; letter-spacing: 4px; color: #666;">BACK NUMBERS</div>
 </header>
 
-<div class="main-content">
-    <div class="player-section">
-        <div class="archive-player-box"><div id="archive-player"></div></div>
-        <div id="now-playing-info" class="req-info">SELECT A TRACK</div>
+<div class="archive-selector" id="dateSelector"></div>
+
+<div class="content-area" id="contentArea">
+    <div class="video-main">
+        <div id="player"></div>
     </div>
-    <div class="list-section" id="bn-list"></div>
+    <div class="track-list" id="trackList"></div>
 </div>
 
 <script>
@@ -86,77 +111,80 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let arcPlayer, historyData = [], currentKey = "";
+    let player, groupedData = {};
 
     function onYouTubeIframeAPIReady() {
-        arcPlayer = new YT.Player('archive-player', {
-            playerVars: { 'autoplay': 0, 'controls': 1, 'modestbranding': 1, 'rel': 0 }
-        });
-        loadHistory();
+        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'autoplay': 0, 'controls': 1 } });
+        loadArchive();
     }
-
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
+    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
-    function loadHistory() {
+    function loadArchive() {
         db.ref('backnumbers').on('value', snap => {
-            historyData = [];
-            snap.forEach(c => { historyData.push({ key: c.key, ...c.val() }); });
-            historyData.reverse(); 
-            renderGrouped();
+            groupedData = {};
+            snap.forEach(child => {
+                const item = child.val();
+                if (!item.timestamp) return;
+                const d = new Date(item.timestamp);
+                if (d.getHours() < 5) d.setDate(d.getDate() - 1);
+                const dateStr = `${d.getFullYear()}.${('0' + (d.getMonth() + 1)).slice(-2)}.${('0' + d.getDate()).slice(-2)}`;
+                
+                if (!groupedData[dateStr]) groupedData[dateStr] = [];
+                groupedData[dateStr].push({ key: child.key, ...item });
+            });
+            renderSelector();
         });
     }
 
-    function renderGrouped() {
-        const listContainer = document.getElementById('bn-list');
-        listContainer.innerHTML = "";
-        let lastDate = "";
+    function renderSelector() {
+        const selector = document.getElementById('dateSelector');
+        selector.innerHTML = "";
+        const dates = Object.keys(groupedData).sort().reverse();
 
-        historyData.forEach((item) => {
-            // タイムスタンプが存在しない場合はスキップ
-            if (!item.timestamp) return;
+        dates.forEach(date => {
+            const card = document.createElement('div');
+            card.className = 'date-card';
+            card.onclick = () => showTracks(date, card);
+            card.innerHTML = `
+                <div class="date-text">${date}</div>
+                <div class="event-title">NIGHT SESSION</div>
+            `;
+            selector.appendChild(card);
+        });
+    }
 
-            const dateObj = new Date(item.timestamp);
-            
-            // 無効な日付オブジェクト（NaNになるもの）はスキップ
-            if (isNaN(dateObj.getTime())) return;
+    function showTracks(date, element) {
+        // UI操作
+        document.querySelectorAll('.date-card').forEach(c => c.classList.remove('active'));
+        element.classList.add('active');
+        document.getElementById('contentArea').classList.add('show');
 
-            // 午前5時切り替えロジック
-            if (dateObj.getHours() < 5) dateObj.setDate(dateObj.getDate() - 1);
-            
-            const dateStr = `${dateObj.getFullYear()}.${('0' + (dateObj.getMonth() + 1)).slice(-2)}.${('0' + dateObj.getDate()).slice(-2)}`;
-
-            if (dateStr !== lastDate) {
-                const divider = document.createElement('div');
-                divider.className = 'date-divider';
-                divider.innerText = dateStr;
-                listContainer.appendChild(divider);
-                lastDate = dateStr;
-            }
-
-            const div = document.createElement('div');
-            div.className = `bn-item ${item.key === currentKey ? 'active' : ''}`;
-            div.id = `item-${item.key}`;
-            div.onclick = () => { playVideo(item.key, item.videoId, item.requester); };
-            div.innerHTML = `
-                <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
-                <div class="bn-item-info">
-                    <span class="title">VIDEO ID: ${item.videoId}</span>
-                    <span class="requester">${item.requester.toUpperCase()}</span>
+        const trackList = document.getElementById('trackList');
+        trackList.innerHTML = "";
+        
+        // その日のリストを表示（新しい順）
+        const dayTracks = [...groupedData[date]].reverse();
+        dayTracks.forEach((track, index) => {
+            const item = document.createElement('div');
+            item.className = 'track-item';
+            item.onclick = () => {
+                player.loadVideoById(track.videoId);
+                document.querySelectorAll('.track-item').forEach(t => t.classList.remove('active'));
+                item.classList.add('active');
+            };
+            item.innerHTML = `
+                <img src="https://img.youtube.com/vi/${track.videoId}/mqdefault.jpg">
+                <div class="track-info">
+                    <span class="req">${track.requester.toUpperCase()}</span>
+                    <span>${track.videoId}</span>
                 </div>
             `;
-            listContainer.appendChild(div);
+            trackList.appendChild(item);
+            
+            // 最初の1曲目を自動ロード
+            if(index === 0) item.click();
         });
-    }
-
-    function playVideo(key, vid, requester) {
-        currentKey = key;
-        document.querySelectorAll('.bn-item').forEach(el => el.classList.remove('active'));
-        const target = document.getElementById(`item-${key}`);
-        if(target) target.classList.add('active');
-        document.getElementById('now-playing-info').innerText = `NOW PLAYING: ${requester.toUpperCase()}`;
-        arcPlayer.loadVideoById(vid);
     }
 </script>
 </body>
