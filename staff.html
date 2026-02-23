@@ -13,26 +13,45 @@
         .master-container { width: 100%; max-width: 1100px; display: flex; height: 100%; background: var(--panel-bg); border-left: 1px solid #1a1a1a; border-right: 1px solid #1a1a1a; }
         .left { width: 45%; padding: 30px; border-right: 1px solid #222; overflow-y: auto; display: flex; flex-direction: column; }
         .right { width: 55%; padding: 30px; background: #050505; overflow-y: auto; }
+        
         .logo { font-size: 22px; font-weight: 900; margin-bottom: 20px; letter-spacing: 5px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
         .section-label { font-size: 10px; color: #444; letter-spacing: 2px; margin: 20px 0 10px; border-bottom: 1px solid #222; padding-bottom: 5px; text-transform: uppercase; }
+
+        /* 入力エリア */
         .input-area { background: #151515; padding: 15px; border-radius: 8px; border: 1px solid #222; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
         input { width: 100%; padding: 10px; background: #000; border: 1px solid #333; color: var(--terminal-green); font-family: monospace; box-sizing: border-box; font-size: 11px; }
         .btn-main { width: 100%; padding: 12px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
         .btn-submit { background: var(--main-red); color: white; box-shadow: var(--neon); }
+
+        /* プレーヤー */
+        #player { width: 100%; aspect-ratio: 16/9; margin-top: 10px; border-radius: 4px; border: 1px solid #222; background:#000; }
+        
+        /* 再生コントロール */
         .playback-ctrl { margin: 20px 0; display: flex; gap: 12px; justify-content: center; background: #000; padding: 15px; border-radius: 50px; border: 1px solid #1a1a1a; }
         .ctrl-icon { width: 45px; height: 45px; border-radius: 50%; background: #151515; color: white; border: 1px solid #222; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        #player { width: 100%; aspect-ratio: 16/9; margin-top: 10px; border-radius: 4px; border: 1px solid #222; background:#000; }
+
+        /* ギャラリー投稿セクション */
+        .gallery-panel { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        #preview-container { width: 100%; height: 120px; border: 1px solid #222; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; }
+        #imagePreview { max-width: 100%; max-height: 100%; display: none; }
+        .gallery-controls { display: flex; width: 100%; gap: 10px; align-items: center; }
+        #imageFileInput { display: none; }
+        .file-custom-label { flex: 1; padding: 10px; background: #111; border: 1px solid #333; color: #555; font-size: 9px; cursor: pointer; text-align: center; border-radius: 4px; }
+        .btn-ss { background: #333; color: #fff; border: 1px solid #444; width: auto; padding: 10px 15px; white-space: nowrap; font-size: 9px; }
+
+        /* 予約リスト */
         .list-item { background: #0d0d0d; padding: 12px; margin-bottom: 8px; border-radius: 6px; display: flex; align-items: center; gap: 15px; border-left: 3px solid #333; cursor: grab; }
         .list-item img { width: 80px; border-radius: 4px; pointer-events: none; }
         .btn-sm { padding: 6px 10px; font-size: 9px; border-radius: 4px; border: 1px solid #333; background: #1a1a1a; color: #fff; cursor: pointer; }
-        .status-msg { font-size: 9px; color: var(--terminal-green); text-align: center; height: 15px; }
+        .status-msg { font-size: 9px; color: var(--terminal-green); text-align: center; height: 15px; font-family: monospace; }
     </style>
 </head>
 <body>
 <div class="master-container">
     <div class="left">
         <div class="logo"><span>27</span> CLUB STAFF</div>
+        
         <div class="section-label">MUSIC REQUEST</div>
         <div class="input-area">
             <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
@@ -40,13 +59,30 @@
             <button class="btn-main btn-submit" onclick="smartSubmit()">SUBMIT REQUEST</button>
             <div id="submitStatus" class="status-msg"></div>
         </div>
+
         <div class="playback-ctrl">
             <button class="ctrl-icon" onclick="control('restart')">⏮</button>
             <button class="ctrl-icon" onclick="control('play')">▶</button>
             <button class="ctrl-icon" onclick="control('pause')">⏸</button>
         </div>
+        
         <div id="player"></div>
+
+        <div class="section-label">GALLERY MANAGEMENT</div>
+        <div class="input-area gallery-panel">
+            <div id="preview-container">
+                <span id="preview-placeholder" style="font-size: 8px; color:#333;">IMAGE PREVIEW READY</span>
+                <img id="imagePreview">
+            </div>
+            <div class="gallery-controls">
+                <label for="imageFileInput" class="file-custom-label" id="fileLabel">NO FILE SELECTED</label>
+                <input type="file" id="imageFileInput" accept="image/*" onchange="previewFile()">
+                <button class="btn-main btn-ss" onclick="postSS()">POST SNAPSHOT</button>
+            </div>
+            <div id="uploadStatus" class="status-msg"></div>
+        </div>
     </div>
+
     <div class="right">
         <div class="section-label">RESERVATION QUEUE (DRAG TO REORDER)</div>
         <div id="reserve-list"></div>
@@ -64,20 +100,26 @@
     const db = firebase.database();
     let player, currentId = "";
 
+    // YouTube API
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', { 
             events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } 
         });
+        // ここでキューの読み込みを開始
         loadQueue();
     }
 
+    // リクエスト送信
     function smartSubmit() {
         const url = document.getElementById('urlInput').value;
         const name = document.getElementById('nameInput').value || "GUEST";
         const id = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
         if (!id) return;
 
-        // 再生中ならキュー、そうでなければ即時再生
         if (player && player.getPlayerState() === 1) {
             db.ref('queue').push({ videoId: id, requester: name, order: Date.now() });
             document.getElementById('submitStatus').innerText = "ADDED TO QUEUE";
@@ -90,8 +132,15 @@
     }
 
     function executeLive(id) {
-        currentId = id; player.loadVideoById(id, 0); syncDB(1, 0);
+        currentId = id; 
+        player.loadVideoById(id, 0); 
+        syncDB(1, 0);
         db.ref('backnumbers').push({ videoId: id, timestamp: firebase.database.ServerValue.TIMESTAMP });
+    }
+
+    function syncDB(state, time) {
+        if (!currentId) return;
+        db.ref('sync').set({ videoId: currentId, state: state, time: time, lastUpdate: Date.now() });
     }
 
     function control(cmd) {
@@ -102,20 +151,26 @@
         setTimeout(() => syncDB(player.getPlayerState(), player.getCurrentTime()), 200);
     }
 
-    function syncDB(state, time) {
-        if (!currentId) return;
-        db.ref('sync').set({ videoId: currentId, state: state, time: time, lastUpdate: Date.now() });
-    }
-
+    // 予約リストのリアルタイム表示（修正版）
     function loadQueue() {
         db.ref('queue').on('value', snap => {
             const list = document.getElementById('reserve-list');
             list.innerHTML = "";
+            if (!snap.exists()) return;
+
             snap.forEach(c => {
                 const item = c.val();
                 const div = document.createElement('div');
                 div.className = "list-item";
-                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div style="flex-grow:1;"><span style="font-size:9px; color:var(--main-red); display:block;">FROM: ${item.requester.toUpperCase()}</span><span style="font-size:9px; color:#555;">ID: ${item.videoId}</span></div><button class="btn-sm" style="color:#0f0;" onclick="playFromQueue('${c.key}','${item.videoId}')">PLAY</button><button class="btn-sm" style="color:#f00; margin-left:5px;" onclick="db.ref('queue/${c.key}').remove()">DEL</button>`;
+                div.innerHTML = `
+                    <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
+                    <div style="flex-grow:1;">
+                        <span style="font-size:9px; color:var(--main-red); display:block;">FROM: ${item.requester.toUpperCase()}</span>
+                        <span style="font-size:9px; color:#555;">ID: ${item.videoId}</span>
+                    </div>
+                    <button class="btn-sm" style="color:#0f0;" onclick="playFromQueue('${c.key}','${item.videoId}')">PLAY</button>
+                    <button class="btn-sm" style="color:#f00; margin-left:5px;" onclick="db.ref('queue/${c.key}').remove()">DEL</button>
+                `;
                 list.appendChild(div);
             });
             Sortable.create(list, { animation: 150 });
@@ -123,7 +178,45 @@
     }
 
     function playFromQueue(k, id) { executeLive(id); db.ref(`queue/${k}`).remove(); }
-    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
+
+    // ギャラリー投稿機能
+    function previewFile() {
+        const file = document.getElementById('imageFileInput').files[0];
+        const preview = document.getElementById('imagePreview');
+        const label = document.getElementById('fileLabel');
+        if (file) {
+            label.innerText = file.name.toUpperCase();
+            const reader = new FileReader();
+            reader.onloadend = () => { 
+                preview.src = reader.result; 
+                preview.style.display = "block"; 
+                document.getElementById('preview-placeholder').style.display = "none"; 
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function postSS() {
+        const fileInput = document.getElementById('imageFileInput');
+        const file = fileInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            db.ref('gallery').push({ 
+                url: e.target.result, 
+                timestamp: firebase.database.ServerValue.TIMESTAMP 
+            }).then(() => {
+                document.getElementById('uploadStatus').innerText = ">> UPLOAD SUCCESS";
+                fileInput.value = ""; 
+                document.getElementById('fileLabel').innerText = "NO FILE SELECTED";
+                document.getElementById('imagePreview').style.display = "none";
+                document.getElementById('preview-placeholder').style.display = "block";
+                setTimeout(()=> document.getElementById('uploadStatus').innerText = "", 2000);
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+
     setInterval(() => { if (player && player.getPlayerState() === 1) syncDB(1, player.getCurrentTime()); }, 3000);
 </script>
 </body>
