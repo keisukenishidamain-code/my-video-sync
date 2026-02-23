@@ -7,96 +7,38 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --main-red: #ff0000; --bg-black: #050505; }
-        body { margin: 0; background: var(--bg-black); color: white; font-family: 'Avenir Next', sans-serif; overflow-x: hidden; }
-
-        header { background: rgba(0,0,0,0.95); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #222; position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 22px; font-weight: bold; color: var(--main-red); letter-spacing: 3px; }
-        nav ul { display: flex; list-style: none; gap: 20px; }
-        nav a { color: #666; text-decoration: none; font-size: 13px; cursor: pointer; transition: 0.3s; }
-        nav a:hover, nav a.active-tab { color: white; }
-
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-        .section { display: none; min-height: 85vh; flex-direction: column; align-items: center; }
-        .active { display: flex; animation: fadeIn 0.6s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* プレイヤー共通 */
-        .player-box { width: 90%; max-width: 900px; aspect-ratio: 16/9; background: #000; border-radius: 20px; overflow: hidden; box-shadow: 0 0 50px rgba(255,0,0,0.2); border: 1px solid #333; }
-        iframe { width: 100%; height: 100%; border: none; }
-
-        /* バックナンバー専用 */
-        .archive-header { margin: 20px 0; text-align: center; }
-        .archive-header h2 { font-size: 12px; letter-spacing: 4px; color: var(--main-red); margin: 0; text-transform: uppercase; }
-        .archive-header p { font-size: 18px; font-weight: bold; margin: 8px 0; color: #fff; }
-
-        .carousel-view {
-            position: relative; width: 100%; height: 350px;
-            display: flex; align-items: center; justify-content: center;
-            perspective: 1500px; overflow: hidden; margin-top: 10px;
-        }
-        .carousel-track {
-            display: flex; gap: 20px; transform-style: preserve-3d;
-            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-            align-items: center;
-        }
-        .carousel-item {
-            width: 280px; flex-shrink: 0; transition: all 0.6s ease;
-            filter: brightness(0.2) grayscale(1); transform: scale(0.7) translateZ(-200px);
-            cursor: pointer;
-        }
-        .carousel-item.center {
-            filter: brightness(1) grayscale(0); transform: scale(1.1) translateZ(100px); z-index: 10;
-        }
-        .carousel-item img { width: 100%; border-radius: 12px; border: 2px solid #222; transition: 0.3s; }
-        .carousel-item.center img { border-color: var(--main-red); box-shadow: 0 0 30px rgba(255,0,0,0.3); }
-
-        /* 操作パネル */
-        .dj-controls { display: flex; align-items: center; gap: 40px; margin-top: 30px; margin-bottom: 50px; }
-        .btn-circle {
-            width: 60px; height: 60px; border-radius: 50%; border: 1px solid #333;
-            background: #111; color: white; cursor: pointer; display: flex;
-            align-items: center; justify-content: center; font-size: 18px; transition: 0.3s;
-        }
-        .btn-circle:hover { color: var(--main-red); border-color: var(--main-red); transform: scale(1.1); }
+        body { margin: 0; background: var(--bg-black); color: white; font-family: sans-serif; overflow-x: hidden; }
+        header { background: #000; padding: 15px 30px; display: flex; justify-content: space-between; border-bottom: 2px solid #222; }
+        nav a { color: #666; text-decoration: none; cursor: pointer; margin-left: 20px; }
+        .section { display: none; flex-direction: column; align-items: center; padding: 20px; }
+        .active { display: flex; }
+        .player-box { width: 90%; max-width: 900px; aspect-ratio: 16/9; background: #000; border-radius: 20px; overflow: hidden; border: 1px solid #333; }
+        .carousel-view { position: relative; width: 100%; height: 350px; display: flex; align-items: center; justify-content: center; perspective: 1500px; overflow: hidden; }
+        .carousel-track { display: flex; gap: 20px; transform-style: preserve-3d; transition: transform 0.6s ease; }
+        .carousel-item { width: 280px; filter: brightness(0.2); transform: scale(0.7) translateZ(-200px); cursor: pointer; }
+        .carousel-item.center { filter: brightness(1); transform: scale(1.1) translateZ(100px); z-index: 10; }
+        .carousel-item img { width: 100%; border-radius: 12px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">CLUB D-0011</div>
-    <nav>
-        <ul>
-            <li><a onclick="switchTab('top')" id="nav-top">LIVE</a></li>
-            <li><a onclick="switchTab('backnumber')" id="nav-bn">BACK NUMBER</a></li>
-        </ul>
-    </nav>
+    <div style="color:red; font-weight:bold;">CLUB D-0011</div>
+    <nav><a onclick="switchTab('top')">LIVE</a><a onclick="switchTab('backnumber')">BACK NUMBER</a></nav>
 </header>
 
-<div class="container">
-    <div id="top" class="section active">
-        <div class="player-box"><div id="player-live"></div></div>
-        <div style="margin-top:25px; display:flex; align-items:center; gap:10px;">
-            <span style="width:10px; height:10px; background:red; border-radius:50%; animation: pulse 1s infinite;"></span>
-            <span style="font-weight:bold; letter-spacing:2px; color:red;">LIVE STREAMING</span>
-        </div>
-    </div>
+<div id="top" class="section active">
+    <div class="player-box"><div id="player-live"></div></div>
+    <p style="color:red; margin-top:15px;">● LIVE STREAMING</p>
+</div>
 
-    <div id="backnumber" class="section">
-        <div class="archive-header">
-            <h2>Archive Player</h2>
-            <p id="current-title">Loading history...</p>
-        </div>
-
-        <div class="player-box"><div id="player-archive"></div></div>
-
-        <div class="carousel-view">
-            <div id="bn-track" class="carousel-track"></div>
-        </div>
-
-        <div class="dj-controls">
-            <button class="btn-circle" onclick="moveCarousel(-1)">◀</button>
-            <button class="btn-circle" onclick="moveCarousel(1)">▶</button>
-        </div>
+<div id="backnumber" class="section">
+    <div id="archive-title" style="margin-bottom:10px; font-weight:bold;">アーカイブ再生</div>
+    <div class="player-box"><div id="player-archive"></div></div>
+    <div class="carousel-view"><div id="bn-track" class="carousel-track"></div></div>
+    <div style="margin-top:20px;">
+        <button onclick="moveCarousel(-1)">◀ PREV</button>
+        <button onclick="moveCarousel(1)">NEXT ▶</button>
     </div>
 </div>
 
@@ -110,29 +52,31 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let livePlayer, archivePlayer;
-    let currentLiveId = "", currentIndex = 0, historyData = [];
+    let livePlayer, archivePlayer, currentLiveId = "", historyData = [], currentIndex = 0;
 
     const tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
     function onYouTubeIframeAPIReady() {
-        livePlayer = new YT.Player('player-live', {
-            playerVars: { 'autoplay': 1, 'controls': 1, 'rel': 0 },
-            events: { 'onReady': startLiveSync }
-        });
-        archivePlayer = new YT.Player('player-archive', {
-            playerVars: { 'autoplay': 0, 'controls': 1, 'rel': 0 }
-        });
+        livePlayer = new YT.Player('player-live', { playerVars: { 'autoplay': 1 } });
+        archivePlayer = new YT.Player('player-archive');
+        startSync();
     }
 
-    function startLiveSync() {
+    function startSync() {
         db.ref('sync').on('value', snap => {
             const data = snap.val();
-            if (data && currentLiveId !== data.videoId) {
-                livePlayer.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
-                currentLiveId = data.videoId;
+            if (data) {
+                if (currentLiveId !== data.videoId) {
+                    // 新しい曲なら最初(data.time)から再生
+                    livePlayer.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
+                    currentLiveId = data.videoId;
+                } else {
+                    // 同じ曲でズレが激しい場合のみ微調整
+                    const diff = Math.abs(livePlayer.getCurrentTime() - data.time);
+                    if (diff > 3) livePlayer.seekTo(data.time);
+                }
             }
         });
     }
@@ -140,19 +84,13 @@
     function switchTab(id) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if (id === 'backnumber') {
-            loadHistory();
-            if(livePlayer) livePlayer.pauseVideo();
-        } else {
-            if(archivePlayer) archivePlayer.pauseVideo();
-            if(livePlayer) livePlayer.playVideo();
-        }
+        if (id === 'backnumber') { loadHistory(); livePlayer.pauseVideo(); } else { archivePlayer.pauseVideo(); livePlayer.playVideo(); }
     }
 
     function loadHistory() {
         db.ref('backnumbers').orderByChild('timestamp').limitToLast(15).once('value', snap => {
             historyData = [];
-            snap.forEach(child => { historyData.push(child.val()); });
+            snap.forEach(c => historyData.push(child.val()));
             historyData.reverse();
             renderCarousel();
         });
@@ -172,29 +110,22 @@
     }
 
     function moveCarousel(step) {
-        currentIndex += step;
-        if (currentIndex < 0) currentIndex = 0;
-        if (currentIndex >= historyData.length) currentIndex = historyData.length - 1;
+        currentIndex = Math.max(0, Math.min(historyData.length - 1, currentIndex + step));
         updateCarousel();
     }
 
     function updateCarousel() {
         const track = document.getElementById('bn-track');
-        const items = document.querySelectorAll('.carousel-item');
-        const offset = -currentIndex * (280 + 20);
-        track.style.transform = `translateX(${offset}px)`;
-
-        items.forEach((item, i) => {
+        track.style.transform = `translateX(${-currentIndex * 300}px)`;
+        document.querySelectorAll('.carousel-item').forEach((item, i) => {
             item.className = `carousel-item ${i === currentIndex ? 'center' : ''}`;
         });
-
         const target = historyData[currentIndex];
-        if (target && archivePlayer.loadVideoById) {
+        if (target) {
             archivePlayer.cueVideoById(target.videoId);
-            document.getElementById('current-title').innerText = target.title;
+            document.getElementById('archive-title').innerText = target.title;
         }
     }
 </script>
-<style> @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } } </style>
 </body>
 </html>
