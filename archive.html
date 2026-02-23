@@ -11,10 +11,10 @@
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: #ffffff; }
         
-        /* ヘッダー固定設定 */
+        /* ヘッダー：背景を黒くして被りを防止 */
         header { 
             padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; 
-            background: rgba(0,0,0,0.9); /* 背後を少し暗くして被りを防止 */
+            background: rgba(0,0,0,0.95); /* 被り防止のため不透明度を上げる */
             position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
         }
         .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
@@ -23,34 +23,37 @@
         .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; }
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
-        /* コンテンツ配置：ヘッダー分（約100px）を確保 */
+        /* 全体レイアウト：ヘッダーの高さ分下に下げる */
         .main-content { 
             width: 100%; height: 100vh; display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; padding-top: 80px; box-sizing: border-box; 
+            justify-content: center; align-items: center; padding-top: 100px; box-sizing: border-box; 
         }
 
-        /* プレイヤーサイズを調整（大きすぎないサイズへ） */
+        /* プレイヤー：大きすぎないよう幅を70%に制限 */
         .archive-player-box { 
-            width: 70%; max-width: 850px; aspect-ratio: 16/9; 
+            width: 70%; max-width: 800px; aspect-ratio: 16/9; 
             background: #000; border: 1px solid #222; position: relative;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            box-shadow: 0 0 30px rgba(0,0,0,1);
         }
         #archive-player { width: 100%; height: 100%; border: none; }
 
-        /* カルーセル */
-        .carousel-container { width: 100%; max-width: 1200px; margin-top: 20px; position: relative; }
+        /* カルーセル（バックナンバーリスト） */
+        .carousel-container { width: 100%; max-width: 1200px; margin-top: 25px; position: relative; }
         .carousel-wrap { width: 100%; overflow: hidden; padding: 10px 0; }
-        .carousel-track { display: flex; gap: 15px; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); padding-left: calc(50% - 130px); }
+        .carousel-track { display: flex; gap: 15px; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); padding-left: calc(50% - 125px); }
         
         .bn-card { 
-            width: 260px; flex-shrink: 0; cursor: pointer; filter: grayscale(1) brightness(0.3); 
+            width: 250px; flex-shrink: 0; cursor: pointer; filter: grayscale(1) brightness(0.3); 
             transition: 0.5s; transform: scale(0.85); border-radius: 4px; overflow: hidden; border: 1px solid #111; 
         }
         .bn-card.active { filter: grayscale(0) brightness(1); transform: scale(1.0); border-color: var(--main-red); box-shadow: var(--neon); }
-        .bn-card img { width: 100%; display: block; }
+        .bn-card img { width: 100%; display: block; pointer-events: none; }
+
+        /* リクエスト情報の表示 */
+        .req-info { font-size: 10px; color: var(--main-red); text-align: center; margin-top: 10px; height: 15px; letter-spacing: 2px; font-weight: 900; }
 
         .controls { position: absolute; top: 50%; width: 100%; display: flex; justify-content: space-between; transform: translateY(-50%); pointer-events: none; z-index: 10; }
-        .btn-bn { background: rgba(0,0,0,0.6); border: 1px solid #333; color: white; font-size: 18px; cursor: pointer; width: 44px; height: 44px; border-radius: 50%; transition: 0.3s; pointer-events: auto; display: flex; align-items: center; justify-content: center; margin: 0 5px; }
+        .btn-bn { background: rgba(0,0,0,0.8); border: 1px solid #333; color: white; font-size: 18px; cursor: pointer; width: 44px; height: 44px; border-radius: 50%; transition: 0.3s; pointer-events: auto; display: flex; align-items: center; justify-content: center; margin: 0 5px; }
         .btn-bn:hover { border-color: var(--main-red); color: var(--main-red); box-shadow: var(--neon); }
     </style>
 </head>
@@ -68,6 +71,7 @@
     <div class="archive-player-box">
         <div id="archive-player"></div>
     </div>
+    <div id="req-display" class="req-info"></div>
     
     <div class="carousel-container">
         <div class="carousel-wrap">
@@ -104,11 +108,14 @@
     }
 
     function loadHistory() {
-        db.ref('backnumbers').limitToLast(20).once('value', snap => {
+        // スタッフページの .push() に対応するため、値をリストとして取得
+        db.ref('backnumbers').limitToLast(30).on('value', snap => {
             historyData = [];
-            snap.forEach(c => historyData.push(c.val()));
-            historyData.reverse();
-            render();
+            snap.forEach(c => {
+                historyData.push({ key: c.key, ...c.val() });
+            });
+            historyData.reverse(); // 新しい順に並べる
+            if (historyData.length > 0) render();
         });
     }
 
@@ -119,21 +126,21 @@
             const div = document.createElement('div');
             div.className = `bn-card ${i === currentIndex ? 'active' : ''}`;
             div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">`;
-            div.onclick = () => { currentIndex = i; update(true); }; // クリックで即再生
+            div.onclick = () => { currentIndex = i; update(true); };
             track.appendChild(div);
         });
-        update(false); // 初回読み込み時はcueのみ
+        update(false);
     }
 
     function move(dir) {
         if (historyData.length === 0) return;
         currentIndex = (currentIndex + dir + historyData.length) % historyData.length;
-        update(true); // ボタン移動で即再生
+        update(true);
     }
 
-    function update(autoPlay) {
+    function update(shouldPlay) {
         const track = document.getElementById('bn-track');
-        const cardWidth = 275; // 260px + gap 15px
+        const cardWidth = 265; // 250px + gap 15px
         track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
         
         document.querySelectorAll('.bn-card').forEach((card, i) => {
@@ -142,11 +149,11 @@
 
         const target = historyData[currentIndex];
         if (target && arcPlayer) {
-            if (autoPlay) {
-                // 動画を切り替えて即時再生
+            document.getElementById('req-display').innerText = `REQUESTED BY: ${target.requester.toUpperCase()}`;
+            if (shouldPlay) {
+                // ここで loadVideoById を使うことで確実に動画が切り替わります
                 arcPlayer.loadVideoById(target.videoId);
             } else {
-                // 最初だけ読み込み準備
                 arcPlayer.cueVideoById(target.videoId);
             }
         }
