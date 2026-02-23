@@ -11,11 +11,10 @@
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: #ffffff; }
         
-        /* ヘッダー：背景を黒くして被りを防止 */
+        /* ヘッダー */
         header { 
             padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; 
-            background: rgba(0,0,0,0.95); /* 被り防止のため不透明度を上げる */
-            position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
+            background: rgba(0,0,0,0.9); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
         }
         .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
@@ -23,38 +22,49 @@
         .nav-btn { color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; border: 1px solid #444; padding: 8px 18px; border-radius: 4px; background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; }
         .nav-btn:hover { color: white; border-color: var(--main-red); box-shadow: var(--neon); }
 
-        /* 全体レイアウト：ヘッダーの高さ分下に下げる */
+        /* メインレイアウト：横並び */
         .main-content { 
-            width: 100%; height: 100vh; display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; padding-top: 100px; box-sizing: border-box; 
+            display: flex; width: 100%; height: 100vh; padding: 110px 40px 40px; box-sizing: border-box; gap: 30px;
         }
 
-        /* プレイヤー：大きすぎないよう幅を70%に制限 */
+        /* 左側：プレイヤーエリア */
+        .player-section { 
+            flex: 2; display: flex; flex-direction: column; gap: 15px; 
+        }
         .archive-player-box { 
-            width: 70%; max-width: 800px; aspect-ratio: 16/9; 
-            background: #000; border: 1px solid #222; position: relative;
+            width: 100%; aspect-ratio: 16/9; background: #000; border: 1px solid #222; 
             box-shadow: 0 0 30px rgba(0,0,0,1);
         }
         #archive-player { width: 100%; height: 100%; border: none; }
+        .req-info { font-size: 11px; color: var(--main-red); letter-spacing: 2px; font-weight: 900; text-transform: uppercase; }
 
-        /* カルーセル（バックナンバーリスト） */
-        .carousel-container { width: 100%; max-width: 1200px; margin-top: 25px; position: relative; }
-        .carousel-wrap { width: 100%; overflow: hidden; padding: 10px 0; }
-        .carousel-track { display: flex; gap: 15px; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); padding-left: calc(50% - 125px); }
-        
-        .bn-card { 
-            width: 250px; flex-shrink: 0; cursor: pointer; filter: grayscale(1) brightness(0.3); 
-            transition: 0.5s; transform: scale(0.85); border-radius: 4px; overflow: hidden; border: 1px solid #111; 
+        /* 右側：リストエリア */
+        .list-section { 
+            flex: 1; min-width: 300px; display: flex; flex-direction: column; 
+            border-left: 1px solid #222; padding-left: 30px;
         }
-        .bn-card.active { filter: grayscale(0) brightness(1); transform: scale(1.0); border-color: var(--main-red); box-shadow: var(--neon); }
-        .bn-card img { width: 100%; display: block; pointer-events: none; }
+        .section-label { font-size: 10px; color: #666; letter-spacing: 3px; margin-bottom: 20px; }
+        
+        #bn-list { 
+            flex-grow: 1; overflow-y: auto; padding-right: 10px;
+            /* スクロールバーのデザイン */
+            scrollbar-width: thin; scrollbar-color: var(--main-red) #000;
+        }
+        #bn-list::-webkit-scrollbar { width: 4px; }
+        #bn-list::-webkit-scrollbar-thumb { background: var(--main-red); }
 
-        /* リクエスト情報の表示 */
-        .req-info { font-size: 10px; color: var(--main-red); text-align: center; margin-top: 10px; height: 15px; letter-spacing: 2px; font-weight: 900; }
-
-        .controls { position: absolute; top: 50%; width: 100%; display: flex; justify-content: space-between; transform: translateY(-50%); pointer-events: none; z-index: 10; }
-        .btn-bn { background: rgba(0,0,0,0.8); border: 1px solid #333; color: white; font-size: 18px; cursor: pointer; width: 44px; height: 44px; border-radius: 50%; transition: 0.3s; pointer-events: auto; display: flex; align-items: center; justify-content: center; margin: 0 5px; }
-        .btn-bn:hover { border-color: var(--main-red); color: var(--main-red); box-shadow: var(--neon); }
+        .bn-item { 
+            display: flex; align-items: center; gap: 15px; padding: 12px; 
+            border: 1px solid #111; margin-bottom: 10px; cursor: pointer; 
+            transition: 0.3s; border-radius: 4px; background: #050505;
+        }
+        .bn-item:hover { border-color: #444; background: #0a0a0a; }
+        .bn-item.active { border-color: var(--main-red); box-shadow: var(--neon); background: #0d0d0d; }
+        
+        .bn-item img { width: 100px; aspect-ratio: 16/9; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
+        .bn-item-info { min-width: 0; }
+        .bn-item-info .title { display: block; font-size: 9px; color: #fff; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bn-item-info .requester { display: block; font-size: 8px; color: var(--main-red); font-weight: 900; }
     </style>
 </head>
 <body>
@@ -68,19 +78,17 @@
 </header>
 
 <div class="main-content">
-    <div class="archive-player-box">
-        <div id="archive-player"></div>
+    <div class="player-section">
+        <div class="archive-player-box">
+            <div id="archive-player"></div>
+        </div>
+        <div id="now-playing-info" class="req-info">SELECT A TRACK</div>
     </div>
-    <div id="req-display" class="req-info"></div>
-    
-    <div class="carousel-container">
-        <div class="carousel-wrap">
-            <div id="bn-track" class="carousel-track"></div>
-        </div>
-        <div class="controls">
-            <button class="btn-bn" onclick="move(-1)">◀</button>
-            <button class="btn-bn" onclick="move(1)">▶</button>
-        </div>
+
+    <div class="list-section">
+        <div class="section-label">BACK NUMBERS</div>
+        <div id="bn-list">
+            </div>
     </div>
 </div>
 
@@ -108,50 +116,47 @@
     }
 
     function loadHistory() {
-        // スタッフページの .push() に対応するため、値をリストとして取得
-        db.ref('backnumbers').limitToLast(30).on('value', snap => {
+        db.ref('backnumbers').limitToLast(50).on('value', snap => {
             historyData = [];
             snap.forEach(c => {
                 historyData.push({ key: c.key, ...c.val() });
             });
-            historyData.reverse(); // 新しい順に並べる
+            historyData.reverse(); 
             if (historyData.length > 0) render();
         });
     }
 
     function render() {
-        const track = document.getElementById('bn-track');
-        track.innerHTML = "";
+        const listContainer = document.getElementById('bn-list');
+        listContainer.innerHTML = "";
+        
         historyData.forEach((item, i) => {
             const div = document.createElement('div');
-            div.className = `bn-card ${i === currentIndex ? 'active' : ''}`;
-            div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">`;
+            div.className = `bn-item ${i === currentIndex ? 'active' : ''}`;
             div.onclick = () => { currentIndex = i; update(true); };
-            track.appendChild(div);
+            
+            div.innerHTML = `
+                <img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg">
+                <div class="bn-item-info">
+                    <span class="title">VIDEO ID: ${item.videoId}</span>
+                    <span class="requester">${item.requester.toUpperCase()}</span>
+                </div>
+            `;
+            listContainer.appendChild(div);
         });
         update(false);
     }
 
-    function move(dir) {
-        if (historyData.length === 0) return;
-        currentIndex = (currentIndex + dir + historyData.length) % historyData.length;
-        update(true);
-    }
-
     function update(shouldPlay) {
-        const track = document.getElementById('bn-track');
-        const cardWidth = 265; // 250px + gap 15px
-        track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
-        
-        document.querySelectorAll('.bn-card').forEach((card, i) => {
-            card.classList.toggle('active', i === currentIndex);
+        const items = document.querySelectorAll('.bn-item');
+        items.forEach((item, i) => {
+            item.classList.toggle('active', i === currentIndex);
         });
 
         const target = historyData[currentIndex];
         if (target && arcPlayer) {
-            document.getElementById('req-display').innerText = `REQUESTED BY: ${target.requester.toUpperCase()}`;
+            document.getElementById('now-playing-info').innerText = `NOW PLAYING: ${target.requester.toUpperCase()}`;
             if (shouldPlay) {
-                // ここで loadVideoById を使うことで確実に動画が切り替わります
                 arcPlayer.loadVideoById(target.videoId);
             } else {
                 arcPlayer.cueVideoById(target.videoId);
