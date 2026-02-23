@@ -2,50 +2,46 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CLUB D-0011 - Official Portal</title>
+    <title>CLUB D-0011 - TOP</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --main-red: #ff0000; --bg-black: #0a0a0a; --card-bg: #1a1a1a; }
-        body { margin: 0; background: var(--bg-black); color: white; font-family: sans-serif; }
-        header { background: rgba(0,0,0,0.9); padding: 15px 30px; display: flex; justify-content: space-between; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 24px; font-weight: bold; color: var(--main-red); }
-        nav ul { display: flex; list-style: none; gap: 20px; }
-        nav a { color: #aaa; text-decoration: none; cursor: pointer; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-        .section { display: none; }
+        body { margin: 0; background: #0a0a0a; color: white; font-family: sans-serif; }
+        header { background: #000; padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        nav ul { display: flex; list-style: none; gap: 20px; margin: 0; }
+        nav a { color: #888; text-decoration: none; cursor: pointer; }
+        nav a:hover { color: #ff0000; }
+        .section { display: none; padding: 20px; }
         .active { display: block; }
-        .video-main { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; position: relative; overflow: hidden; }
+        #player-container { width: 100%; max-width: 800px; aspect-ratio: 16/9; margin: auto; background: #000; position: relative; }
         #player { width: 100%; height: 100%; }
-        #logo-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:#000; z-index:10; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card { background: #1a1a1a; border-radius: 8px; overflow: hidden; border: 1px solid #333; cursor: pointer; }
+        .card:hover { border-color: #ff0000; }
+        .card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+        .card-info { padding: 10px; font-size: 13px; }
     </style>
 </head>
-<body onclick="initAudio()">
+<body>
 
 <header>
-    <div class="logo">CLUB D-0011</div>
+    <div style="color:red; font-weight:bold;">CLUB D-0011</div>
     <nav>
         <ul>
-            <li><a onclick="switchTab('top')">TOP</a></li>
-            <li><a onclick="switchTab('backnumber')">履歴</a></li>
+            <li><a onclick="switchTab('top')">TOPページ</a></li>
+            <li><a onclick="switchTab('backnumber')">バックナンバー</a></li>
         </ul>
     </nav>
 </header>
 
-<div class="container">
-    <div id="top" class="section active">
-        <div class="video-main">
-            <div id="logo-overlay">タップして接続</div>
-            <div id="player"></div>
-        </div>
-        <p id="status-msg" style="text-align:center; color:#555; margin-top:10px;">接続待機中...</p>
-    </div>
+<div id="top" class="section active">
+    <div id="player-container"><div id="player"></div></div>
+    <p style="text-align:center; color:#555;">現在放送中</p>
+</div>
 
-    <div id="backnumber" class="section">
-        <h2>BACK NUMBER</h2>
-        <div id="bn-list"></div>
-    </div>
+<div id="backnumber" class="section">
+    <h2>BACK NUMBER</h2>
+    <div id="bn-list" class="grid">読み込み中...</div>
 </div>
 
 <script>
@@ -57,17 +53,12 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let player, currentId = "", isUnlocked = false;
+    let player, currentId = "";
 
     function switchTab(id) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-    }
-
-    function initAudio() {
-        isUnlocked = true;
-        document.getElementById('logo-overlay').style.display = "none";
-        if (player) player.playVideo();
+        if (id === 'backnumber') loadBacknumbers();
     }
 
     const tag = document.createElement('script');
@@ -76,41 +67,33 @@
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: { 'autoplay': 1, 'controls': 1, 'playsinline': 1 },
-            events: { 'onReady': startSync }
+            playerVars: { 'autoplay': 1, 'controls': 1 },
+            events: { 'onReady': () => {
+                db.ref('sync').on('value', snap => {
+                    const data = snap.val();
+                    if (data && currentId !== data.videoId) {
+                        player.loadVideoById({ videoId: data.videoId, startSeconds: data.time });
+                        currentId = data.videoId;
+                    }
+                });
+            }}
         });
     }
 
-    function startSync() {
-        db.ref('sync').on('value', snap => {
-            const data = snap.val();
-            if (!data) return;
-
-            // 動画IDが変わったら読み込み
-            if (currentId !== data.videoId && data.videoId) {
-                const startAt = data.serverStartTime ? (Date.now() - data.serverStartTime) / 1000 : 0;
-                player.loadVideoById({ videoId: data.videoId, startSeconds: startAt });
-                currentId = data.videoId;
-            }
-
-            // 状態（state）に応じた処理
-            if (data.state === 1) { // 再生
-                player.playVideo();
-                document.getElementById('status-msg').innerText = "LIVE放送中";
-                // ズレ補正
-                const ideal = (Date.now() - data.serverStartTime) / 1000;
-                if (Math.abs(player.getCurrentTime() - ideal) > 2) player.seekTo(ideal, true);
-            } 
-            else if (data.state === 2 || data.state === 3) { // 一時停止
-                player.pauseVideo();
-                document.getElementById('status-msg').innerText = "一時停止中";
-            } 
-            else { // 停止（0など）
-                player.stopVideo();
-                currentId = ""; 
-                document.getElementById('logo-overlay').style.display = "flex";
-                document.getElementById('status-msg').innerText = "配信終了";
-            }
+    function loadBacknumbers() {
+        db.ref('backnumbers').orderByChild('timestamp').limitToLast(20).on('value', snap => {
+            const list = document.getElementById('bn-list');
+            list.innerHTML = "";
+            snap.forEach(child => {
+                const d = child.val();
+                const div = document.createElement('div');
+                div.className = "card";
+                div.onclick = () => { player.loadVideoById(d.videoId); switchTab('top'); };
+                div.innerHTML = `
+                    <img src="https://img.youtube.com/vi/${d.videoId}/mqdefault.jpg">
+                    <div class="card-info">${d.title}</div>`;
+                list.prepend(div);
+            });
         });
     }
 </script>
