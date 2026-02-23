@@ -13,60 +13,83 @@
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background: #000; color: #fff; font-family: 'Orbitron', sans-serif; 
-            overflow: hidden; display: flex; justify-content: center; align-items: center; 
+            overflow: hidden; 
+            /* 画面全体の中央寄せ設定 */
+            display: flex; justify-content: center; align-items: center; 
         }
         
-        .master-container { display: flex; width: 100vw; height: 100vh; background: #0a0a0a; box-sizing: border-box; overflow: hidden; }
+        /* コンテナの幅を固定して中央に寄せる */
+        .master-container { 
+            display: flex; 
+            width: 98vw;      /* 画面端に少し隙間を作る */
+            max-width: 1400px; /* 広がりすぎ防止 */
+            height: 96vh;     /* 上下に少し隙間を作る */
+            background: #0a0a0a; 
+            box-sizing: border-box; 
+            overflow: hidden; 
+            border: 1px solid #222;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
         
         .left { 
-            width: 380px; flex-shrink: 0; padding: 15px; border-right: 1px solid var(--border-color); 
+            width: 380px; flex-shrink: 0; padding: 20px; border-right: 1px solid var(--border-color); 
             display: flex; flex-direction: column; box-sizing: border-box; 
+            background: #0d0d0d;
         }
         
         .list-section { 
-            flex: 1; padding: 15px; background: #050505; display: flex; flex-direction: column; 
+            flex: 1; padding: 20px; background: #050505; display: flex; flex-direction: column; 
             overflow: hidden; box-sizing: border-box; border-right: 1px solid var(--border-color); 
         }
         .list-section:last-child { border-right: none; }
         
-        .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 10px; }
+        .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 15px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
         
-        .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; padding-bottom: 3px; }
-        .section-label { font-size: 9px; color: #fff; letter-spacing: 1px; text-transform: uppercase; margin: 0; }
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--border-color); margin-bottom: 10px; padding-bottom: 5px; }
+        .section-label { font-size: 10px; color: #fff; letter-spacing: 1px; text-transform: uppercase; margin: 0; opacity: 0.8; }
         
-        .clear-link { font-size: 8px; color: #ffffff; cursor: pointer; text-decoration: underline; letter-spacing: 1px; opacity: 0.8; transition: 0.3s; }
+        .clear-link { font-size: 8px; color: #ffffff; cursor: pointer; text-decoration: underline; letter-spacing: 1px; opacity: 0.6; transition: 0.3s; }
         .clear-link:hover { color: var(--main-red); opacity: 1; text-shadow: var(--neon); }
 
-        .input-group { background: #111; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
-        input[type="text"] { width: 100%; padding: 10px; background: #000; border: 1px solid #555; color: #fff; font-family: 'Orbitron'; font-size: 11px; box-sizing: border-box; outline: none; }
+        .input-group { background: #111; padding: 12px; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
+        input[type="text"] { width: 100%; padding: 10px; background: #000; border: 1px solid #444; color: #fff; font-family: 'Orbitron'; font-size: 11px; box-sizing: border-box; outline: none; border-radius: 2px; }
+        input[type="text"]:focus { border-color: var(--main-red); }
         
-        /* イベント名入力用の強調スタイル */
-        .event-input { border-color: var(--main-red) !important; color: var(--main-red) !important; }
+        .event-input { border-color: var(--main-red) !important; color: var(--main-red) !important; font-weight: 900; }
 
-        .btn-ui { width: 100%; height: 48px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; font-size: 12px; cursor: pointer; text-transform: uppercase; color: #fff !important; }
+        .btn-ui { width: 100%; height: 48px; border: none; border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; font-size: 12px; cursor: pointer; text-transform: uppercase; color: #fff !important; transition: 0.3s; }
         .btn-red { background: var(--main-red); box-shadow: var(--neon); }
+        .btn-red:hover { transform: scale(1.02); filter: brightness(1.2); }
         .btn-gray { background: #1a1a1a; border: 1px solid #555; }
+        .btn-gray:hover { background: #333; }
         
-        #player { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border-color); background:#000; margin-bottom: 10px; }
-        .playback-ctrl { margin-bottom: 10px; display: flex; gap: 10px; justify-content: center; background: #000; padding: 8px; border-radius: 30px; border: 1px solid var(--border-color); }
-        .ctrl-icon { width: 40px; height: 40px; border-radius: 50%; background: #111; color: #fff; border: 1px solid #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        #player { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border-color); background:#000; margin-bottom: 15px; }
+        .playback-ctrl { margin-bottom: 15px; display: flex; gap: 15px; justify-content: center; background: #000; padding: 10px; border-radius: 40px; border: 1px solid var(--border-color); }
+        .ctrl-icon { width: 45px; height: 45px; border-radius: 50%; background: #111; color: #fff; border: 1px solid #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: 0.2s; }
+        .ctrl-icon:hover { border-color: var(--main-red); color: var(--main-red); }
         
         #imageFileInput { display: none; }
         .file-label { width: 100%; height: 42px; background: #1a1a1a; border: 1px solid #555; color: #fff; font-family: 'Orbitron'; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
         
         .scroll-list { flex-grow: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
-        .list-item { background: #0d0d0d; padding: 8px; margin-bottom: 5px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-left: 3px solid var(--main-red); width: 100%; box-sizing: border-box; position: relative; }
+        /* カスタムスクロールバー */
+        .scroll-list::-webkit-scrollbar { width: 4px; }
+        .scroll-list::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+        .list-item { background: #0d0d0d; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; align-items: center; gap: 12px; border-left: 3px solid var(--main-red); width: 100%; box-sizing: border-box; position: relative; transition: 0.2s; }
+        .list-item:hover { background: #151515; }
         .history-item { border-left: 3px solid #444; }
         
-        .staff-date-divider { font-size: 8px; color: #666; padding: 8px 5px 3px; border-bottom: 1px solid #222; margin-bottom: 8px; letter-spacing: 1px; }
-        .list-item img { width: 60px; height: 35px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
+        .staff-date-divider { font-size: 9px; color: var(--main-red); padding: 15px 5px 5px; border-bottom: 1px solid #222; margin-bottom: 10px; letter-spacing: 2px; font-weight: 900; }
+        .list-item img { width: 70px; height: 40px; object-fit: cover; border-radius: 2px; flex-shrink: 0; }
         .list-info { flex-grow: 1; min-width: 0; position: relative; }
         .list-info span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 85%; }
         
-        .mini-del-btn { position: absolute; right: 5px; top: 8px; background: none; border: none; color: #888; font-size: 12px; cursor: pointer; padding: 0 5px; line-height: 1; }
+        .mini-del-btn { position: absolute; right: 5px; top: 10px; background: none; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 0 5px; }
         .mini-del-btn:hover { color: var(--main-red); }
-        .status-msg { font-size: 9px; color: #fff; height: 12px; text-align: center; font-weight: bold; margin-top: 2px; }
+        .status-msg { font-size: 9px; color: #fff; height: 12px; text-align: center; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -88,7 +111,7 @@
 
         <div class="playback-ctrl">
             <button class="ctrl-icon" onclick="control('restart')">⏮</button>
-            <button class="ctrl-icon" onclick="playNextInQueue()" style="color: var(--main-red);">▶</button>
+            <button class="ctrl-icon" onclick="playNextInQueue()" style="color: var(--main-red); border-color: var(--main-red);">▶</button>
             <button class="ctrl-icon" onclick="control('pause')">⏸</button>
         </div>
         
@@ -196,23 +219,18 @@
     function deleteHistoryItem(k) { if(confirm("DELETE?")) db.ref(`backnumbers/${k}`).remove(); }
     function clearBackNumbers() { if (confirm("ALL CLEAR HISTORY?")) db.ref('backnumbers').remove(); }
     
-    // 再生時にイベントタイトルも一緒に保存するように修正
     function playSelected(k, v, n) { 
         currentId = v; 
         currentRequester = n; 
         const eTitle = document.getElementById('eventTitleInput').value || "NIGHT SESSION";
-        
         player.loadVideoById(v, 0); 
         syncDB(1, 0); 
-        
-        // backnumbersにeventTitleを含めて保存
         db.ref('backnumbers').push({ 
             videoId: v, 
             requester: n, 
             eventTitle: eTitle, 
             timestamp: firebase.database.ServerValue.TIMESTAMP 
         }); 
-        
         db.ref(`queue/${k}`).remove(); 
     }
 
