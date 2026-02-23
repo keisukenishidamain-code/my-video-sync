@@ -16,11 +16,10 @@
             font-family: 'Orbitron', sans-serif; overflow: hidden; 
         }
         
-        /* ヘッダー */
         header { 
             padding: 25px 40px; 
             display: flex; justify-content: space-between; align-items: center; 
-            background: rgba(0,0,0,0.9); 
+            background: rgba(0,0,0,0.95); 
             position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
             border-bottom: 1px solid var(--border-color);
         }
@@ -36,107 +35,101 @@
         .nav-btn:hover { border-color: var(--main-red); box-shadow: var(--neon); }
 
         .master-wrapper {
-            margin-top: 90px;
-            height: calc(100vh - 90px);
+            margin-top: 85px;
+            height: calc(100vh - 85px);
             display: flex;
             flex-direction: column;
         }
 
-        /* 月別ナビゲーション（デフォルト白） */
-        .month-nav {
-            padding: 15px 40px 0;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        .month-btn {
-            font-size: 10px; color: #ffffff; cursor: pointer; border-bottom: 1px solid transparent;
-            transition: 0.3s; letter-spacing: 1px; opacity: 0.6;
-        }
-        .month-btn:hover { color: var(--main-red); border-color: var(--main-red); opacity: 1; }
-
-        /* カルーセルエリア */
+        /* セレクターエリア：高さを抑えて動画エリアを確保 */
         .archive-selector {
             flex-shrink: 0;
-            height: 200px;
+            height: 160px;
             display: flex;
             align-items: center;
             overflow-x: auto;
             padding: 0 40px;
-            gap: 20px;
-            scroll-behavior: smooth;
-            scrollbar-width: none;
-            scroll-snap-type: x proximity;
+            gap: 15px;
+            background: #080808;
+            border-bottom: 1px solid var(--border-color);
         }
-        .archive-selector::-webkit-scrollbar { display: none; }
+        .archive-selector::-webkit-scrollbar { height: 4px; }
+        .archive-selector::-webkit-scrollbar-thumb { background: #222; }
 
         .date-card {
-            flex: 0 0 280px;
-            height: 140px;
-            background: #0a0a0a;
+            flex: 0 0 240px;
+            height: 100px;
+            background: #111;
             border: 1px solid #333;
             border-radius: 4px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            cursor: pointer; transition: 0.4s;
-            scroll-snap-align: center;
-            padding: 0 10px;
+            cursor: pointer; transition: 0.3s;
+            padding: 0 15px;
             text-align: center;
         }
-        .date-card:hover { border-color: var(--main-red); transform: translateY(-5px); }
-        
-        /* 選択中のカード：白枠で際立たせる */
+        .date-card:hover { border-color: var(--main-red); }
         .date-card.active { 
-            border-color: #fff; 
-            box-shadow: 0 0 20px rgba(255,255,255,0.1), var(--neon); 
-            background: #110002; 
+            border-color: var(--main-red); 
+            box-shadow: var(--neon);
+            background: #1a0004; 
         }
-        
-        /* 日付：赤ネオン */
-        .date-card .date-text { 
-            font-size: 16px; font-weight: 900; letter-spacing: 3px; 
-            color: var(--main-red); text-shadow: var(--neon); margin-bottom: 8px; 
-        }
-        
-        /* サブタイトル：白 */
-        .date-card .event-title { 
-            font-size: 12px; font-weight: 400; color: #fff; 
-            letter-spacing: 2px; text-transform: uppercase; line-height: 1.2; opacity: 0.9;
-        }
+        .date-card .date-text { font-size: 14px; font-weight: 900; color: var(--main-red); margin-bottom: 5px; }
+        .date-card .event-title { font-size: 10px; color: #fff; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* 下部コンテンツエリア */
+        /* コンテンツエリア：動画を適切なサイズに */
         .content-area {
             flex-grow: 1;
             display: none;
-            padding: 20px 40px 40px;
-            gap: 30px;
+            padding: 30px 40px;
+            gap: 40px;
             overflow: hidden;
-            border-top: 1px solid var(--border-color);
             background: #050505;
         }
         .content-area.show { display: flex; }
 
-        .video-section { flex: 2; display: flex; flex-direction: column; gap: 15px; }
-        .player-wrapper { width: 100%; aspect-ratio: 16/9; background: #000; border: 1px solid #222; }
+        /* 動画セクション：大きすぎないように制限 */
+        .video-section { 
+            flex: 1.4; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+            max-width: 900px; /* 最大幅を制限 */
+        }
+        .player-wrapper { 
+            width: 100%; 
+            aspect-ratio: 16/9; 
+            background: #000; 
+            border: 1px solid #222; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
         #player { width: 100%; height: 100%; }
-        .now-playing { font-size: 12px; color: var(--main-red); font-weight: 900; letter-spacing: 2px; }
+        
+        .now-playing-box { border-left: 3px solid var(--main-red); padding-left: 15px; }
+        .now-playing-label { font-size: 10px; color: var(--main-red); font-weight: 900; letter-spacing: 2px; margin-bottom: 5px; }
+        .now-playing-title { font-size: 16px; color: #fff; letter-spacing: 1px; }
 
+        /* トラックリスト：スクロールを独立 */
         .track-list-section { 
             flex: 1; 
-            display: flex; flex-direction: column; 
-            border-left: 1px solid var(--border-color); 
-            padding-left: 25px; 
+            display: flex; 
+            flex-direction: column; 
             overflow: hidden;
+            background: #0a0a0a;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
         }
-        .track-scroll { flex-grow: 1; overflow-y: auto; padding-right: 10px; }
+        .track-header { padding: 15px 20px; background: #111; border-bottom: 1px solid var(--border-color); font-size: 11px; letter-spacing: 2px; color: #666; font-weight: 900; }
+        .track-scroll { flex-grow: 1; overflow-y: auto; padding: 15px; }
         .track-item {
-            display: flex; gap: 15px; padding: 10px; border: 1px solid #111;
-            margin-bottom: 8px; cursor: pointer; border-radius: 4px; background: #0a0a0a; transition: 0.2s;
+            display: flex; gap: 15px; padding: 12px; border: 1px solid #222;
+            margin-bottom: 10px; cursor: pointer; border-radius: 4px; background: #0d0d0d; transition: 0.2s;
         }
-        .track-item:hover { border-color: #444; background: #111; }
-        .track-item.active { border-color: var(--main-red); box-shadow: var(--neon); background: #0d0d0d; }
-        .track-item img { width: 70px; aspect-ratio: 16/9; object-fit: cover; border-radius: 2px; }
-        .track-info { display: flex; flex-direction: column; justify-content: center; font-size: 9px; }
-        .track-info .req { color: var(--main-red); font-weight: 900; margin-bottom: 2px; }
+        .track-item:hover { border-color: #444; }
+        .track-item.active { border-color: var(--main-red); background: #1a0004; }
+        .track-item img { width: 80px; aspect-ratio: 16/9; object-fit: cover; border-radius: 2px; }
+        .track-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+        .track-info .req { color: var(--main-red); font-size: 9px; font-weight: 900; margin-bottom: 3px; }
+        .track-info .v-id { color: #666; font-size: 9px; }
     </style>
 </head>
 <body>
@@ -144,26 +137,28 @@
 <header>
     <a href="index.html" class="logo"><span>27</span> CLUB</a>
     <div class="nav-links">
-        <a href="index.html" class="nav-btn">LIVE</a>
+        <a href="index.html" class="nav-btn">LIVE SCREEN</a>
         <a href="gallery.html" class="nav-btn">GALLERY</a>
     </div>
 </header>
 
 <div class="master-wrapper">
-    <div class="month-nav" id="monthNav"></div>
-    
-    <div class="archive-selector" id="dateSelector"></div>
+    <div class="archive-selector" id="dateSelector">
+        </div>
 
     <div class="content-area" id="contentArea">
         <div class="video-section">
             <div class="player-wrapper">
                 <div id="player"></div>
             </div>
-            <div id="nowPlayingText" class="now-playing">SELECT A TRACK</div>
+            <div class="now-playing-box">
+                <div class="now-playing-label">NOW PLAYING</div>
+                <div id="nowPlayingText" class="now-playing-title">SELECT A TRACK FROM THE LIST</div>
+            </div>
         </div>
         
         <div class="track-list-section">
-            <div style="font-size: 10px; color: #666; margin-bottom: 15px; letter-spacing: 2px;">SETLIST</div>
+            <div class="track-header">SETLIST</div>
             <div class="track-scroll" id="trackList"></div>
         </div>
     </div>
@@ -183,9 +178,7 @@
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', { 
-            height: '100%', 
-            width: '100%', 
-            playerVars: { 'autoplay': 0, 'controls': 1, 'rel': 0, 'modestbranding': 1 } 
+            playerVars: { 'autoplay': 0, 'controls': 1, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3 } 
         });
         loadArchive();
     }
@@ -195,16 +188,21 @@
     function loadArchive() {
         db.ref('backnumbers').on('value', snap => {
             groupedData = {};
-            snap.forEach(child => {
-                const item = child.val();
+            const items = [];
+            snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
+            
+            // タイムスタンプ順にソート
+            items.sort((a, b) => a.timestamp - b.timestamp);
+
+            items.forEach(item => {
                 if (!item.timestamp) return;
                 const d = new Date(item.timestamp);
-                if (isNaN(d.getTime())) return;
+                // 朝5時までは前日扱いとするロジック
                 if (d.getHours() < 5) d.setDate(d.getDate() - 1);
                 const dateStr = `${d.getFullYear()}.${('0' + (d.getMonth() + 1)).slice(-2)}.${('0' + d.getDate()).slice(-2)}`;
                 
                 if (!groupedData[dateStr]) groupedData[dateStr] = [];
-                groupedData[dateStr].push({ key: child.key, ...item });
+                groupedData[dateStr].push(item);
             });
             renderSelector();
         });
@@ -212,54 +210,23 @@
 
     function renderSelector() {
         const selector = document.getElementById('dateSelector');
-        const monthNav = document.getElementById('monthNav');
         selector.innerHTML = "";
-        monthNav.innerHTML = "";
-
         const dates = Object.keys(groupedData).sort().reverse();
-        const months = new Set();
 
         dates.forEach(date => {
-            // その日の最初の曲のeventTitleを表示（なければデフォルト）
-            const eventTitle = groupedData[date][0].eventTitle || "NIGHT SESSION";
+            const firstEntry = groupedData[date][0];
+            const eventTitle = firstEntry.eventTitle || "NIGHT SESSION";
 
             const card = document.createElement('div');
             card.className = 'date-card';
-            card.setAttribute('data-date', date);
             card.onclick = () => showTracks(date, card);
             card.innerHTML = `
                 <div class="date-text">${date}</div>
                 <div class="event-title">${eventTitle}</div>
             `;
             selector.appendChild(card);
-            months.add(date.substring(0, 7));
-        });
-
-        // 月別ジャンプボタン
-        Array.from(months).sort().reverse().forEach(m => {
-            const btn = document.createElement('div');
-            btn.className = 'month-btn';
-            btn.innerText = m;
-            btn.onclick = () => jumpToMonth(m);
-            monthNav.appendChild(btn);
         });
     }
-
-    function jumpToMonth(monthStr) {
-        const firstCard = document.querySelector(`.date-card[data-date^="${monthStr}"]`);
-        if (firstCard) {
-            firstCard.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-        }
-    }
-
-    // ホイール制御
-    const selectorEl = document.getElementById('dateSelector');
-    selectorEl.addEventListener('wheel', (e) => {
-        if (e.deltaY !== 0) {
-            e.preventDefault();
-            selectorEl.scrollLeft += e.deltaY;
-        }
-    });
 
     function showTracks(date, element) {
         document.querySelectorAll('.date-card').forEach(c => c.classList.remove('active'));
@@ -269,29 +236,40 @@
         const trackList = document.getElementById('trackList');
         trackList.innerHTML = "";
         
-        // 新しい順に表示
+        // その日の曲リスト（新しい順に表示したい場合は reverse() を使う）
         const dayTracks = [...groupedData[date]].reverse();
+        
         dayTracks.forEach((track, index) => {
             const item = document.createElement('div');
             item.className = 'track-item';
-            item.id = `track-${track.key}`;
             item.onclick = () => {
                 player.loadVideoById(track.videoId);
                 document.querySelectorAll('.track-item').forEach(t => t.classList.remove('active'));
                 item.classList.add('active');
-                document.getElementById('nowPlayingText').innerText = `NOW PLAYING: ${track.requester.toUpperCase()}`;
+                document.getElementById('nowPlayingText').innerText = track.requester.toUpperCase();
             };
             item.innerHTML = `
                 <img src="https://img.youtube.com/vi/${track.videoId}/mqdefault.jpg">
                 <div class="track-info">
                     <span class="req">${track.requester.toUpperCase()}</span>
-                    <span style="color:#666;">ID: ${track.videoId}</span>
+                    <span class="v-id">ID: ${track.videoId}</span>
                 </div>
             `;
             trackList.appendChild(item);
+            
+            // 最初の1曲目を自動再生（選択状態にする）
             if(index === 0) item.click();
         });
     }
+
+    // 横スクロールをホイールで操作可能にする
+    const selectorEl = document.getElementById('dateSelector');
+    selectorEl.addEventListener('wheel', (e) => {
+        if (e.deltaY !== 0) {
+            e.preventDefault();
+            selectorEl.scrollLeft += e.deltaY;
+        }
+    });
 </script>
 </body>
 </html>
