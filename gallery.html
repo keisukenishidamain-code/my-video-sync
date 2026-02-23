@@ -9,147 +9,61 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
-        
         body, html { 
-            margin: 0; padding: 0; width: 100%; 
-            /* height: 100% 固定を解除してスクロールを許可 */
-            min-height: 100vh; 
-            background: #000; font-family: 'Orbitron', sans-serif; color: #ffffff; 
-            overflow-y: auto; /* 縦スクロールを有効に */
-            overflow-x: hidden;
+            margin: 0; padding: 0; width: 100%; min-height: 100vh; 
+            background: #000; font-family: 'Orbitron', sans-serif; color: #fff;
+            overflow-x: hidden; /* 横スクロール禁止 */
+            overflow-y: auto;   /* 縦スクロールのみ */
         }
-
-        /* スクロールバーのデザインを27 CLUB風に */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--main-red); box-shadow: var(--neon); }
-
         header { 
-            padding: 25px 40px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            background: rgba(0,0,0,0.95); /* スクロール時に透けないよう少し濃く */
-            position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
-            border-bottom: 1px solid #222;
-            backdrop-filter: blur(10px); /* 背景をボカすと高級感が出ます */
+            padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; 
+            background: rgba(0,0,0,0.9); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; 
+            border-bottom: 1px solid #222; backdrop-filter: blur(5px);
         }
-        .logo { font-size: 22px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
+        .logo { font-size: 20px; font-weight: 900; letter-spacing: 4px; text-decoration: none; color: #fff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
-
-        .nav-links { display: flex; gap: 15px; }
-        .nav-btn { 
-            color: #ffffff; text-decoration: none; font-size: 10px; letter-spacing: 2px; 
-            border: 1px solid #444; padding: 8px 20px; border-radius: 4px; 
-            background: rgba(0,0,0,0.5); transition: 0.3s; text-transform: uppercase; 
-        }
-        .nav-btn:hover { border-color: var(--main-red); box-shadow: var(--neon); }
-
-        .container { 
-            padding: 140px 15px 80px; /* 上下の余白を広めに */
-            max-width: 1800px;
-            margin: 0 auto;
-        }
-
+        .nav-btn { color: #fff; text-decoration: none; font-size: 9px; border: 1px solid #333; padding: 6px 15px; border-radius: 4px; margin-left: 10px; }
+        
+        .container { padding: 100px 10px 40px; max-width: 100%; margin: 0 auto; box-sizing: border-box; }
+        
         #gallery-grid { 
-            column-count: 7; 
-            column-gap: 12px;
+            column-count: 7; column-gap: 10px; width: 100%; 
         }
-
-        @media (max-width: 1600px) { #gallery-grid { column-count: 6; } }
-        @media (max-width: 1300px) { #gallery-grid { column-count: 5; } }
-        @media (max-width: 1000px) { #gallery-grid { column-count: 4; } }
-        @media (max-width: 800px)  { #gallery-grid { column-count: 3; } }
-        @media (max-width: 500px)  { #gallery-grid { column-count: 2; } }
+        @media (max-width: 1200px) { #gallery-grid { column-count: 4; } }
+        @media (max-width: 600px)  { #gallery-grid { column-count: 2; } }
 
         .photo-card { 
-            display: block;
-            width: 100%;
-            margin-bottom: 12px;
-            break-inside: avoid;
-            position: relative;
-            background: #050505; 
-            border: 1px solid #222; 
-            border-radius: 4px; 
-            overflow: hidden; 
-            transition: 0.3s ease-in-out;
-            cursor: pointer;
+            break-inside: avoid; margin-bottom: 10px; border: 1px solid #111; 
+            transition: 0.3s; cursor: pointer; position: relative; overflow: hidden;
         }
+        .photo-card:hover { border-color: var(--main-red); transform: translateY(-3px); box-shadow: var(--neon); }
+        .photo-card img { width: 100%; height: auto; display: block; }
 
-        .photo-card:hover { 
-            border-color: var(--main-red); 
-            box-shadow: var(--neon); 
-            transform: translateY(-5px);
-            z-index: 10;
-        }
-
-        .photo-card img { 
-            width: 100%; height: auto; display: block; transition: 0.5s;
-        }
-
-        .date-badge {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.8));
-            color: #aaa; font-size: 9px; padding: 20px 10px 5px;
-            text-align: right; opacity: 0; transition: 0.3s;
-        }
-        .photo-card:hover .date-badge { opacity: 1; }
-
-        #modal { 
-            display: none; position: fixed; top: 0; left: 0; 
-            width: 100%; height: 100%; background: rgba(0,0,0,0.95); 
-            z-index: 1000; justify-content: center; align-items: center; 
-        }
-        #modal img { max-width: 95%; max-height: 95%; object-fit: contain; }
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
+        #modal img { max-width: 90%; max-height: 90%; object-fit: contain; }
     </style>
 </head>
 <body>
-
 <header>
     <a href="index.html" class="logo"><span>27</span> CLUB</a>
-    <div class="nav-links">
+    <div>
         <a href="index.html" class="nav-btn">LIVE</a>
         <a href="archive.html" class="nav-btn">BACK NUMBERS</a>
     </div>
 </header>
-
-<div class="container">
-    <div id="gallery-grid"></div>
-</div>
-
-<div id="modal" onclick="this.style.display='none'">
-    <img id="modal-img" src="">
-</div>
-
+<div class="container"><div id="gallery-grid"></div></div>
+<div id="modal" onclick="this.style.display='none'"><img id="modal-img" src=""></div>
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
-        databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "club-d0011",
-        appId: "1:51948793811:web:1edecab7c41c1d84ad8926"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE", databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "club-d0011", appId: "1:51948793811:web:1edecab7c41c1d84ad8926" };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
+    db = firebase.database();
     db.ref('gallery').on('value', snap => {
-        const grid = document.getElementById('gallery-grid');
-        grid.innerHTML = "";
-        let items = [];
-        snap.forEach(child => { items.push(child.val()); });
-
+        const grid = document.getElementById('gallery-grid'); grid.innerHTML = "";
+        let items = []; snap.forEach(c => items.push(c.val()));
         items.reverse().forEach(data => {
-            const date = data.timestamp ? new Date(data.timestamp) : new Date();
-            const dateStr = `${date.getFullYear()}.${('0'+(date.getMonth()+1)).slice(-2)}.${('0'+date.getDate()).slice(-2)}`;
-
-            const card = document.createElement('div');
-            card.className = 'photo-card';
-            card.onclick = () => { 
-                document.getElementById('modal-img').src = data.url; 
-                document.getElementById('modal').style.display = 'flex'; 
-            };
-            card.innerHTML = `
-                <img src="${data.url}" loading="lazy">
-                <div class="date-badge">${dateStr}</div>
-            `;
+            const card = document.createElement('div'); card.className = 'photo-card';
+            card.onclick = () => { document.getElementById('modal-img').src = data.url; document.getElementById('modal').style.display = 'flex'; };
+            card.innerHTML = `<img src="${data.url}" loading="lazy">`;
             grid.appendChild(card);
         });
     });
