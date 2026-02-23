@@ -16,6 +16,7 @@
             font-family: 'Orbitron', sans-serif; overflow: hidden; 
         }
         
+        /* ヘッダー */
         header { 
             padding: 25px 40px; 
             display: flex; justify-content: space-between; align-items: center; 
@@ -41,6 +42,7 @@
             flex-direction: column;
         }
 
+        /* 月別ナビゲーション（デフォルト白） */
         .month-nav {
             padding: 15px 40px 0;
             display: flex;
@@ -53,9 +55,10 @@
         }
         .month-btn:hover { color: var(--main-red); border-color: var(--main-red); opacity: 1; }
 
+        /* カルーセルエリア */
         .archive-selector {
             flex-shrink: 0;
-            height: 200px; /* 少し高さを確保 */
+            height: 200px;
             display: flex;
             align-items: center;
             overflow-x: auto;
@@ -68,8 +71,8 @@
         .archive-selector::-webkit-scrollbar { display: none; }
 
         .date-card {
-            flex: 0 0 280px; /* 横幅を少し広げました */
-            height: 140px; /* 高さを少し上げました */
+            flex: 0 0 280px;
+            height: 140px;
             background: #0a0a0a;
             border: 1px solid #333;
             border-radius: 4px;
@@ -80,22 +83,27 @@
             text-align: center;
         }
         .date-card:hover { border-color: var(--main-red); transform: translateY(-5px); }
-        .date-card.active { border-color: var(--main-red); box-shadow: var(--neon); background: #111; }
         
-        /* 日付のフォントサイズ調整 */
-        .date-card .date-text { font-size: 14px; font-weight: 400; letter-spacing: 4px; color: #888; margin-bottom: 5px; }
+        /* 選択中のカード：白枠で際立たせる */
+        .date-card.active { 
+            border-color: #fff; 
+            box-shadow: 0 0 20px rgba(255,255,255,0.1), var(--neon); 
+            background: #110002; 
+        }
         
-        /* サブタイトルの強調修正 */
+        /* 日付：赤ネオン */
+        .date-card .date-text { 
+            font-size: 16px; font-weight: 900; letter-spacing: 3px; 
+            color: var(--main-red); text-shadow: var(--neon); margin-bottom: 8px; 
+        }
+        
+        /* サブタイトル：白 */
         .date-card .event-title { 
-            font-size: 14px; /* サイズアップ */
-            font-weight: 900; 
-            color: #fff; /* 白に変更して赤ネオンを背景に引くイメージ */
-            text-shadow: 0 0 10px var(--main-red);
-            letter-spacing: 2px; 
-            text-transform: uppercase;
-            line-height: 1.2;
+            font-size: 12px; font-weight: 400; color: #fff; 
+            letter-spacing: 2px; text-transform: uppercase; line-height: 1.2; opacity: 0.9;
         }
 
+        /* 下部コンテンツエリア */
         .content-area {
             flex-grow: 1;
             display: none;
@@ -143,6 +151,7 @@
 
 <div class="master-wrapper">
     <div class="month-nav" id="monthNav"></div>
+    
     <div class="archive-selector" id="dateSelector"></div>
 
     <div class="content-area" id="contentArea">
@@ -173,7 +182,11 @@
     let player, groupedData = {};
 
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { height: '100%', width: '100%', playerVars: { 'autoplay': 0, 'controls': 1, 'rel': 0, 'modestbranding': 1 } });
+        player = new YT.Player('player', { 
+            height: '100%', 
+            width: '100%', 
+            playerVars: { 'autoplay': 0, 'controls': 1, 'rel': 0, 'modestbranding': 1 } 
+        });
         loadArchive();
     }
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
@@ -207,7 +220,7 @@
         const months = new Set();
 
         dates.forEach(date => {
-            // その日の最初の曲からイベント名を取得
+            // その日の最初の曲のeventTitleを表示（なければデフォルト）
             const eventTitle = groupedData[date][0].eventTitle || "NIGHT SESSION";
 
             const card = document.createElement('div');
@@ -222,6 +235,7 @@
             months.add(date.substring(0, 7));
         });
 
+        // 月別ジャンプボタン
         Array.from(months).sort().reverse().forEach(m => {
             const btn = document.createElement('div');
             btn.className = 'month-btn';
@@ -238,6 +252,7 @@
         }
     }
 
+    // ホイール制御
     const selectorEl = document.getElementById('dateSelector');
     selectorEl.addEventListener('wheel', (e) => {
         if (e.deltaY !== 0) {
@@ -254,6 +269,7 @@
         const trackList = document.getElementById('trackList');
         trackList.innerHTML = "";
         
+        // 新しい順に表示
         const dayTracks = [...groupedData[date]].reverse();
         dayTracks.forEach((track, index) => {
             const item = document.createElement('div');
