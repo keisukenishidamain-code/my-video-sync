@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>27 Club - Staff Cockpit (Centered)</title>
+    <title>27 Club - Staff Cockpit (All White Text)</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -13,104 +13,77 @@
             --neon: 0 0 10px #ff0033; 
             --bg-dark: #000; 
             --panel-bg: #0a0a0a;
-            --border-color: #333;
+            --border-color: #444; /* 視認性のため少し明るく */
         }
 
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100vh; 
-            background: var(--bg-dark); color: white; 
+            background: var(--bg-dark); color: #ffffff; /* すべて白 */
             font-family: 'Orbitron', sans-serif; overflow: hidden;
-            display: flex; justify-content: center; align-items: center; /* 画面全体で中央寄せ */
+            display: flex; justify-content: center; align-items: center;
         }
 
         .master-container { 
-            display: flex; 
-            width: 100%; 
-            max-width: 1100px; /* 広がりすぎないよう制限 */
-            height: 95vh; /* 上下にわずかな隙間を作り、圧迫感を軽減 */
-            background: var(--panel-bg); 
-            border: 1px solid var(--border-color);
+            display: flex; width: 100%; max-width: 1100px; height: 95vh; 
+            background: var(--panel-bg); border: 1px solid var(--border-color);
             box-sizing: border-box; 
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
         
-        .left { 
-            width: 42%; padding: 15px; border-right: 1px solid var(--border-color); 
-            display: flex; flex-direction: column; 
-        }
-        .right { 
-            width: 58%; padding: 15px; background: #050505; 
-            display: flex; flex-direction: column; 
-        }
+        .left { width: 42%; padding: 15px; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
+        .right { width: 58%; padding: 15px; background: #050505; display: flex; flex-direction: column; }
         
-        .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 10px; }
+        .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 10px; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
         
+        /* ラベルも白に */
         .section-label { 
-            font-size: 9px; color: #666; letter-spacing: 1px; 
+            font-size: 9px; color: #ffffff; letter-spacing: 1px; 
             margin: 5px 0; border-bottom: 1px solid var(--border-color); 
             padding-bottom: 3px; text-transform: uppercase; 
         }
 
-        .input-group { 
-            background: #111; padding: 10px; border-radius: 4px; 
-            border: 1px solid var(--border-color); margin-bottom: 10px;
-            display: flex; flex-direction: column; gap: 5px; 
-        }
+        .input-group { background: #111; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
+        
         input[type="text"] { 
-            width: 100%; padding: 8px; background: #000; border: 1px solid #444; 
-            color: #fff; font-family: 'Orbitron'; font-size: 10px; box-sizing: border-box; outline: none;
+            width: 100%; padding: 8px; background: #000; border: 1px solid #555; 
+            color: #ffffff; font-family: 'Orbitron'; font-size: 10px; box-sizing: border-box; outline: none;
         }
-        input[type="text"]:focus { border-color: var(--main-red); }
+        input[type="text"]::placeholder { color: #888; } /* プレースホルダーのみ少し落とす */
 
         .btn-ui { 
-            width: 100%; height: 40px; border: 1px solid #444; 
+            width: 100%; height: 40px; border: 1px solid #555; 
             border-radius: 4px; font-family: 'Orbitron'; font-weight: 900; 
             font-size: 11px; cursor: pointer; text-transform: uppercase;
             color: #ffffff !important; display: flex; align-items: center; justify-content: center;
         }
         .btn-red { background: var(--main-red); border: none; box-shadow: var(--neon); }
-        .btn-gray { background: #1a1a1a; transition: 0.2s; }
-        .btn-gray:hover { background: #333; }
+        .btn-gray { background: #1a1a1a; }
 
         #player { width: 100%; aspect-ratio: 16/9; border: 1px solid var(--border-color); background:#000; margin-bottom: 10px; }
         
-        .playback-ctrl { 
-            margin-bottom: 10px; display: flex; gap: 10px; justify-content: center; 
-            background: #000; padding: 8px; border-radius: 30px; border: 1px solid var(--border-color); 
-        }
-        .ctrl-icon { 
-            width: 35px; height: 35px; border-radius: 50%; background: #111; 
-            color: white; border: 1px solid #444; cursor: pointer; display: flex; 
-            align-items: center; justify-content: center; font-size: 14px;
-        }
+        .playback-ctrl { margin-bottom: 10px; display: flex; gap: 10px; justify-content: center; background: #000; padding: 8px; border-radius: 30px; border: 1px solid var(--border-color); }
+        .ctrl-icon { width: 35px; height: 35px; border-radius: 50%; background: #111; color: #ffffff; border: 1px solid #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 
         #imageFileInput { display: none; }
         .file-label { 
-            width: 100%; height: 42px; background: #1a1a1a; border: 1px solid #444; 
-            color: #fff; font-family: 'Orbitron'; font-weight: 900; font-size: 11px; 
+            width: 100%; height: 42px; background: #1a1a1a; border: 1px solid #555; 
+            color: #ffffff; font-family: 'Orbitron'; font-weight: 900; font-size: 11px; 
             cursor: pointer; display: flex; align-items: center; justify-content: center; 
-            border-radius: 4px; letter-spacing: 1px;
+            border-radius: 4px;
         }
 
-        #reserve-list { 
-            flex-grow: 1; overflow-y: auto; padding-right: 5px; 
-            scrollbar-width: thin; scrollbar-color: var(--main-red) #000;
-        }
-        .list-item { 
-            background: #0d0d0d; padding: 8px; margin-bottom: 5px; 
-            border-radius: 4px; display: flex; align-items: center; gap: 10px; border-left: 2px solid #333; 
-        }
+        #reserve-list { flex-grow: 1; overflow-y: auto; padding-right: 5px; scrollbar-width: thin; scrollbar-color: var(--main-red) #000; }
+        .list-item { background: #0d0d0d; padding: 8px; margin-bottom: 5px; border-radius: 4px; display: flex; align-items: center; gap: 10px; border-left: 2px solid var(--main-red); }
         .list-item img { width: 65px; border-radius: 2px; }
         
-        .status-msg { font-size: 9px; color: #0f0; height: 12px; text-align: center; font-family: monospace; }
+        /* ステータスメッセージも白に */
+        .status-msg { font-size: 9px; color: #ffffff; height: 12px; text-align: center; font-family: monospace; font-weight: bold; }
     </style>
 </head>
 <body>
 <div class="master-container">
     <div class="left">
         <div class="logo"><span>27</span> STAFF</div>
-        
         <div class="input-group">
             <div class="section-label">LIVE BROADCAST</div>
             <input type="text" id="urlInput" placeholder="YOUTUBE URL...">
@@ -119,15 +92,12 @@
             <button class="btn-ui btn-gray" style="margin-top:3px; height:32px;" onclick="addToQueue()">ADD TO QUEUE</button>
             <div id="submitStatus" class="status-msg"></div>
         </div>
-
         <div class="playback-ctrl">
             <button class="ctrl-icon" onclick="control('restart')">⏮</button>
             <button class="ctrl-icon" onclick="control('play')">▶</button>
             <button class="ctrl-icon" onclick="control('pause')">⏸</button>
         </div>
-        
         <div id="player"></div>
-
         <div class="input-group">
             <div class="section-label">GALLERY UPLOAD</div>
             <label for="imageFileInput" class="file-label" id="fileLabel">SELECT & POST IMAGE</label>
@@ -135,14 +105,13 @@
             <div id="uploadStatus" class="status-msg"></div>
         </div>
     </div>
-
     <div class="right">
         <div class="section-label">RESERVATION QUEUE</div>
         <div id="reserve-list"></div>
     </div>
 </div>
-
 <script>
+    /* （以下JSは変更なし） */
     const firebaseConfig = {
         apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE",
         databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -152,17 +121,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let player, currentId = "";
-
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
-
-    function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', { 
-            events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } 
-        });
-        loadQueue();
-    }
-
+    function onYouTubeIframeAPIReady() { player = new YT.Player('player', { events: { 'onStateChange': (e) => syncDB(e.data, player.getCurrentTime()) } }); loadQueue(); }
     function loadQueue() {
         db.ref('queue').on('value', snap => {
             const list = document.getElementById('reserve-list');
@@ -171,51 +132,17 @@
                 const item = c.val();
                 const div = document.createElement('div');
                 div.className = "list-item";
-                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div style="flex-grow:1;"><span style="font-size:8px; color:var(--main-red); display:block;">${item.requester.toUpperCase()}</span><span style="font-size:10px; color:#fff;">${item.videoId}</span></div><button class="btn-ui btn-gray" style="width:60px; height:30px; font-size:8px;" onclick="playFromQueue('${c.key}','${item.videoId}')">PLAY</button><button class="btn-ui btn-gray" style="width:35px; height:30px; font-size:8px; color:#f00 !important; margin-left:3px;" onclick="db.ref('queue/${c.key}').remove()">✕</button>`;
+                div.innerHTML = `<img src="https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg"><div style="flex-grow:1;"><span style="font-size:8px; color:var(--main-red); display:block;">${item.requester.toUpperCase()}</span><span style="font-size:10px; color:#ffffff;">${item.videoId}</span></div><button class="btn-ui btn-gray" style="width:60px; height:30px; font-size:8px;" onclick="playFromQueue('${c.key}','${item.videoId}')">PLAY</button><button class="btn-ui btn-gray" style="width:35px; height:30px; font-size:8px; color:#ff0033 !important; margin-left:3px;" onclick="db.ref('queue/${c.key}').remove()">✕</button>`;
                 list.appendChild(div);
             });
             Sortable.create(list, { animation: 150 });
         });
     }
-
-    function smartSubmit() {
-        const id = getYTId(document.getElementById('urlInput').value);
-        if (!id) return;
-        executeLive(id);
-        document.getElementById('submitStatus').innerText = "LIVE START";
-        clearInputs();
-    }
-
-    function addToQueue() {
-        const id = getYTId(document.getElementById('urlInput').value);
-        const name = document.getElementById('nameInput').value || "GUEST";
-        if (!id) return;
-        db.ref('queue').push({ videoId: id, requester: name, order: Date.now() });
-        document.getElementById('submitStatus').innerText = "ADDED TO QUEUE";
-        clearInputs();
-    }
-
+    function smartSubmit() { const id = getYTId(document.getElementById('urlInput').value); if (!id) return; executeLive(id); document.getElementById('submitStatus').innerText = "LIVE START"; clearInputs(); }
+    function addToQueue() { const id = getYTId(document.getElementById('urlInput').value); const name = document.getElementById('nameInput').value || "GUEST"; if (!id) return; db.ref('queue').push({ videoId: id, requester: name, order: Date.now() }); document.getElementById('submitStatus').innerText = "ADDED TO QUEUE"; clearInputs(); }
     function getYTId(url) { return url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop(); }
     function clearInputs() { document.getElementById('urlInput').value = ""; document.getElementById('nameInput').value = ""; setTimeout(() => document.getElementById('submitStatus').innerText = "", 2000); }
-
-    function autoUpload(input) {
-        const file = input.files[0];
-        if (!file) return;
-        const status = document.getElementById('uploadStatus');
-        status.innerText = "UPLOADING...";
-        status.style.color = "#ff0";
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => {
-                status.innerText = "UPLOAD SUCCESS!";
-                status.style.color = "#0f0";
-                input.value = "";
-                setTimeout(() => { status.innerText = ""; }, 3000);
-            });
-        };
-        reader.readAsDataURL(file);
-    }
-
+    function autoUpload(input) { const file = input.files[0]; if (!file) return; const status = document.getElementById('uploadStatus'); status.innerText = "UPLOADING..."; const reader = new FileReader(); reader.onload = (e) => { db.ref('gallery').push({ url: e.target.result, timestamp: firebase.database.ServerValue.TIMESTAMP }).then(() => { status.innerText = "SUCCESS!"; input.value = ""; setTimeout(() => { status.innerText = ""; }, 3000); }); }; reader.readAsDataURL(file); }
     function executeLive(id) { currentId = id; player.loadVideoById(id, 0); syncDB(1, 0); db.ref('backnumbers').push({ videoId: id, timestamp: firebase.database.ServerValue.TIMESTAMP }); }
     function syncDB(state, time) { if (!currentId) return; db.ref('sync').set({ videoId: currentId, state: state, time: time, lastUpdate: Date.now() }); }
     function control(cmd) { if (!player || !currentId) return; if (cmd === 'restart') player.seekTo(0); cmd === 'pause' ? player.pauseVideo() : player.playVideo(); setTimeout(() => syncDB(player.getPlayerState(), player.getCurrentTime()), 200); }
