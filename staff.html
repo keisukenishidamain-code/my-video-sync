@@ -83,7 +83,11 @@
         .list-info { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
         .item-label { font-size: 8px; color: var(--main-red); letter-spacing: 1px; font-weight: 900; text-transform: uppercase; }
         .item-value { font-size: 9px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .mini-del-btn { position: absolute; right: 8px; top: 8px; background: none; border: none; color: #fff; opacity: 0.5; font-size: 12px; cursor: pointer; }
+        
+        .mini-del-btn { position: absolute; right: 6px; top: 6px; background: none; border: none; color: #fff; opacity: 0.4; font-size: 12px; cursor: pointer; z-index: 10; transition: 0.2s; }
+        .mini-del-btn:hover { opacity: 1; color: var(--main-red); }
+        .list-item .btn-gray { margin-right: 12px; }
+
         .staff-date-divider { font-size: 9px; color: #fff; padding: 15px 0 8px; border-bottom: 1px solid #333; margin-bottom: 5px; letter-spacing: 3px; font-weight: 900; text-align: center; }
         .gallery-item { border-left: 3px solid #00ffcc; }
         .gallery-label { color: #00ffcc !important; }
@@ -175,9 +179,9 @@
                         <div class="list-info">
                             <span class="item-label">${item.requester.toUpperCase()}</span>
                             <span class="item-value">${item.videoId}</span>
-                            <button class="mini-del-btn" onclick="db.ref('queue/${item.key}').remove()">✕</button>
                         </div>
                         <button class="btn-ui btn-gray" style="width:60px; height:28px; font-size:8px; flex-shrink:0;" onclick="playSelected('${item.key}','${item.videoId}','${item.requester}')">PLAY</button>
+                        <button class="mini-del-btn" onclick="db.ref('queue/${item.key}').remove()">✕</button>
                     `;
                     list.appendChild(div);
                 });
@@ -249,6 +253,3 @@
 </script>
 </body>
 </html>
-
-
-
