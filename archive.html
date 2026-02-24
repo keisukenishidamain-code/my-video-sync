@@ -41,7 +41,7 @@
             flex-direction: column;
         }
 
-        /* セレクターエリア：高さを抑えて動画エリアを確保 */
+        
         .archive-selector {
             flex-shrink: 0;
             height: 160px;
@@ -76,7 +76,7 @@
         .date-card .date-text { font-size: 14px; font-weight: 900; color: var(--main-red); margin-bottom: 5px; }
         .date-card .event-title { font-size: 10px; color: #fff; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* コンテンツエリア：動画を適切なサイズに */
+       
         .content-area {
             flex-grow: 1;
             display: none;
@@ -87,13 +87,13 @@
         }
         .content-area.show { display: flex; }
 
-        /* 動画セクション：大きすぎないように制限 */
+        
         .video-section { 
             flex: 1.4; 
             display: flex; 
             flex-direction: column; 
             gap: 20px; 
-            max-width: 900px; /* 最大幅を制限 */
+            max-width: 900px; 
         }
         .player-wrapper { 
             width: 100%; 
@@ -108,7 +108,7 @@
         .now-playing-label { font-size: 10px; color: var(--main-red); font-weight: 900; letter-spacing: 2px; margin-bottom: 5px; }
         .now-playing-title { font-size: 16px; color: #fff; letter-spacing: 1px; }
 
-        /* トラックリスト：スクロールを独立 */
+       
         .track-list-section { 
             flex: 1; 
             display: flex; 
@@ -236,7 +236,7 @@
         const trackList = document.getElementById('trackList');
         trackList.innerHTML = "";
         
-        // その日の曲リスト（新しい順に表示したい場合は reverse() を使う）
+       
         const dayTracks = [...groupedData[date]].reverse();
         
         dayTracks.forEach((track, index) => {
@@ -257,12 +257,12 @@
             `;
             trackList.appendChild(item);
             
-            // 最初の1曲目を自動再生（選択状態にする）
+            
             if(index === 0) item.click();
         });
     }
 
-    // 横スクロールをホイールで操作可能にする
+    
     const selectorEl = document.getElementById('dateSelector');
     selectorEl.addEventListener('wheel', (e) => {
         if (e.deltaY !== 0) {
