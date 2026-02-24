@@ -8,25 +8,17 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        /* =============================================
-           LAYOUT SETTINGS (横幅 px 指定)
-        ============================================= */
         :root {
-            --panel-left-width: 320px;    /* 一番左：操作パネル */
-            --column-1-width: 380px;      /* 左から2番目：RESERVATION */
-            --column-2-width: 380px;      /* 左から3番目：HISTORY */
-            --column-3-width: 380px;      /* 一番右：GALLERY CONTROL */
-            
-            /* COLORS & EFFECTS */
+            --panel-left-width: 320px;
+            --column-1-width: 380px;
+            --column-2-width: 380px;
+            --column-3-width: 380px;
             --main-red: #ff0033;
             --neon: 0 0 10px #ff0033;
             --border-color: #222;
             --bg-card: #111;
         }
 
-        /* =============================================
-           BASE STYLES
-        ============================================= */
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background: #000; color: #fff; font-family: 'Orbitron', sans-serif; 
@@ -36,18 +28,17 @@
         
         .master-container { 
             display: flex; 
-            width: fit-content; /* 中身の合計幅に合わせる */
+            width: fit-content;
             max-width: 99vw;
             height: 96vh;
             background: #0a0a0a; 
             box-sizing: border-box; 
-            overflow-x: auto; /* 幅が溢れた場合は横スクロール可能に */
+            overflow-x: auto;
             overflow-y: hidden;
             border: 1px solid #222;
             border-radius: 8px;
         }
         
-        /* カラム共通設定 */
         .left-panel { 
             width: var(--panel-left-width); 
             flex-shrink: 0; padding: 20px; border-right: 1px solid var(--border-color); 
@@ -56,18 +47,16 @@
         }
         
         .list-column { 
-            flex-shrink: 0; /* 指定したpx幅を維持 */
+            flex-shrink: 0;
             background: #050505; display: flex; flex-direction: column; 
             overflow: hidden; box-sizing: border-box; border-right: 1px solid var(--border-color); 
         }
         .list-column:last-child { border-right: none; }
 
-        /* 各カラムにpx幅を適用 */
         .list-column:nth-child(2) { width: var(--column-1-width); }
         .list-column:nth-child(3) { width: var(--column-2-width); }
         .list-column:nth-child(4) { width: var(--column-3-width); }
 
-        /* --- 以下、デザインパーツ (変更なし) --- */
         .logo { font-size: 18px; font-weight: 900; letter-spacing: 3px; margin-bottom: 20px; border-left: 4px solid var(--main-red); padding-left: 15px; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
         .section-header { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 12px 15px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
@@ -152,7 +141,6 @@
 </div>
 
 <script>
-    // --- 既存のJSロジック ---
     const firebaseConfig = { apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE", databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "club-d0011", appId: "1:51948793811:web:1edecab7c41c1d84ad8926" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
