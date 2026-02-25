@@ -9,7 +9,12 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --main-red: #ff0033; --neon: 0 0 15px #ff0033; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Orbitron', sans-serif; color: #ffffff; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #000; overflow: hidden; 
+            font-family: 'Orbitron', "游明朝", "YuMincho", "MS PMincho", serif; 
+            color: #ffffff; 
+        }
         header { padding: 30px 50px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,1) 0%, transparent 100%); position: fixed; top: 0; width: 100%; z-index: 100; box-sizing: border-box; }
         .logo { font-size: 24px; font-weight: 900; letter-spacing: 5px; text-decoration: none; color: #ffffff; }
         .logo span { color: var(--main-red); text-shadow: var(--neon); }
@@ -47,7 +52,7 @@
         </div>
         <div id="player"></div>
         <div id="volume-ctrl">
-            <input type="range" id="volRange" class="vol-slider" min="0" max="100" value="100" oninput="changeVolume(this.value)">
+            <input type="range" id="volRange" class="vol-slider" min="0" max="100" value="50" oninput="changeVolume(this.value)">
         </div>
         <div id="brand-overlay">
             <div class="brand-logo-big"><span>27</span> CLUB</div>
@@ -64,7 +69,7 @@
         player = new YT.Player('player', {
             playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1 },
             events: { 
-                'onReady': (e) => { e.target.setVolume(100); startSync(); }, 
+                'onReady': (e) => { e.target.setVolume(50); startSync(); }, 
                 'onStateChange': (e) => {
                     const ov = document.getElementById('brand-overlay');
                     const info = document.getElementById('track-info');
