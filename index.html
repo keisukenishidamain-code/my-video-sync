@@ -64,7 +64,8 @@
     const firebaseConfig = { apiKey: "AIzaSyDoZtzHkOcC3p565fLN4oGO7vmlwQZiNkE", databaseURL: "https://club-d0011-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "club-d0011", appId: "1:51948793811:web:1edecab7c41c1d84ad8926" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let player, currentVideoId = "";
+    let player, currentVideoId = "", lastSyncState = 0;
+
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
             playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1 },
@@ -73,36 +74,58 @@
                 'onStateChange': (e) => {
                     const ov = document.getElementById('brand-overlay');
                     const info = document.getElementById('track-info');
+                    // スタッフ側が停止中(lastSyncState === 0)なのに再生が始まったら強制停止
                     if (e.data === 1) { 
+                        if (lastSyncState === 0) {
+                            player.pauseVideo();
+                            return;
+                        }
                         ov.style.opacity = "0"; info.style.opacity = "1";
                         setTimeout(() => { if(player.getPlayerState()===1) ov.style.display="none"; }, 800);
                         updateTitle();
-                    } else { ov.style.display = "flex"; ov.style.opacity = "1"; info.style.opacity = "0"; }
+                    } else { 
+                        ov.style.display = "flex"; ov.style.opacity = "1"; info.style.opacity = "0"; 
+                    }
                 }
             }
         });
     }
+
     function changeVolume(val) { if (player && player.setVolume) { player.setVolume(val); if (val > 0 && player.isMuted()) player.unMute(); } }
     function updateTitle() { if (player && player.getVideoData) { const data = player.getVideoData(); if(data.title) document.getElementById('video-title').innerText = data.title.toUpperCase(); } }
+
     function startSync() {
         db.ref('sync').on('value', (snap) => {
             const data = snap.val();
             if (!data || !player) return;
+            
+            lastSyncState = data.state; // スタッフ側の状態を保存
+
             if (data.requester) document.getElementById('requester-name').innerText = data.requester.toUpperCase();
+            
             if (currentVideoId !== data.videoId) {
                 currentVideoId = data.videoId;
                 player.loadVideoById(data.videoId, data.time);
                 return;
             }
+
             const latency = (Date.now() - data.lastUpdate) / 1000;
             const targetTime = data.time + (data.state === 1 ? latency : 0);
+
             if (data.state === 1) {
                 const diff = Math.abs(player.getCurrentTime() - targetTime);
                 if (diff > 2) player.seekTo(targetTime, true);
                 if (player.getPlayerState() !== 1) player.playVideo();
-            } else { player.pauseVideo(); }
+            } else { 
+                player.pauseVideo();
+                // 停止時もシーク位置を合わせておく
+                if (Math.abs(player.getCurrentTime() - data.time) > 1) {
+                    player.seekTo(data.time, true);
+                }
+            }
         });
     }
+
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api"; document.body.appendChild(tag);
 </script>
 </body>
