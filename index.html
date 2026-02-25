@@ -68,14 +68,19 @@
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-            playerVars: { 'autoplay': 1, 'controls': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1 },
+            playerVars: { 
+                'autoplay': 0, // 自動再生をOFFにする
+                'controls': 0, 'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3, 'disablekb': 1 
+            },
             events: { 
-                'onReady': (e) => { e.target.setVolume(50); startSync(); }, 
+                'onReady': (e) => { 
+                    e.target.setVolume(50); 
+                    startSync(); 
+                }, 
                 'onStateChange': (e) => {
                     const ov = document.getElementById('brand-overlay');
                     const info = document.getElementById('track-info');
-                    // スタッフ側が停止中(lastSyncState === 0)なのに再生が始まったら強制停止
-                    if (e.data === 1) { 
+                    if (e.data === 1) { // 再生開始時
                         if (lastSyncState === 0) {
                             player.pauseVideo();
                             return;
@@ -99,13 +104,15 @@
             const data = snap.val();
             if (!data || !player) return;
             
-            lastSyncState = data.state; // スタッフ側の状態を保存
+            lastSyncState = data.state;
 
             if (data.requester) document.getElementById('requester-name').innerText = data.requester.toUpperCase();
             
             if (currentVideoId !== data.videoId) {
                 currentVideoId = data.videoId;
-                player.loadVideoById(data.videoId, data.time);
+                // 動画読み込み。stateが1のときだけ自動再生させる
+                player.cueVideoById(data.videoId, data.time);
+                if (data.state === 1) player.playVideo();
                 return;
             }
 
@@ -118,7 +125,6 @@
                 if (player.getPlayerState() !== 1) player.playVideo();
             } else { 
                 player.pauseVideo();
-                // 停止時もシーク位置を合わせておく
                 if (Math.abs(player.getCurrentTime() - data.time) > 1) {
                     player.seekTo(data.time, true);
                 }
