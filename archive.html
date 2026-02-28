@@ -13,7 +13,7 @@
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background: #000; color: #ffffff; 
-            font-family: 'Orbitron', sans-serif; overflow: hidden; 
+            font-family: 'Orbitron', "游明朝", "YuMincho", serif; overflow: hidden; 
         }
         
         header { 
@@ -41,7 +41,6 @@
             flex-direction: column;
         }
 
-        
         .archive-selector {
             flex-shrink: 0;
             height: 160px;
@@ -76,7 +75,6 @@
         .date-card .date-text { font-size: 14px; font-weight: 900; color: var(--main-red); margin-bottom: 5px; }
         .date-card .event-title { font-size: 10px; color: #fff; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; }
 
-       
         .content-area {
             flex-grow: 1;
             display: none;
@@ -87,7 +85,6 @@
         }
         .content-area.show { display: flex; }
 
-        
         .video-section { 
             flex: 1.4; 
             display: flex; 
@@ -106,9 +103,8 @@
         
         .now-playing-box { border-left: 3px solid var(--main-red); padding-left: 15px; }
         .now-playing-label { font-size: 10px; color: var(--main-red); font-weight: 900; letter-spacing: 2px; margin-bottom: 5px; }
-        .now-playing-title { font-size: 16px; color: #fff; letter-spacing: 1px; }
+        .now-playing-title { font-size: 16px; color: #fff; letter-spacing: 1px; text-transform: uppercase; }
 
-       
         .track-list-section { 
             flex: 1; 
             display: flex; 
@@ -129,7 +125,7 @@
         .track-item img { width: 80px; aspect-ratio: 16/9; object-fit: cover; border-radius: 2px; }
         .track-info { display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
         .track-info .req { color: var(--main-red); font-size: 9px; font-weight: 900; margin-bottom: 3px; }
-        .track-info .v-id { color: #666; font-size: 9px; }
+        .track-info .v-id { color: #eee; font-size: 10px; letter-spacing: 0.5px; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     </style>
 </head>
 <body>
@@ -143,8 +139,7 @@
 </header>
 
 <div class="master-wrapper">
-    <div class="archive-selector" id="dateSelector">
-        </div>
+    <div class="archive-selector" id="dateSelector"></div>
 
     <div class="content-area" id="contentArea">
         <div class="video-section">
@@ -175,6 +170,7 @@
     const db = firebase.database();
 
     let player, groupedData = {};
+    const titleCache = {};
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', { 
@@ -185,19 +181,30 @@
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
     document.body.appendChild(tag);
 
+    async function getTrackTitle(videoId) {
+        if (titleCache[videoId]) return titleCache[videoId];
+        try {
+            const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+            if (!response.ok) throw new Error();
+            const data = await response.json();
+            titleCache[videoId] = data.title;
+            return data.title;
+        } catch (e) {
+            return "PRIVATE / DELETED VIDEO";
+        }
+    }
+
     function loadArchive() {
         db.ref('backnumbers').on('value', snap => {
             groupedData = {};
             const items = [];
             snap.forEach(child => { items.push({ key: child.key, ...child.val() }); });
             
-            // タイムスタンプ順にソート
             items.sort((a, b) => a.timestamp - b.timestamp);
 
             items.forEach(item => {
                 if (!item.timestamp) return;
                 const d = new Date(item.timestamp);
-                // 朝5時までは前日扱いとするロジック
                 if (d.getHours() < 5) d.setDate(d.getDate() - 1);
                 const dateStr = `${d.getFullYear()}.${('0' + (d.getMonth() + 1)).slice(-2)}.${('0' + d.getDate()).slice(-2)}`;
                 
@@ -228,7 +235,7 @@
         });
     }
 
-    function showTracks(date, element) {
+    async function showTracks(date, element) {
         document.querySelectorAll('.date-card').forEach(c => c.classList.remove('active'));
         element.classList.add('active');
         document.getElementById('contentArea').classList.add('show');
@@ -236,33 +243,46 @@
         const trackList = document.getElementById('trackList');
         trackList.innerHTML = "";
         
-       
         const dayTracks = [...groupedData[date]].reverse();
         
         dayTracks.forEach((track, index) => {
             const item = document.createElement('div');
             item.className = 'track-item';
-            item.onclick = () => {
-                player.loadVideoById(track.videoId);
+            const titleElementId = `title-${track.key}`;
+
+            item.onclick = async () => {
                 document.querySelectorAll('.track-item').forEach(t => t.classList.remove('active'));
                 item.classList.add('active');
-                document.getElementById('nowPlayingText').innerText = track.requester.toUpperCase();
+                
+                const title = await getTrackTitle(track.videoId);
+                document.getElementById('nowPlayingText').innerText = title.toUpperCase();
+                player.loadVideoById(track.videoId);
             };
+
             item.innerHTML = `
-                <img src="https://img.youtube.com/vi/${track.videoId}/mqdefault.jpg">
+                <img src="https://img.youtube.com/vi/${track.videoId}/mqdefault.jpg" onerror="this.src='https://via.placeholder.com/80x45?text=NO+IMAGE'">
                 <div class="track-info">
                     <span class="req">${track.requester.toUpperCase()}</span>
-                    <span class="v-id">ID: ${track.videoId}</span>
+                    <span class="v-id" id="${titleElementId}">LOADING TITLE...</span>
                 </div>
             `;
             trackList.appendChild(item);
+
+            getTrackTitle(track.videoId).then(title => {
+                const el = document.getElementById(titleElementId);
+                if (el) el.innerText = title.toUpperCase();
+            });
             
-            
-            if(index === 0) item.click();
+            if (index === 0) {
+                getTrackTitle(track.videoId).then(title => {
+                    document.getElementById('nowPlayingText').innerText = title.toUpperCase();
+                    item.classList.add('active');
+                    player.cueVideoById(track.videoId);
+                });
+            }
         });
     }
 
-    
     const selectorEl = document.getElementById('dateSelector');
     selectorEl.addEventListener('wheel', (e) => {
         if (e.deltaY !== 0) {
